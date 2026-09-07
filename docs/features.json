@@ -1,0 +1,282 @@
+[
+  {
+    "id": "F01",
+    "title": "Skole, brukere og fullmakter",
+    "description": "Skoleslag, godkjenning, trinn, skoleår, ansatte, kompetanse, elevtilknytning og tidsavgrenset stedfortreder. Skill rolle fra myndighet i en bestemt sak.",
+    "context": "BC01",
+    "phase": "P1"
+  },
+  {
+    "id": "F02",
+    "title": "Elevprofil og foresattrelasjoner",
+    "description": "Styrker, interesser, språk, kommunikasjon og støtte som virker. Foreldreansvar, bosted, representasjon, begrensninger og informasjonsrett registreres med kilde og gyldighet.",
+    "context": "BC01",
+    "phase": "P1"
+  },
+  {
+    "id": "F03",
+    "title": "Felles innboks for elevinformasjon",
+    "description": "Notater, e-post fra foresatte, vedlegg, PDF, Word, skannede dokumenter, rapporter og timeplaner. Først manuell import; senere godkjente e-post- og systemkoblinger. Ingen generell innhøsting av alle ansattes e-poster.",
+    "context": "BC02",
+    "phase": "P2"
+  },
+  {
+    "id": "F04",
+    "title": "Uttrekk med kildekontroll",
+    "description": "Dokumentlesing og OCR foreslår elevkobling, datoer, mål og tiltak. Bevar avsender, opprinnelig tekst, sidereferanse og hva som er påstand, observasjon eller vurdering. Feiltolkninger og dubletter håndteres.",
+    "context": "BC02",
+    "phase": "P2"
+  },
+  {
+    "id": "F05",
+    "title": "Elevtidslinje og retting",
+    "description": "Søk i relevant, autorisert informasjon. Hendelsesdato og registreringsdato holdes adskilt. Innspill kan bestrides; nyere informasjon kan erstatte operative oppsummeringer med sporbar historikk.",
+    "context": "BC02",
+    "phase": "P2"
+  },
+  {
+    "id": "F06",
+    "title": "Kravregister og årshjul",
+    "description": "Versjonerte lovkrav, forskrifter, godkjenningsvedtak, lokale rutiner og produktvalg. Beregn hvilke krav som gjelder hvem og når; vis kilde, ansvar, dokumentbehov og uavklarte forhold.",
+    "context": "BC03",
+    "phase": "P1"
+  },
+  {
+    "id": "F07",
+    "title": "Henvisning, sakkyndighet og vedtak",
+    "description": "Samle henvisningsgrunnlag, nødvendig samtykke/tillatelse og PPT-dokumentasjon. Registrer innhold, omfang, organisering, kompetanse, gyldighet og vedtaksmyndighet. Hold ITO, assistanse og fysisk tilrettelegging atskilt.",
+    "context": "BC04",
+    "phase": "P3"
+  },
+  {
+    "id": "F08",
+    "title": "IOP med mål og versjoner",
+    "description": "Generer og rediger IOP-utkast innenfor vedtaket. Koble mål, delmål, tiltak, arena, ansvar og evaluering. Dokumenter elev- og foreldreinnspill; kontroller endringer ved nye vedtak.",
+    "context": "BC05",
+    "phase": "P3"
+  },
+  {
+    "id": "F09",
+    "title": "Læreplan og klassens planer",
+    "description": "Skolens godkjente læreplan, fag- og timefordeling, halvårsplaner og ukeplaner. Koble tema til elevmål; varsle om endringer og ta hensyn til Montessori og aldersblanding.",
+    "context": "BC06",
+    "phase": "P3"
+  },
+  {
+    "id": "F10",
+    "title": "Bibliotek for egne opplegg og materiell",
+    "description": "Import, søk, gjenbruk og deling av pedagogens opplegg med rettigheter, alder, ferdigheter og tidsbruk. Oversikt over materiell, plassering, antall og dokumenterte Montessori-presentasjoner.",
+    "context": "BC06",
+    "phase": "P3"
+  },
+  {
+    "id": "F11",
+    "title": "Kartlegging og målinger",
+    "description": "Registrer instrument, versjon, resultater og gjennomføringsbetingelser. Hold standardiserte prøver atskilt fra observasjoner; bruk faglig godkjente intervaller, lisensvilkår og gyldige fritak.",
+    "context": "BC09",
+    "phase": "P4"
+  },
+  {
+    "id": "F12",
+    "title": "Planlegg neste undervisningsøkt",
+    "description": "Bruk aktive mål, siste gjennomføring, klassens tema og tilgjengelige ressurser. Mål, materiell, konkrete trinn, støtte, tilpasninger og observasjonspunkt. Faglig gjennomgang før bruk.",
+    "context": "BC07",
+    "phase": "P3"
+  },
+  {
+    "id": "F13",
+    "title": "Assistentkort og veiledning",
+    "description": "Gjennomføringskort som kan forstås på omtrent fem minutter. Materiell, tre–fem trinn, hvordan støtte, avtalt forenkling og kontaktperson; korte tilbakemeldinger. Krev nødvendig opplæring i tillegg.",
+    "context": "BC07",
+    "phase": "P3"
+  },
+  {
+    "id": "F14",
+    "title": "Automatisk timeplan og gruppeforslag",
+    "description": "Faste krav, pedagogiske preferanser, kompetanse, elevbehov, inkludering, rom og materiell. Forklar gruppeforslag; lås økter; vis uløselige konflikter og omplanlegg ved fravær.",
+    "context": "BC08",
+    "phase": "P5"
+  },
+  {
+    "id": "F15",
+    "title": "Gjennomførte timer og avvik",
+    "description": "Registrer per elev faktisk deltakelse, varighet, støtteform, bemanning og årsak til bortfall. Sammenstill med vedtak uten å likestille assistentminutter med undervisning eller automatisk fordele gruppetid feil.",
+    "context": "BC07",
+    "phase": "P3"
+  },
+  {
+    "id": "F16",
+    "title": "Rask øktlogg og diktering",
+    "description": "Strukturert kortnotat på cirka ett minutt, med valgfri fritekst. Senere diktering med kontroll av transkripsjon, uttrykkelig opptaksvalg og begrenset lagring av lyd.",
+    "context": "BC07",
+    "phase": "P3"
+  },
+  {
+    "id": "F17",
+    "title": "Fremgang og neste steg",
+    "description": "Vis utvikling per mål og hvilke observasjoner den bygger på. Manglende belegg skal være synlig; foreslå justering med faglig begrunnelse og hensyn til dagsform og kontekst.",
+    "context": "BC09",
+    "phase": "P4"
+  },
+  {
+    "id": "F18",
+    "title": "Lovpålagte elevdokumenter og rapporter",
+    "description": "Rapporttyper og maler styres av gjeldende krav. Generer blant annet årlig ITO-evaluering fra relevant dokumentasjon; kontroller innhold, perioder, kilder, mangler og nødvendige faglige godkjenninger.",
+    "context": "BC10",
+    "phase": "P4"
+  },
+  {
+    "id": "F19",
+    "title": "Underveis-, halvårs- og sluttvurdering",
+    "description": "Samle lærernes innspill og elevens egenvurdering. Lag utkast til veiledende vurdering og møtegrunnlag. Faglærer fastsetter karakterer; Montessori-regler, fritak og fag som avsluttes tidlig styres særskilt.",
+    "context": "BC09",
+    "phase": "P4"
+  },
+  {
+    "id": "F20",
+    "title": "Ukesoppdatering per elev",
+    "description": "Kort, forståelig utkast om arbeid, mestring og neste uke. Bare foresatte som mottakere i første versjon; senere elevtilpasset variant. Velg relevant innhold, og vis manglende grunnlag uten å fylle inn antakelser.",
+    "context": "BC10",
+    "phase": "P2"
+  },
+  {
+    "id": "F21",
+    "title": "Gjennomgang, godkjenning og sikker utsending",
+    "description": "Godkjenn eksakt innhold, vedlegg, mottakere og kanal. Endringer gjør godkjenning ugyldig. Støtt eksplisitt utsending, kvittering, feil, usikkert leveringsutfall, rettelser og sikker foresattportal.",
+    "context": "BC11",
+    "phase": "P2"
+  },
+  {
+    "id": "F22",
+    "title": "Møter, samarbeid og individuell plan",
+    "description": "Møteforberedelse, innspill, referatutkast, ansvar, oppgaver og frister. Samarbeid med PPT og andre tjenester etter relevant grunnlag. Individuell plan etter velferdslovgivning holdes atskilt fra IOP.",
+    "context": "BC12",
+    "phase": "P4"
+  },
+  {
+    "id": "F23",
+    "title": "Fravær og oppfølging",
+    "description": "Hent eller før fravær, registrer kontakt og tiltak, foreslå oppfølging og gjør ansvar synlig. Skill elevfravær fra avlyst undervisning og fra manglende lærerressurs.",
+    "context": "BC12",
+    "phase": "P5"
+  },
+  {
+    "id": "F24",
+    "title": "Skolemiljø og aktivitetsplan",
+    "description": "Egen begrenset sak med varsel, undersøkelser, elevens syn, tiltak, ansvar og evaluering. Dokumenter faktisk handling; rute saker om ansatte til korrekt mottaker.",
+    "context": "BC13",
+    "phase": "P6"
+  },
+  {
+    "id": "F25",
+    "title": "Bekymring, barnevern og akutt oppfølging",
+    "description": "Beskyttet dokumentasjon, ansvarlig avsenders vurdering, riktige kontaktpunkter og registrering av melding/handling. Akutte og personlige plikter skal ikke forsinkes av AI eller krav om rektorgodkjenning.",
+    "context": "BC13",
+    "phase": "P6"
+  },
+  {
+    "id": "F26",
+    "title": "Fysiske inngrep og forebygging",
+    "description": "Egen hendelsesregistrering med beskrivelse, inngrep, elevens syn og faktisk varsling. Gjentatte/alvorlige hendelser følges opp i riktig organisatorisk løp.",
+    "context": "BC13",
+    "phase": "P6"
+  },
+  {
+    "id": "F27",
+    "title": "Personvern, tilgang og innsyn",
+    "description": "Formålsstyrt tilgang per skole, elev og sak; sikker innlogging og revisjonsspor. Innsyn, retting, begrensning og informasjon til registrerte. Administratortilgang gir ikke automatisk rett til elevinnhold.",
+    "context": "BC14",
+    "phase": "P1"
+  },
+  {
+    "id": "F28",
+    "title": "Dokumentforvaltning og arkiv",
+    "description": "Dokumentklasser, bevarings-/sletteplan, rettslig sperre, arkivoverføring og kvittering. Slett operative avledninger når grunnlaget krever det. Ingen generell sletting ved skoleårets slutt.",
+    "context": "BC14",
+    "phase": "P1"
+  },
+  {
+    "id": "F29",
+    "title": "Ledelsesoversikt og internkontroll",
+    "description": "Oppgaver, ansvar, avvik, risiko og oppfølgingsstatus. Vis manglende opplysninger særskilt; et ferdig dokument betyr ikke at elevens rett er oppfylt. Styret og skoleeier får riktig aggregert informasjon.",
+    "context": "BC03",
+    "phase": "P6"
+  },
+  {
+    "id": "F30",
+    "title": "Offentlig rapportering og administrasjon",
+    "description": "Forbered kontrollerte uttrekk til GSI, elevdata, tilsyn og relevante tilskudds-/refusjonsprosesser. Avstem mot skoleadministrative kilder; menneskelig attestasjon og integrasjon etter tilgjengelige grensesnitt.",
+    "context": "BC03",
+    "phase": "P7"
+  },
+  {
+    "id": "F31",
+    "title": "Tilgjengelighet og språk",
+    "description": "Tastatur, skjermleser, god lesbarhet, tilgjengelige dokumenter og støtte for bokmål/nynorsk. Oversettelsesutkast og tolkeoppfølging når nødvendig; faglig og språklig kontroll av viktig innhold.",
+    "context": "BC01",
+    "phase": "P1"
+  },
+  {
+    "id": "F32",
+    "title": "Integrasjoner og datautveksling",
+    "description": "Feide/annen identitet, skoleadministrasjon, LMS, e-post, kalender, dokumentarkiv og sikker post. Avtaler, tillatelser, minimalt datatilfang, dublettkontroll og manuell import/eksport som reserve.",
+    "context": "BC16",
+    "phase": "P7"
+  },
+  {
+    "id": "F33",
+    "title": "AI med utskiftbar modell og kvalitetskontroll",
+    "description": "Serverstyrt gateway for generering, søk, OCR og tale. API i utvikling med syntetiske data, egen server i produksjon. Kilder, modellversjon, evalueringer, kostnadsgrenser og ingen stille ekstern reserve.",
+    "context": "BC15",
+    "phase": "P2"
+  },
+  {
+    "id": "F34",
+    "title": "Drift, sikkerhet og beredskap",
+    "description": "Kryptering, nøkkelstyring, sikkerhetskopier, prøvd gjenoppretting, overvåking uten elevtekst, oppdateringer og hendelseshåndtering. Manuelle arbeidsflyter skal fungere ved AI-feil.",
+    "context": "BC15",
+    "phase": "P1"
+  },
+  {
+    "id": "F35",
+    "title": "Skoleår, overganger og skolebytte",
+    "description": "Oppdater tilknytning, rettigheter, planer og krav ved nytt år/trinn/skole. Selektiv overføringspakke med konkret delingsgrunnlag, nødvendig innhold, mottakerkontroll og kvittering.",
+    "context": "BC14",
+    "phase": "P7"
+  },
+  {
+    "id": "F36",
+    "title": "Ressurser og arbeidsbelastning",
+    "description": "Kompetanse, tilgjengelighet, planleggingstid, veiledning, pauser og faktiske ressursbehov. Foreslå avlastning og synliggjør kapasitetsmangel; støtt gjeldende arbeidsavtaler og lokale arbeidstidsregler.",
+    "context": "BC08",
+    "phase": "P5"
+  },
+  {
+    "id": "F37",
+    "title": "Betingede leder- og driftsplikter",
+    "description": "Krav- og oppfølgingsmoduler for opptak, skyss, SFO, helse/miljø, forsikring, bemanning, anskaffelser og økonomi der de gjelder. Integrer med fagsystemer og behold ansvar hos rett funksjon.",
+    "context": "BC03",
+    "phase": "P7"
+  },
+  {
+    "id": "F38",
+    "title": "Varsler, fritak, klager og partsrettigheter",
+    "description": "Riktig myndighet, saksgrunnlag, høring, begrunnelse, underretning, frist og klagepakke. Skill klage på vedtak, gjennomføring og sluttvurdering; tidsberegning er regelstyrt.",
+    "context": "BC04",
+    "phase": "P4"
+  },
+  {
+    "id": "F39",
+    "title": "Tilbakemelding og kontroll av forslag",
+    "description": "Pedagogen kan godta, endre, avvise og begrunne forslag. Oppdateringer av elevgrunnlaget viser berørte planer og rapporter; brukeren velger hva som skal endres.",
+    "context": "BC07",
+    "phase": "P3"
+  },
+  {
+    "id": "F40",
+    "title": "Målbar avlastning",
+    "description": "Mål samlet arbeidstid inkludert kontroll, retting og dobbeltføring. Evaluer assistentkort og rapportkvalitet. Bruk aggregert innsikt og frivillige studier, uten rangering av ansatte eller elever.",
+    "context": "BC03",
+    "phase": "P2"
+  }
+]

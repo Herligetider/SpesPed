@@ -1,0 +1,2191 @@
+[
+  {
+    "id": "L001",
+    "category": "Elevrettigheter",
+    "title": "Elevens beste og medvirkning",
+    "basis": "O §§ 10-1–10-2; P §§ 5A-1–5A-2",
+    "applicability": "Begge; alle trinn",
+    "owner": "Alle beslutningstakere",
+    "trigger": "Når forhold gjelder eleven",
+    "documentation": "Elevens syn og konkret vurdering der saken krever det; ingen generell standardrapport",
+    "featureIds": [
+      "F02",
+      "F08",
+      "F22",
+      "F24"
+    ],
+    "humanResponsibility": "Mennesket hører eleven og vurderer hensynene.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S07"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L002",
+    "category": "Elevrettigheter",
+    "title": "Samarbeid og nødvendig informasjon",
+    "basis": "O §§ 10-3, 10-8; P §§ 5A-3, 5A-8",
+    "applicability": "Begge; alle trinn",
+    "owner": "Skole, kontaktlærer, rektor",
+    "trigger": "Løpende og ved konkrete hendelser",
+    "documentation": "Informasjon og dialog; formen følger situasjon og særregler",
+    "featureIds": [
+      "F20",
+      "F21",
+      "F22"
+    ],
+    "humanResponsibility": "Informasjonsbehov og mottakerrett må vurderes.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S11"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L003",
+    "category": "Elevrettigheter",
+    "title": "Selvråderett og representasjon",
+    "basis": "O § 24-5; relevante regler i P og barnelova",
+    "applicability": "Begge; avhengig av alder og sakstype",
+    "owner": "Skolen / vedtaksmyndighet",
+    "trigger": "Ved valg, samtykke og endret representasjon",
+    "documentation": "Dokumenter relevant valg/tillatelse der nødvendig",
+    "featureIds": [
+      "F02",
+      "F07",
+      "F21",
+      "F38"
+    ],
+    "humanResponsibility": "15-årsregelen om opplæring er ikke en generell regel om all datadeling.",
+    "sourceIds": [
+      "S19",
+      "S20"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L004",
+    "category": "Elevrettigheter",
+    "title": "Læreplan og opplæringens innhold",
+    "basis": "O kap. 1–3; P § 2-3; PF kap. 5; skolens godkjenning",
+    "applicability": "Offentlig LK20/LK20S; privat godkjent læreplan",
+    "owner": "Skoleeier, rektor, lærere",
+    "trigger": "Planlegging og gjennomføring",
+    "documentation": "Opplæring etter rett læreplan; lokale planer er arbeidsverktøy",
+    "featureIds": [
+      "F09",
+      "F10",
+      "F12",
+      "F14"
+    ],
+    "humanResponsibility": "Velge innhold og vurdere faktisk opplæring.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S04",
+      "S33"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L005",
+    "category": "Elevrettigheter",
+    "title": "Forsvarlig organisering og tilhørighet",
+    "basis": "O § 14-2; P § 3-4; individuelle vedtak",
+    "applicability": "Begge; grupper og klasser",
+    "owner": "Rektor og pedagog",
+    "trigger": "Ved gruppe- og timeplanlegging",
+    "documentation": "Organisering og vurderinger når nødvendig; ikke én pålagt timeplanmal",
+    "featureIds": [
+      "F14",
+      "F36"
+    ],
+    "humanResponsibility": "Vurdere inkludering, gruppesammensetning og elevens beste.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S06"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L006",
+    "category": "Tilrettelegging",
+    "title": "Tilpasset opplæring",
+    "basis": "O § 11-1; P § 3-4 b",
+    "applicability": "Begge; alle elever",
+    "owner": "Lærere, skole",
+    "trigger": "Løpende",
+    "documentation": "Gjennomført tilpasning; ikke IOP for alle",
+    "featureIds": [
+      "F09",
+      "F12",
+      "F16"
+    ],
+    "humanResponsibility": "Undervisning og faglig vurdering.",
+    "sourceIds": [
+      "S05"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L007",
+    "category": "Tilrettelegging",
+    "title": "Følge med på utbytte og sette inn tiltak",
+    "basis": "O § 11-2; P § 3-4 c",
+    "applicability": "Begge; alle elever",
+    "owner": "Lærer melder fra; skole vurderer tiltak",
+    "trigger": "Ved tvil om tilfredsstillende utbytte",
+    "documentation": "Relevant grunnlag, tiltak og oppfølging",
+    "featureIds": [
+      "F11",
+      "F16",
+      "F17",
+      "F22"
+    ],
+    "humanResponsibility": "Vurdere utbytte; en AI-indikasjon er ikke konklusjon.",
+    "sourceIds": [
+      "S05"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L008",
+    "category": "Tilrettelegging",
+    "title": "Intensiv opplæring",
+    "basis": "O § 11-3; P § 3-4 d",
+    "applicability": "Begge; 1.–4. trinn når vilkårene gjelder",
+    "owner": "Skolen og pedagog",
+    "trigger": "Risiko for manglende forventet progresjon i aktuelle ferdigheter",
+    "documentation": "Tiltak og oppfølging; ingen egen lovpålagt standardrapport",
+    "featureIds": [
+      "F11",
+      "F12",
+      "F14",
+      "F17"
+    ],
+    "humanResponsibility": "Velge og gjennomføre forsvarlig innsats.",
+    "sourceIds": [
+      "S05"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L009",
+    "category": "Tilrettelegging",
+    "title": "Personlig assistanse",
+    "basis": "O § 11-4; P § 3-6",
+    "applicability": "Begge; ved behov og vedtak",
+    "owner": "Vedtaksmyndighet og skole",
+    "trigger": "Etter vedtakets start og omfang",
+    "documentation": "Vedtak og oppfølging av levert hjelp",
+    "featureIds": [
+      "F07",
+      "F13",
+      "F15"
+    ],
+    "humanResponsibility": "Assistanse holdes atskilt fra faglig ansvar.",
+    "sourceIds": [
+      "S05",
+      "S06"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L010",
+    "category": "Tilrettelegging",
+    "title": "Fysisk tilrettelegging, hjelpemidler og mobilitet",
+    "basis": "O § 11-5; P § 3-6",
+    "applicability": "Begge; når vilkårene gjelder",
+    "owner": "Vedtaksmyndighet, skoleeier og skole",
+    "trigger": "Ved behov og gjennomføring",
+    "documentation": "Vedtak og nødvendig plan for opplæring i hjelpemidler/mobilitet",
+    "featureIds": [
+      "F07",
+      "F10",
+      "F12",
+      "F15"
+    ],
+    "humanResponsibility": "Skaffe, tilrettelegge og lære opp i praksis.",
+    "sourceIds": [
+      "S05",
+      "S07"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L011",
+    "category": "Tilrettelegging",
+    "title": "Rett til individuelt tilrettelagt opplæring",
+    "basis": "O § 11-6; P § 3-6",
+    "applicability": "Begge; elever med slik rett",
+    "owner": "Kommune / korrekt myndighet; skole",
+    "trigger": "Ved behov og gyldig vedtak",
+    "documentation": "Vedtak om innhold, omfang og organisering",
+    "featureIds": [
+      "F07",
+      "F08",
+      "F15"
+    ],
+    "humanResponsibility": "Systemet avgjør ikke rettigheter.",
+    "sourceIds": [
+      "S06",
+      "S32"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L012",
+    "category": "Tilrettelegging",
+    "title": "Sakkyndighet og nødvendig samtykke",
+    "basis": "O §§ 11-7–11-8; P § 3-6",
+    "applicability": "Begge; ITO-prosess",
+    "owner": "PPT og vedtaksmyndighet; skole bidrar",
+    "trigger": "Før vedtak om ITO",
+    "documentation": "Sakkyndig vurdering og nødvendig samtykke",
+    "featureIds": [
+      "F03",
+      "F04",
+      "F07",
+      "F22"
+    ],
+    "humanResponsibility": "AI erstatter ikke PPT; rett person må samtykke.",
+    "sourceIds": [
+      "S05",
+      "S06"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L013",
+    "category": "Tilrettelegging",
+    "title": "Riktig vedtaksmyndighet i privatskole",
+    "basis": "P § 3-6",
+    "applicability": "Private skoler godkjent etter P",
+    "owner": "Elevens hjemkommune/hjemfylke",
+    "trigger": "Ved vedtak og finansiering",
+    "documentation": "Vedtak og relevant finansieringsgrunnlag",
+    "featureIds": [
+      "F01",
+      "F07",
+      "F30"
+    ],
+    "humanResponsibility": "Rektor får ikke automatisk myndighet gjennom systemrollen.",
+    "sourceIds": [
+      "S32"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L014",
+    "category": "Tilrettelegging",
+    "title": "Kompetanse og faglig ansvar",
+    "basis": "O §§ 11-9, 17-6; P § 3-6 og personalregler",
+    "applicability": "Begge; ITO og bruk av assistenter",
+    "owner": "Rektor og faglig ansvarlig lærer",
+    "trigger": "Ved bemanning og gjennomføring",
+    "documentation": "Relevant kompetanse og ev. gyldig unntak",
+    "featureIds": [
+      "F01",
+      "F13",
+      "F14",
+      "F36"
+    ],
+    "humanResponsibility": "Ansvar, veiledning og kvalifisert undervisning i praksis.",
+    "sourceIds": [
+      "S06"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L015",
+    "category": "Tilrettelegging",
+    "title": "Individuell opplæringsplan",
+    "basis": "O § 11-10; P § 3-6",
+    "applicability": "Begge; ITO, ikke bare assistanse",
+    "owner": "Skolen / faglig ansvarlig",
+    "trigger": "Så raskt som mulig etter vedtak",
+    "documentation": "Skriftlig IOP med mål, innhold og gjennomføring",
+    "featureIds": [
+      "F07",
+      "F08",
+      "F09"
+    ],
+    "humanResponsibility": "Faglig utforming innenfor vedtakets rammer.",
+    "sourceIds": [
+      "S07"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L016",
+    "category": "Tilrettelegging",
+    "title": "Evaluere IOP og endrede behov",
+    "basis": "O §§ 11-10–11-11; P § 3-6",
+    "applicability": "Begge; ITO",
+    "owner": "Skole, PPT og myndighet ved behov",
+    "trigger": "Ved utvikling eller endrede forutsetninger",
+    "documentation": "Oppdatert plan og grunnlag for ev. ny utredning",
+    "featureIds": [
+      "F05",
+      "F08",
+      "F17",
+      "F39"
+    ],
+    "humanResponsibility": "Endringer utenfor vedtaket krever riktig videre saksbehandling.",
+    "sourceIds": [
+      "S07",
+      "S08"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L017",
+    "category": "Tilrettelegging",
+    "title": "Årlig skriftlig ITO-evaluering",
+    "basis": "O § 11-11; P § 3-6",
+    "applicability": "Begge; ITO",
+    "owner": "Skolen; ansvarlig pedagog gjennomgår",
+    "trigger": "Én gang årlig; lokal dato må fastsettes",
+    "documentation": "Opplæring som er gitt og utvikling opp mot IOP-mål; tilgang for elev/foreldre",
+    "featureIds": [
+      "F15",
+      "F17",
+      "F18",
+      "F21"
+    ],
+    "humanResponsibility": "Kvalitetssikre beskrivelser og pedagogisk vurdering.",
+    "sourceIds": [
+      "S08"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L018",
+    "category": "Tilrettelegging",
+    "title": "Følge opp avvik fra vedtak",
+    "basis": "O kap. 11; P § 3-6",
+    "applicability": "Begge; individuell tilrettelegging",
+    "owner": "Skoleleder og skoleeier",
+    "trigger": "Løpende ved bortfall eller feil gjennomføring",
+    "documentation": "Oversikt over faktisk tilbud og avvik",
+    "featureIds": [
+      "F14",
+      "F15",
+      "F29"
+    ],
+    "humanResponsibility": "Vurdere avhjelping og elevens beste; ingen automatisk timegjeldsløsning.",
+    "sourceIds": [
+      "S07"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L019",
+    "category": "Tilrettelegging",
+    "title": "Oppdatert grunnlag ved nytt trinn/skole",
+    "basis": "O kap. 11; P § 3-6; regler om skolebytte",
+    "applicability": "Begge; overganger",
+    "owner": "Skole og vedtaksmyndighet",
+    "trigger": "Før oppstart og ved endrede behov",
+    "documentation": "Relevant overføringsgrunnlag og gyldige planer/vedtak",
+    "featureIds": [
+      "F07",
+      "F08",
+      "F35"
+    ],
+    "humanResponsibility": "Vurdere videre gyldighet og behov for nytt vedtak.",
+    "sourceIds": [
+      "S06",
+      "S21"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L020",
+    "category": "Vurdering",
+    "title": "Underveisvurdering i fag",
+    "basis": "OF § 9-11; PF § 6-11",
+    "applicability": "Begge; alle elever",
+    "owner": "Faglærere",
+    "trigger": "Integrert i opplæringen",
+    "documentation": "Muntlig/skriftlig vurdering; ikke plikt til daglig skriftlig logg",
+    "featureIds": [
+      "F16",
+      "F17",
+      "F19"
+    ],
+    "humanResponsibility": "Faglig tilbakemelding og elevens egenvurdering.",
+    "sourceIds": [
+      "S09"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L021",
+    "category": "Vurdering",
+    "title": "Vurdering etter riktige mål",
+    "basis": "OF §§ 9-1, 9-11; PF §§ 6-2, 6-11",
+    "applicability": "Begge; IOP og ordinære mål",
+    "owner": "Faglærer",
+    "trigger": "Underveis og ved vurdering",
+    "documentation": "Riktig vurderingsgrunnlag per fag/ordning",
+    "featureIds": [
+      "F08",
+      "F09",
+      "F19"
+    ],
+    "humanResponsibility": "IOP-mål gir ikke automatisk rett til karakter på annet grunnlag.",
+    "sourceIds": [
+      "S09",
+      "S07"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L022",
+    "category": "Vurdering",
+    "title": "Halvårsvurdering uten karakter",
+    "basis": "OF § 9-13; PF § 6-13",
+    "applicability": "Begge; 1.–10.",
+    "owner": "Faglærer",
+    "trigger": "Hvert halvår etter regelens periodisering",
+    "documentation": "Kan gis muntlig eller skriftlig; lokale skriftlighetskrav må skilles ut",
+    "featureIds": [
+      "F18",
+      "F19",
+      "F22"
+    ],
+    "humanResponsibility": "Vurdering og veiledning må faktisk gis.",
+    "sourceIds": [
+      "S10"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L023",
+    "category": "Vurdering",
+    "title": "Halvårsvurdering med karakter",
+    "basis": "OF § 9-13; PF § 6-13; godkjente unntak",
+    "applicability": "Ordinært fra 8. trinn; Montessori særprofil",
+    "owner": "Faglærer",
+    "trigger": "Etter relevant vurderingsordning",
+    "documentation": "Skriftlig karakter der påkrevd",
+    "featureIds": [
+      "F06",
+      "F19"
+    ],
+    "humanResponsibility": "Lærer fastsetter karakter; systemet velger riktig regelprofil.",
+    "sourceIds": [
+      "S10",
+      "S04",
+      "S34"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L024",
+    "category": "Vurdering",
+    "title": "Orden og oppførsel",
+    "basis": "OF §§ 9-12, 9-14, 9-17; PF §§ 6-12, 6-14, 6-17",
+    "applicability": "Begge; karakterregler avhenger av ordning",
+    "owner": "Kontaktlærer i samråd med lærere",
+    "trigger": "Løpende, halvår og avslutning",
+    "documentation": "Vurdering etter skoleregler; Montessori uten karakter",
+    "featureIds": [
+      "F19",
+      "F22",
+      "F38"
+    ],
+    "humanResponsibility": "Vurder særforutsetninger; ikke automatisert atferdsskår.",
+    "sourceIds": [
+      "S03",
+      "S04",
+      "S34"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L025",
+    "category": "Vurdering",
+    "title": "Samtale om elevens utvikling",
+    "basis": "OF § 9-6; PF § 6-6",
+    "applicability": "Begge; alle trinn",
+    "owner": "Kontakt-/faglærere",
+    "trigger": "Minst én faglig samtale per halvår; jevnlig øvrig dialog",
+    "documentation": "Samtale; ikke et obligatorisk omfattende referat",
+    "featureIds": [
+      "F19",
+      "F22"
+    ],
+    "humanResponsibility": "Faktisk samtale kan ikke erstattes av generert tekst.",
+    "sourceIds": [
+      "S12",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L026",
+    "category": "Vurdering",
+    "title": "Foreldremøte og foreldresamtaler",
+    "basis": "OF § 11-1; PF § 8-1",
+    "applicability": "Begge; grunnskole",
+    "owner": "Skole og kontaktlærer",
+    "trigger": "Møte ved skoleårets start; minst to samtaleinvitasjoner årlig",
+    "documentation": "Invitasjon og relevant dialog; elev fra 12 år har rett til å delta",
+    "featureIds": [
+      "F20",
+      "F21",
+      "F22"
+    ],
+    "humanResponsibility": "Tilrettelegge reell deltakelse; ukesbrev erstatter ikke samtalen.",
+    "sourceIds": [
+      "S11",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L027",
+    "category": "Vurdering",
+    "title": "Varsel om karaktergrunnlag og nedsatt orden/oppførsel",
+    "basis": "OF § 9-7; PF § 6-7",
+    "applicability": "Når relevant vurderingsordning og vilkår gjelder",
+    "owner": "Skole / lærer",
+    "trigger": "I tide til at eleven kan forbedre grunnlaget",
+    "documentation": "Skriftlig varsel",
+    "featureIds": [
+      "F19",
+      "F21",
+      "F38"
+    ],
+    "humanResponsibility": "Vurdere konkret grunnlag og rett mottaker.",
+    "sourceIds": [
+      "S03",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L028",
+    "category": "Vurdering",
+    "title": "Sluttvurdering og karakterfastsetting",
+    "basis": "OF §§ 9-15–9-17; PF §§ 6-15–6-17; Montessori-vedtak",
+    "applicability": "Avsluttende fag; valgt vurderingsordning",
+    "owner": "Faglærer, rektor",
+    "trigger": "Ved avslutning av fag",
+    "documentation": "Fastsetting og grunnlag etter ordning",
+    "featureIds": [
+      "F19",
+      "F30",
+      "F38"
+    ],
+    "humanResponsibility": "Ingen automatisk karakter eller aritmetisk snitt av prøver som standpunkt.",
+    "sourceIds": [
+      "S03",
+      "S04",
+      "S34"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L029",
+    "category": "Vurdering",
+    "title": "Fritak fra karakter, opplæring eller eksamen",
+    "basis": "OF kap. 9 og relevante særregler; PF kap. 1 og 6",
+    "applicability": "Etter konkret vilkår, trinn og fag",
+    "owner": "Riktig beslutningstaker; elev/foreldre involveres",
+    "trigger": "Ved søknad/valg og før vurdering",
+    "documentation": "Nødvendig avgjørelse, informasjon og ev. vedtak",
+    "featureIds": [
+      "F07",
+      "F19",
+      "F38"
+    ],
+    "humanResponsibility": "Skill fritak fra karakter fra fritak fra opplæring; ikke automatisk ved IOP.",
+    "sourceIds": [
+      "S03",
+      "S04",
+      "S05"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L030",
+    "category": "Vurdering",
+    "title": "Prøver og individuelle fritak",
+    "basis": "OF kap. 19, særlig § 19-8; PF kap. 13, særlig § 13-7",
+    "applicability": "Relevante trinn/prøver; godkjente skoleunntak",
+    "owner": "Rektor / skoleadministrator",
+    "trigger": "Årets gjennomføringsperioder",
+    "documentation": "Deltakelse, tilrettelegging, individuelt vedtak ved fritak",
+    "featureIds": [
+      "F06",
+      "F11",
+      "F30",
+      "F38"
+    ],
+    "humanResponsibility": "IOP gir ikke automatisk fritak; prøver har egne bruksbegrensninger.",
+    "sourceIds": [
+      "S25",
+      "S26",
+      "S27"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L031",
+    "category": "Vurdering",
+    "title": "Vitnemål og fraværsføring",
+    "basis": "OF §§ 9-43–9-45; PF §§ 6-42–6-44",
+    "applicability": "Grunnskolens avslutning; tilhørende regler",
+    "owner": "Rektor / skoleadministrasjon",
+    "trigger": "Ved avslutning og retting",
+    "documentation": "Korrekt vitnemål, merknader og fraværsgrunnlag",
+    "featureIds": [
+      "F19",
+      "F23",
+      "F30"
+    ],
+    "humanResponsibility": "Attestere offisielt dokument i ansvarlig fagsystem.",
+    "sourceIds": [
+      "S03",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L032",
+    "category": "Vurdering",
+    "title": "Klage på sluttvurdering",
+    "basis": "OF kap. 10; PF kap. 7",
+    "applicability": "Ved klage på relevant sluttvurdering",
+    "owner": "Rektor, faglærer og klageinstans",
+    "trigger": "Særskilte klagefrister; ikke generell vedtaksfrist",
+    "documentation": "Begrunnelse, saksgrunnlag og oversendelse",
+    "featureIds": [
+      "F19",
+      "F21",
+      "F38"
+    ],
+    "humanResponsibility": "Riktig klageinstans behandler; ikke AI.",
+    "sourceIds": [
+      "S03",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L033",
+    "category": "Oppfølging og vern",
+    "title": "Følge opp elevfravær",
+    "basis": "O § 10-6; P § 5A-6; OF § 11-1/PF § 8-1",
+    "applicability": "Begge; alt fravær med tilpasset oppfølging",
+    "owner": "Skole / kontaktlærer",
+    "trigger": "Når fravær oppstår",
+    "documentation": "Kontakt og oppfølging etter behov; varsling til hjemmet etter reglene",
+    "featureIds": [
+      "F23",
+      "F22",
+      "F21"
+    ],
+    "humanResponsibility": "Ingen automatisk terskel som fritar skolen for oppfølging.",
+    "sourceIds": [
+      "S13",
+      "S11",
+      "S01"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L034",
+    "category": "Oppfølging og vern",
+    "title": "Trygt og godt skolemiljø og aktivitetsplikt",
+    "basis": "O §§ 12-2–12-4; P § 2-4",
+    "applicability": "Begge; når plikten gjelder",
+    "owner": "Alle ansatte og skoleledelse",
+    "trigger": "Mistanke/kjennskap; løpende forebygging",
+    "documentation": "Dokumenter faktisk oppfølging og aktivitet",
+    "featureIds": [
+      "F24",
+      "F25",
+      "F29"
+    ],
+    "humanResponsibility": "Følge med, gripe inn, melde, undersøke og sette inn tiltak i praksis.",
+    "sourceIds": [
+      "S14"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L035",
+    "category": "Oppfølging og vern",
+    "title": "Skriftlig tiltaksplan i skolemiljøsak",
+    "basis": "O § 12-4; P § 2-4",
+    "applicability": "Begge; når tiltak settes inn",
+    "owner": "Skolen",
+    "trigger": "Ved tiltak og senere evaluering",
+    "documentation": "Problem, tiltak, tidspunkt, ansvar og evalueringstid",
+    "featureIds": [
+      "F24",
+      "F22",
+      "F18"
+    ],
+    "humanResponsibility": "Egnethet og faktisk effekt må vurderes.",
+    "sourceIds": [
+      "S14"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L036",
+    "category": "Oppfølging og vern",
+    "title": "Skjerpet varsling når ansatte krenker",
+    "basis": "O § 12-5; P § 2-4",
+    "applicability": "Begge; mistanke om ansatt/leder",
+    "owner": "Ansatt, rektor, skoleeier/styre etter rolle",
+    "trigger": "Straks etter relevant plikt",
+    "documentation": "Varsling og videre oppfølging",
+    "featureIds": [
+      "F24",
+      "F25",
+      "F01"
+    ],
+    "humanResponsibility": "Ruting må kunne gå utenom den lederen saken gjelder.",
+    "sourceIds": [
+      "S14",
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L037",
+    "category": "Oppfølging og vern",
+    "title": "Fysiske inngrep: forebygging og dokumentasjon",
+    "basis": "O §§ 13-3–13-5; P §§ 3-10 a–3-10 c",
+    "applicability": "Begge; relevante inngrep",
+    "owner": "Ansatt, rektor, skoleeier/styre",
+    "trigger": "Etter inngrep; særskilt ved alvor/gjentakelse",
+    "documentation": "Kort hendelse, inngrep, elevens syn og pålagt varsling",
+    "featureIds": [
+      "F26",
+      "F24",
+      "F29"
+    ],
+    "humanResponsibility": "Menneskelig vurdering; AI gir ikke instruksjoner om tvangsbruk.",
+    "sourceIds": [
+      "S15",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L038",
+    "category": "Oppfølging og vern",
+    "title": "Oppmerksomhets- og meldeplikt til barnevernet",
+    "basis": "O § 24-3; P § 7-4; barnevernslova § 13-2",
+    "applicability": "Begge; når lovvilkårene er oppfylt",
+    "owner": "Den enkelte ansatte",
+    "trigger": "Uten ugrunnet opphold når plikten er utløst",
+    "documentation": "Nødvendig bekymringsmelding / opplysninger",
+    "featureIds": [
+      "F25",
+      "F21"
+    ],
+    "humanResponsibility": "Personlig plikt; ingen obligatorisk ledergodkjenning eller AI-avgjørelse.",
+    "sourceIds": [
+      "S16",
+      "S67"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L039",
+    "category": "Oppfølging og vern",
+    "title": "Avverge bestemte alvorlige lovbrudd",
+    "basis": "Straffeloven § 196",
+    "applicability": "Alle; når bestemmelsens vilkår gjelder",
+    "owner": "Den enkelte",
+    "trigger": "Mens avverging fortsatt er mulig",
+    "documentation": "Handling/melding etter situasjonen; dokumentasjon må ikke forsinke",
+    "featureIds": [
+      "F25"
+    ],
+    "humanResponsibility": "Akutt handling og vurdering; går foran taushetsplikt.",
+    "sourceIds": [
+      "S17"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L040",
+    "category": "Oppfølging og vern",
+    "title": "Samarbeid og individuell plan",
+    "basis": "O § 24-1; P § 3-6a",
+    "applicability": "Begge; behov for samordnede tjenester",
+    "owner": "Skole, PPT og ansvarlige tjenester",
+    "trigger": "Når nødvendig; ved individuell plan",
+    "documentation": "Koordinering, mål, tiltak og ansvar etter relevant plan",
+    "featureIds": [
+      "F22",
+      "F07"
+    ],
+    "humanResponsibility": "Samarbeidsplikt er ikke ubegrenset adgang til deling.",
+    "sourceIds": [
+      "S18"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L041",
+    "category": "Oppfølging og vern",
+    "title": "Særskilt språkopplæring",
+    "basis": "O § 3-6; P § 3-5",
+    "applicability": "Begge; når språkvilkårene gjelder",
+    "owner": "Skole og korrekt vedtaksmyndighet",
+    "trigger": "Ved behov og jevnlig revurdering",
+    "documentation": "Vedtak, språkgrunnlag og oppfølging",
+    "featureIds": [
+      "F07",
+      "F11",
+      "F12",
+      "F19"
+    ],
+    "humanResponsibility": "Skill språkbehov fra spesialpedagogiske behov.",
+    "sourceIds": [
+      "S24",
+      "S01"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L042",
+    "category": "Oppfølging og vern",
+    "title": "Sosial/personlig og utdanningsrettet rådgivning",
+    "basis": "O kap. 16; P § 3-11a og relevante forskrifter",
+    "applicability": "Begge; etter behov/trinn",
+    "owner": "Skole / rådgiver",
+    "trigger": "Ved behov og relevante overganger",
+    "documentation": "Veiledning; dokumenter nødvendig oppfølging",
+    "featureIds": [
+      "F22",
+      "F35"
+    ],
+    "humanResponsibility": "Gjennomføre samtaler og gi individuelt tilpasset råd.",
+    "sourceIds": [
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L043",
+    "category": "Oppfølging og vern",
+    "title": "Helhetlig opplæring ved langvarig sykdom",
+    "basis": "O regler om opplæring og individuell tilrettelegging; P relevant ansvar",
+    "applicability": "Begge; ved langvarig fravær/sykdom",
+    "owner": "Skoleeier, skole og helsetjeneste innen sitt ansvar",
+    "trigger": "Ved behov",
+    "documentation": "Plan for opplæring og nødvendig koordinering",
+    "featureIds": [
+      "F07",
+      "F12",
+      "F23",
+      "F22"
+    ],
+    "humanResponsibility": "Helsehjelp holdes utenfor pedagogisk AI-ansvar.",
+    "sourceIds": [
+      "S05"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L044",
+    "category": "Oppfølging og vern",
+    "title": "Religions-/livssynsfritak og alternative aktiviteter",
+    "basis": "O § 14-6; P relevante fritaksregler",
+    "applicability": "Begge; etter lov og godkjenning",
+    "owner": "Skole og elev/foreldre etter myndighet",
+    "trigger": "Ved melding om fritak",
+    "documentation": "Registrert melding og tilrettelagt alternativ der påkrevd",
+    "featureIds": [
+      "F09",
+      "F12",
+      "F38"
+    ],
+    "humanResponsibility": "Ingen vurdering av elevens tro som profilering.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S19"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L045",
+    "category": "Personvern",
+    "title": "Formål, nødvendighet og behandlingsgrunnlag",
+    "basis": "GDPR art. 5–6; O § 25-1; P personopplysningsregler",
+    "applicability": "Begge; hver behandling",
+    "owner": "Skoleeier/behandlingsansvarlig",
+    "trigger": "Før innsamling og ny bruk",
+    "documentation": "Dokumentert formål og grunnlag; bare nødvendige opplysninger",
+    "featureIds": [
+      "F03",
+      "F04",
+      "F06",
+      "F27"
+    ],
+    "humanResponsibility": "Relevant er ikke det samme som lovlig å samle alt.",
+    "sourceIds": [
+      "S37",
+      "S21",
+      "S66"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L046",
+    "category": "Personvern",
+    "title": "Særlige kategorier og lovovertredelser",
+    "basis": "GDPR art. 9–10",
+    "applicability": "Begge; når slike opplysninger behandles",
+    "owner": "Behandlingsansvarlig",
+    "trigger": "Før behandling og deling",
+    "documentation": "Grunnlag etter art. 6 og tilleggsvilkår der påkrevd",
+    "featureIds": [
+      "F04",
+      "F27",
+      "F33"
+    ],
+    "humanResponsibility": "Konkret vurdering av helseopplysninger og andre beskyttede data.",
+    "sourceIds": [
+      "S36"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L047",
+    "category": "Personvern",
+    "title": "Taushetsplikt og hjemmel for deling",
+    "basis": "Forvaltningsloven §§ 13 flg.; P § 7-3",
+    "applicability": "Begge; personlige forhold",
+    "owner": "Alle som omfattes av taushetsplikten",
+    "trigger": "Ved tilgang, samtale, eksport og utsending",
+    "documentation": "Delingsgrunnlag og begrenset innhold",
+    "featureIds": [
+      "F21",
+      "F25",
+      "F27",
+      "F35"
+    ],
+    "humanResponsibility": "Riktig unntak/tillatelse; GDPR-grunnlag opphever ikke alene taushetsplikten.",
+    "sourceIds": [
+      "S20",
+      "S17",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L048",
+    "category": "Personvern",
+    "title": "Foresattes rett til informasjon",
+    "basis": "Barnelova § 47; taushetsplikt; GDPR",
+    "applicability": "Begge; per foresatt, elev og innhold",
+    "owner": "Skolen",
+    "trigger": "Ved løpende informasjon og innsynsforespørsler",
+    "documentation": "Vurdert mottakerrett, beskyttelsesbehov og ev. avslag",
+    "featureIds": [
+      "F02",
+      "F20",
+      "F21",
+      "F27"
+    ],
+    "humanResponsibility": "Skille eget initiativ fra forespørsel; vurder skade og andre personers vern.",
+    "sourceIds": [
+      "S20"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L049",
+    "category": "Personvern",
+    "title": "Informasjon om hvordan data brukes",
+    "basis": "GDPR art. 12–14",
+    "applicability": "Begge; direkte og indirekte innsamling",
+    "owner": "Behandlingsansvarlig",
+    "trigger": "Ved innsamling/innen relevant frist; ved endret bruk",
+    "documentation": "Forståelig personverninformasjon om bl.a. AI, kilder og mottakere",
+    "featureIds": [
+      "F03",
+      "F21",
+      "F27"
+    ],
+    "humanResponsibility": "Alderstilpasset informasjon; ikke samtykkeboks som universalløsning.",
+    "sourceIds": [
+      "S45"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L050",
+    "category": "Personvern",
+    "title": "Innsyn og håndtering av rettighetskrav",
+    "basis": "GDPR art. 12, 15",
+    "applicability": "Begge; ved krav",
+    "owner": "Behandlingsansvarlig / delegert saksbehandler",
+    "trigger": "Uten ugrunnet opphold, normalt innen én måned; ev. lovlig forlengelse",
+    "documentation": "Svar, kopi, begrunnede unntak og fristinformasjon",
+    "featureIds": [
+      "F27",
+      "F28"
+    ],
+    "humanResponsibility": "Kontroller identitet, representasjon og tredjepersonopplysninger.",
+    "sourceIds": [
+      "S41"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L051",
+    "category": "Personvern",
+    "title": "Riktighet, retting, begrensning og protest",
+    "basis": "GDPR art. 5, 16, 18–19, 21",
+    "applicability": "Begge; etter rettighetens vilkår",
+    "owner": "Behandlingsansvarlig",
+    "trigger": "Ved feil/krav; normalt rettighetsfrister",
+    "documentation": "Rettet/supplert informasjon og nødvendig oppfølging av mottakere",
+    "featureIds": [
+      "F05",
+      "F27",
+      "F28",
+      "F39"
+    ],
+    "humanResponsibility": "Skill uenighet i vurdering fra objektiv feil; behold nødvendig kontekst.",
+    "sourceIds": [
+      "S42"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L052",
+    "category": "Personvern",
+    "title": "Sletting og lagringsbegrensning",
+    "basis": "GDPR art. 5, 17; relevant bevaringshjemmel",
+    "applicability": "Begge; per dokumentklasse",
+    "owner": "Behandlingsansvarlig og arkivansvarlig",
+    "trigger": "Når formål opphører/frist utløper eller krav fremmes",
+    "documentation": "Sletting eller begrunnet bevaring; håndter avledninger og kopier",
+    "featureIds": [
+      "F28",
+      "F33",
+      "F34"
+    ],
+    "humanResponsibility": "Ingen generell evig lagring eller automatisk sletting av bevaringspliktig materiale.",
+    "sourceIds": [
+      "S43",
+      "S47"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L053",
+    "category": "Personvern",
+    "title": "Personvernkonsekvensvurdering",
+    "basis": "GDPR art. 35–36",
+    "applicability": "Begge; ved sannsynlig høy risiko",
+    "owner": "Behandlingsansvarlig med relevant bistand",
+    "trigger": "Før aktuell behandling og ved vesentlig endring",
+    "documentation": "DPIA og ev. forhåndsdrøftelse ved høy restrisiko",
+    "featureIds": [
+      "F06",
+      "F27",
+      "F33"
+    ],
+    "humanResponsibility": "Dette prosjektet bør planlegges med DPIA; systemet kan ikke godkjenne sin egen risiko.",
+    "sourceIds": [
+      "S38"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L054",
+    "category": "Personvern",
+    "title": "Databehandler og underleverandører",
+    "basis": "GDPR art. 28",
+    "applicability": "Begge; ved bruk av leverandører",
+    "owner": "Behandlingsansvarlig og leverandør",
+    "trigger": "Før behandling og ved endring",
+    "documentation": "Avtale, instrukser og godkjenning av underleverandører",
+    "featureIds": [
+      "F27",
+      "F32",
+      "F33",
+      "F34"
+    ],
+    "humanResponsibility": "Avklare roller og faktisk behandlingskjede.",
+    "sourceIds": [
+      "S39"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L055",
+    "category": "Personvern",
+    "title": "Overføring utenfor EØS",
+    "basis": "GDPR kap. V",
+    "applicability": "Begge; der en overføring skjer",
+    "owner": "Behandlingsansvarlig / relevant databehandler",
+    "trigger": "Før overføring og ved endrede forhold",
+    "documentation": "Overføringsgrunnlag og nødvendige vurderinger/tiltak",
+    "featureIds": [
+      "F32",
+      "F33",
+      "F34"
+    ],
+    "humanResponsibility": "Vurder fjernsupport, logger og leverandørtilgang i tillegg til serverplassering.",
+    "sourceIds": [
+      "S40",
+      "S66"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L056",
+    "category": "Personvern",
+    "title": "Protokoll og ansvarlighet",
+    "basis": "GDPR art. 5 nr. 2, 24, 30",
+    "applicability": "Begge; etter artikkelens virkeområde",
+    "owner": "Behandlingsansvarlig og databehandler",
+    "trigger": "Før drift og ved endringer",
+    "documentation": "Behandlingsprotokoll og dokumentasjon av etterlevelse",
+    "featureIds": [
+      "F06",
+      "F27",
+      "F29"
+    ],
+    "humanResponsibility": "Navngitt ansvar og oppdaterte behandlingsbeskrivelser.",
+    "sourceIds": [
+      "S71"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L057",
+    "category": "Personvern",
+    "title": "Personvernombud",
+    "basis": "GDPR art. 37–39",
+    "applicability": "Offentlige myndigheter; private etter vilkårene",
+    "owner": "Skoleeier / behandlingsansvarlig",
+    "trigger": "Før/under relevant behandling",
+    "documentation": "Rolle, kontakt og nødvendig involvering",
+    "featureIds": [
+      "F01",
+      "F27",
+      "F29"
+    ],
+    "humanResponsibility": "Ikke påstå at alle små private skoler automatisk har samme ombudsplikt.",
+    "sourceIds": [
+      "S46"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L058",
+    "category": "Personvern",
+    "title": "Innebygd personvern og informasjonssikkerhet",
+    "basis": "GDPR art. 25, 32",
+    "applicability": "Begge; hele løsningen",
+    "owner": "Skoleeier og leverandør",
+    "trigger": "Ved design, drift og endring",
+    "documentation": "Risikotilpassede tekniske og organisatoriske tiltak",
+    "featureIds": [
+      "F01",
+      "F27",
+      "F28",
+      "F34"
+    ],
+    "humanResponsibility": "Tilgang, kryptering, gjenoppretting og kontroll må prøves i praksis.",
+    "sourceIds": [
+      "S66"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L059",
+    "category": "Personvern",
+    "title": "Brudd på personopplysningssikkerheten",
+    "basis": "GDPR art. 33–34",
+    "applicability": "Begge; ved brudd",
+    "owner": "Databehandler varsler ansvarlig; ansvarlig vurderer melding",
+    "trigger": "Tilsyn normalt innen 72 timer etter kjennskap hvis meldepliktig; berørte uten ugrunnet opphold ved høy risiko",
+    "documentation": "Bruddslogg, risikovurdering, melding og oppfølging",
+    "featureIds": [
+      "F27",
+      "F29",
+      "F34"
+    ],
+    "humanResponsibility": "Ikke alle avvik er meldepliktige; manglende fullstendighet må ikke forsinke fristen.",
+    "sourceIds": [
+      "S44"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L060",
+    "category": "Personvern",
+    "title": "Automatiserte avgjørelser og meningsfull kontroll",
+    "basis": "GDPR art. 22 og øvrige personvernkrav",
+    "applicability": "Når automatisert avgjørelse har rettslig/tilsvarende betydelig virkning",
+    "owner": "Behandlingsansvarlig og faglig beslutningstaker",
+    "trigger": "Før og under automatisert bruk",
+    "documentation": "Vurdering av anvendelse, grunnlag og menneskelig kontroll",
+    "featureIds": [
+      "F07",
+      "F18",
+      "F19",
+      "F21",
+      "F33"
+    ],
+    "humanResponsibility": "En rutinemessig godkjenningsknapp er ikke nødvendigvis reell kontroll.",
+    "sourceIds": [
+      "S41",
+      "S42"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L061",
+    "category": "Personvern",
+    "title": "Deling ved skolebytte",
+    "basis": "O § 25-1; OF § 20-3; P/PF tilsvarende regler",
+    "applicability": "Begge; overføring og relevante formål",
+    "owner": "Avgivende og mottakende skole",
+    "trigger": "Før/ved skolebytte etter gjeldende plikt",
+    "documentation": "Nødvendig og selektiv overføringspakke med riktig grunnlag",
+    "featureIds": [
+      "F35",
+      "F21",
+      "F27"
+    ],
+    "humanResponsibility": "Skill ordinær overføring, tillatelsesbasert deling og plikten skjerpet fra august 2026.",
+    "sourceIds": [
+      "S21",
+      "S22",
+      "S23",
+      "S20"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L062",
+    "category": "Forvaltning og ledelse",
+    "title": "Saksbehandling ved enkeltvedtak",
+    "basis": "Forvaltningsloven 1967: §§ 6, 11, 11 a, 16–18, 23–27; sektorregler",
+    "applicability": "Offentlige organer; private når de fatter enkeltvedtak",
+    "owner": "Riktig vedtaksmyndighet",
+    "trigger": "Gjennom sakens behandling",
+    "documentation": "Habilitet, opplysning av sak, nødvendig høring, begrunnelse og underretning",
+    "featureIds": [
+      "F07",
+      "F22",
+      "F38"
+    ],
+    "humanResponsibility": "Myndighet og skjønn kan ikke erstattes av rapportgenerator.",
+    "sourceIds": [
+      "S06",
+      "S56"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L063",
+    "category": "Forvaltning og ledelse",
+    "title": "Klage på vedtak og gjennomføring",
+    "basis": "Forvaltningsloven §§ 28–33; særregler i O/P",
+    "applicability": "Begge; relevant avgjørelse/gjennomføring",
+    "owner": "Vedtaksmyndighet, skole og klageinstans",
+    "trigger": "Normalt tre uker for enkeltvedtak; andre klagetyper har egne regler",
+    "documentation": "Klagegrunnlag, ny vurdering og ev. oversendelse",
+    "featureIds": [
+      "F15",
+      "F21",
+      "F38"
+    ],
+    "humanResponsibility": "Frist må beregnes etter riktig klagetype og underretning.",
+    "sourceIds": [
+      "S06",
+      "S07",
+      "S56"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L064",
+    "category": "Forvaltning og ledelse",
+    "title": "Arkivering og dokumentasjonsforvaltning",
+    "basis": "Arkivlova 2025 og gjeldende arkiv-/bevaringsforskrifter",
+    "applicability": "Offentlig; privat virkeområde vurderes særskilt",
+    "owner": "Arkivansvarlig / skoleeier",
+    "trigger": "Ved dokumentfangst, avslutning og overføring",
+    "documentation": "Bevar relevant dokumentasjon med integritet, metadata og tilgang",
+    "featureIds": [
+      "F03",
+      "F28",
+      "F35"
+    ],
+    "humanResponsibility": "Skolens konkrete bevaringsplan og offentlig ansvar ved private oppdrag må avklares.",
+    "sourceIds": [
+      "S47",
+      "S48",
+      "S49"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L065",
+    "category": "Forvaltning og ledelse",
+    "title": "Offentlig innsyn og journal",
+    "basis": "Offentleglova; arkivregelverk; taushetsplikt",
+    "applicability": "Offentlig; private etter lovens konkrete virkeområde",
+    "owner": "Skoleeier / saksbehandler / arkivansvarlig",
+    "trigger": "Ved journalføring og innsynskrav",
+    "documentation": "Journal og vurdert innsyn med skjerming/unntak",
+    "featureIds": [
+      "F27",
+      "F28",
+      "F38"
+    ],
+    "humanResponsibility": "Ikke publiser sensitive elevmetadata; ingen generell offentlighetsplikt for alle private skoler.",
+    "sourceIds": [
+      "S47",
+      "S69"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L066",
+    "category": "Forvaltning og ledelse",
+    "title": "Internkontroll",
+    "basis": "Kommuneloven § 25-1; P § 5-2a",
+    "applicability": "Begge med ulikt øverste ansvar",
+    "owner": "Kommunedirektør / privat skolestyre",
+    "trigger": "Systematisk og risikotilpasset",
+    "documentation": "Rutiner, ansvar, avvik, risikovurdering og forbedring",
+    "featureIds": [
+      "F06",
+      "F29",
+      "F37"
+    ],
+    "humanResponsibility": "Ledelsen følger faktisk praksis; automatiske kontrollpunkter er delstøtte.",
+    "sourceIds": [
+      "S28",
+      "S29"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L067",
+    "category": "Forvaltning og ledelse",
+    "title": "Kvalitetsutvikling og eierinformasjon",
+    "basis": "O § 17-12; P § 5-2 og PF relevante regler",
+    "applicability": "Begge; ulike styringsordninger",
+    "owner": "Skoleeier, styre og rektor",
+    "trigger": "Jevnlig; offentlig eierinformasjon minst årlig",
+    "documentation": "Relevant vurderingsgrunnlag; ikke nødvendigvis ett bestemt rapportformat",
+    "featureIds": [
+      "F17",
+      "F29",
+      "F30",
+      "F40"
+    ],
+    "humanResponsibility": "Tolke resultater og iverksette forbedring; små grupper må vernes.",
+    "sourceIds": [
+      "S30",
+      "S28",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L068",
+    "category": "Forvaltning og ledelse",
+    "title": "Statistikk, tilsyn og innrapportering",
+    "basis": "O §§ 25-4, 29-2; OF kap. 19; P/PF rapporteringsregler",
+    "applicability": "Begge; aktuelle nasjonale innsamlinger",
+    "owner": "Skoleeier, rektor, skoleadministrasjon",
+    "trigger": "Årets publiserte frister og konkrete pålegg",
+    "documentation": "Kontrollerte uttrekk, attestasjon og tilsynsgrunnlag",
+    "featureIds": [
+      "F30",
+      "F29",
+      "F32"
+    ],
+    "humanResponsibility": "Ikke alle innsamlinger gjelder hver skole; kontroller autoritativ kilde og rapporteringsår.",
+    "sourceIds": [
+      "S31",
+      "S01",
+      "S02",
+      "S03",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L069",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Universell utforming av digitale løsninger",
+    "basis": "Likestillings- og diskrimineringsloven § 18; IKT-forskriften",
+    "applicability": "Begge; krav avhenger av sektor og løsning",
+    "owner": "Skoleeier og leverandør",
+    "trigger": "Ved anskaffelse, innføring og endring",
+    "documentation": "Dokumentert samsvar med aktuelle krav; erklæring der påkrevd",
+    "featureIds": [
+      "F31",
+      "F10",
+      "F18",
+      "F21"
+    ],
+    "humanResponsibility": "Test faktisk bruk med hjelpemidler og tilgjengelige dokumenter.",
+    "sourceIds": [
+      "S50",
+      "S51"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L070",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Diskrimineringsvern og egnet tilrettelegging",
+    "basis": "Likestillings- og diskrimineringsloven §§ 6, 12, 17, 21",
+    "applicability": "Begge; etter vilkårene",
+    "owner": "Skoleeier og skole",
+    "trigger": "Ved behov og ved endringer",
+    "documentation": "Konkret behovsvurdering og egnet tilrettelegging",
+    "featureIds": [
+      "F02",
+      "F07",
+      "F12",
+      "F29"
+    ],
+    "humanResponsibility": "Likeverd og faktisk tilrettelegging; ingen AI-rangering av elever.",
+    "sourceIds": [
+      "S70"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L071",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Språkvalg og særskilte språkrettigheter",
+    "basis": "O §§ 3-1–3-5; P og godkjente planer der relevant",
+    "applicability": "Offentlig; privat rett/tilbud må avklares per godkjenning",
+    "owner": "Skoleeier, skole og elev/foreldre",
+    "trigger": "Ved språkvalg og behov",
+    "documentation": "Relevante valg, vedtak og tilbud",
+    "featureIds": [
+      "F02",
+      "F07",
+      "F09",
+      "F31"
+    ],
+    "humanResponsibility": "Ikke anta identisk privat rett til samisk, tegnspråk eller punktskrift.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S04"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L072",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Alternativ og supplerende kommunikasjon",
+    "basis": "O § 11-12; P relevante rettighetsregler",
+    "applicability": "Ved behov for ASK",
+    "owner": "Skole og pedagog",
+    "trigger": "Løpende",
+    "documentation": "Tilrettelegging og nødvendig opplæring",
+    "featureIds": [
+      "F02",
+      "F07",
+      "F10",
+      "F13"
+    ],
+    "humanResponsibility": "Elevens egne kommunikasjonsformer må fungere i praksis.",
+    "sourceIds": [
+      "S01",
+      "S05"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L073",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Innføringsopplæring",
+    "basis": "O § 3-7; P § 3-5 a",
+    "applicability": "Etter språk-/oppholdsvilkår og relevant avgjørelse",
+    "owner": "Skole og korrekt myndighet",
+    "trigger": "Ved oppstart og revurdering",
+    "documentation": "Vedtak/valg og tidsavgrenset oppfølging etter regel",
+    "featureIds": [
+      "F07",
+      "F09",
+      "F11",
+      "F38"
+    ],
+    "humanResponsibility": "Menneskelig vurdering av vilkår, samtykke og organisering.",
+    "sourceIds": [
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L074",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Opptak, skoleplass, skolestart og permisjon",
+    "basis": "O kap. 2; P §§ 3-1–3-3; lokale regler",
+    "applicability": "Avhengig av skoleslag og situasjon",
+    "owner": "Kommune / privat skole etter myndighet",
+    "trigger": "Ved søknad eller overgang",
+    "documentation": "Søknad og nødvendig vedtak med klageinformasjon",
+    "featureIds": [
+      "F01",
+      "F06",
+      "F37",
+      "F38"
+    ],
+    "humanResponsibility": "Opptaksregler, nærskolerett og lokale permisjonsregler må konfigureres.",
+    "sourceIds": [
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L075",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Skyss, reisefølge og tilsyn",
+    "basis": "O §§ 4-1–4-3; P § 3-7",
+    "applicability": "Etter avstand, funksjon og øvrige vilkår",
+    "owner": "Kommune/fylke/skole innen sitt ansvar",
+    "trigger": "Ved behov og endrede forhold",
+    "documentation": "Relevant søknad/vedtak og praktisk oppfølging",
+    "featureIds": [
+      "F07",
+      "F14",
+      "F37"
+    ],
+    "humanResponsibility": "Programmet dokumenterer og koordinerer; transportansvaret består.",
+    "sourceIds": [
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L076",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "SFO og leksehjelp",
+    "basis": "O §§ 4-4–4-5; OF kap. 2; lokale vedtekter",
+    "applicability": "Kommunalt ansvar; privat tilbud/avtale vurderes konkret",
+    "owner": "Skoleeier / SFO-ledelse",
+    "trigger": "Ved tilbud, søknad og skoleår",
+    "documentation": "Plass, relevant betalingsvedtak og nødvendig tilrettelegging",
+    "featureIds": [
+      "F06",
+      "F13",
+      "F22",
+      "F37"
+    ],
+    "humanResponsibility": "Ta med 2026-endringer; ikke overfør kommunale regler automatisk til privat SFO.",
+    "sourceIds": [
+      "S01",
+      "S03",
+      "S22"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L077",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Skoleregler, bortvisning og pålagt skolebytte",
+    "basis": "O §§ 10-7, 13-1–13-2; P relevante regler",
+    "applicability": "Etter skoleslag og myndighet",
+    "owner": "Rektor / rett beslutningsorgan",
+    "trigger": "Ved regelarbeid eller konkret sak",
+    "documentation": "Gjeldende regler og nødvendige enkeltvedtak",
+    "featureIds": [
+      "F24",
+      "F37",
+      "F38"
+    ],
+    "humanResponsibility": "Forholdsmessighet, medvirkning og riktig myndighet må vurderes.",
+    "sourceIds": [
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L078",
+    "category": "Tilgjengelighet og øvrige elevrettigheter",
+    "title": "Skoledemokrati",
+    "basis": "O §§ 10-4–10-5; P §§ 5A-4–5A-5",
+    "applicability": "Begge; organisering etter reglene",
+    "owner": "Skoleledelse, skoleeier/styre",
+    "trigger": "Gjennom skoleåret",
+    "documentation": "Medvirkningsarenaer og nødvendige beslutningsspor",
+    "featureIds": [
+      "F22",
+      "F29",
+      "F37"
+    ],
+    "humanResponsibility": "Reell deltakelse fra elever og foresatte.",
+    "sourceIds": [
+      "S01",
+      "S02"
+    ],
+    "coverage": "Delstøtte: forberedelse, arbeidsflyt, kontroll og dokumentasjon",
+    "verification": "Nasjonalt krav kildebelagt; anvendelse må fastsettes per skole/sak",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L079",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Helse, miljø, beredskap og fysisk skolemiljø",
+    "basis": "Forskrift om helse og miljø i barnehager, skoler og SFO; O kap. 12",
+    "applicability": "Begge; relevante virksomheter",
+    "owner": "Skoleeier, rektor, driftsansvarlig",
+    "trigger": "Løpende, ved hendelser og endringer",
+    "documentation": "Godkjenning, internkontroll, avvik og pålagt informasjon",
+    "featureIds": [
+      "F24",
+      "F29",
+      "F37"
+    ],
+    "humanResponsibility": "Fysiske undersøkelser og utbedring må gjøres utenfor programmet.",
+    "sourceIds": [
+      "S52"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L080",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Helsehjelp og legemidler i skolehverdagen",
+    "basis": "Helse-/omsorgsregelverk og sektorens samarbeidsplikt",
+    "applicability": "Når eleven trenger helsehjelp eller avtalt bistand",
+    "owner": "Helsepersonell og skole innen sine roller",
+    "trigger": "Ved behov og konkret avtale",
+    "documentation": "Nødvendig skoleinstruks og ansvarsavklaring; pasientjournal i rett system",
+    "featureIds": [
+      "F02",
+      "F13",
+      "F22",
+      "F37"
+    ],
+    "humanResponsibility": "Ingen medisinske doserings-/behandlingsforslag; femminutterskort erstatter ikke opplæring.",
+    "sourceIds": [
+      "S05",
+      "S18"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L081",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Ansattes kompetanse, politiattest og yrkesforbud",
+    "basis": "O kap. 17 / OF kap. 12; P kap. 4 / PF kap. 9–10",
+    "applicability": "Begge; ved ansettelse og bemanning",
+    "owner": "Arbeidsgiver / rektor",
+    "trigger": "Før oppstart og ved relevante endringer",
+    "documentation": "Kontrollstatus og kompetanse; attest lagres kun etter gjeldende regler",
+    "featureIds": [
+      "F01",
+      "F36",
+      "F37"
+    ],
+    "humanResponsibility": "HR verifiserer dokumentene; elevprofil skal ikke inneholde personalmappe.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S03",
+      "S04"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L082",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Arbeidsmiljø, arbeidstid og bemanning",
+    "basis": "Arbeidsmiljøloven kap. 3–4 og 10; relevante tariff-/arbeidsavtaler",
+    "applicability": "Begge som arbeidsgiver; arbeidstidsregler etter avtale",
+    "owner": "Arbeidsgiver",
+    "trigger": "Ved planlegging og endringer",
+    "documentation": "Risikovurdering og relevant arbeids-/tidsplan",
+    "featureIds": [
+      "F14",
+      "F36",
+      "F37",
+      "F40"
+    ],
+    "humanResponsibility": "Timeplanendring er ikke alltid arbeidstidsendring; lokale avtaler må inn.",
+    "sourceIds": [
+      "S53",
+      "S54"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L083",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Ressurskrav, læremidler og forsikring",
+    "basis": "O kap. 15, 17 og § 28-8; P/PF relevante regler",
+    "applicability": "Avhengig av skoleslag og krav",
+    "owner": "Skoleeier, rektor og administrasjon",
+    "trigger": "Årlig og ved endrede forhold",
+    "documentation": "Ressurs-/forsikringskontroll og dokumentasjon etter relevant regel",
+    "featureIds": [
+      "F10",
+      "F30",
+      "F36",
+      "F37"
+    ],
+    "humanResponsibility": "Vurder hver plikt særskilt; et kravregister erstatter ikke kjøp eller bemanning.",
+    "sourceIds": [
+      "S01",
+      "S03",
+      "S04"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L084",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Privatskolens godkjenning, styre og økonomi",
+    "basis": "P kap. 2, 5–7; økonomiforskrift og tilskuddsvilkår",
+    "applicability": "Private skoler med statstilskudd",
+    "owner": "Styret, daglig leder, økonomifunksjon",
+    "trigger": "Årlig, ved rapportering og virksomhetsendring",
+    "documentation": "Godkjenning, styringsgrunnlag og økonomisk dokumentasjon",
+    "featureIds": [
+      "F06",
+      "F29",
+      "F30",
+      "F37"
+    ],
+    "humanResponsibility": "Regnskapsføring/revisjon skjer i egnede systemer; lokal detaljkartlegging kreves.",
+    "sourceIds": [
+      "S02",
+      "S31",
+      "S32"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L085",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Anskaffelser og leverandørkontroll",
+    "basis": "Anskaffelsesregelverk der virksomhet/anskaffelse omfattes; GDPR",
+    "applicability": "Offentlig og private etter konkret virkeområde",
+    "owner": "Innkjøps-/skoleeierfunksjon",
+    "trigger": "Før avtale og ved endring",
+    "documentation": "Vurdering av krav, avtaler, sikkerhet og leverandører",
+    "featureIds": [
+      "F27",
+      "F31",
+      "F32",
+      "F37"
+    ],
+    "humanResponsibility": "Område registrert; terskelverdier/prosedyrer må kartlegges før anskaffelsesmodul.",
+    "sourceIds": [
+      "S39",
+      "S51"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L086",
+    "category": "Betingede leder- og driftsplikter",
+    "title": "Opphavsrett, lisenser og kartleggingsmateriell",
+    "basis": "Åndsverkloven og konkrete lisens-/avtalevilkår",
+    "applicability": "Ved import, gjenbruk, AI-behandling eller deling",
+    "owner": "Skoleeier og ressursansvarlig",
+    "trigger": "Før bruk som krever rettigheter",
+    "documentation": "Kilde, rettighet, tillatt bruk og ev. begrensning",
+    "featureIds": [
+      "F10",
+      "F11",
+      "F32",
+      "F33"
+    ],
+    "humanResponsibility": "Undervisningsrett gir ikke automatisk rett til modelltrening eller viderepublisering.",
+    "sourceIds": [
+      "S68"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L087",
+    "category": "Regelendringer og avklaringer",
+    "title": "KI-regelverkets klassifisering og plikter",
+    "basis": "KI-forordningen; norsk gjennomføring og ikrafttredelse",
+    "applicability": "Betinget av funksjon, marked og gjeldende dato",
+    "owner": "Tilbyder og skole som bruker",
+    "trigger": "Før pilot/produksjon og ved vesentlig endring",
+    "documentation": "Klassifiseringsvurdering, AI-kompetanse og ev. risikodokumentasjon",
+    "featureIds": [
+      "F06",
+      "F27",
+      "F33",
+      "F34"
+    ],
+    "humanResponsibility": "Ikke anta at menneskelig godkjenning alene fjerner høyrisiko; nasjonal status må avklares.",
+    "sourceIds": [
+      "S57",
+      "S58"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L088",
+    "category": "Regelendringer og avklaringer",
+    "title": "Ny forvaltningslov og overgangsregler",
+    "basis": "LOV-2025-06-20-81; gjeldende 1967-lov frem til relevante endringer",
+    "applicability": "Begge der forvaltningsregler gjelder",
+    "owner": "Regelansvarlig",
+    "trigger": "Ved ikrafttredelsesvedtak",
+    "documentation": "Datert regelversjon og konsekvensanalyse",
+    "featureIds": [
+      "F06",
+      "F38"
+    ],
+    "humanResponsibility": "Kilden viser «Kongen bestemmer»; ikke aktiver ny lov bare fordi den er vedtatt.",
+    "sourceIds": [
+      "S55",
+      "S56"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L089",
+    "category": "Regelendringer og avklaringer",
+    "title": "Skolens og kommunens lokale krav",
+    "basis": "Lokale forskrifter, godkjenningsvedtak, delegering og rutiner",
+    "applicability": "Per skole, kommune og skoleår",
+    "owner": "Skoleeier/styre og rektor",
+    "trigger": "Før oppstart og ved endringer",
+    "documentation": "Lokale regler, maler, frister og beslutningsmyndighet",
+    "featureIds": [
+      "F01",
+      "F06",
+      "F18",
+      "F29",
+      "F37"
+    ],
+    "humanResponsibility": "Lokale kilder er ikke mottatt; nasjonale funn alene fastslår ikke alle lokale plikter.",
+    "sourceIds": [
+      "S01",
+      "S02",
+      "S28"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "L090",
+    "category": "Regelendringer og avklaringer",
+    "title": "Skoler uten statstilskudd godkjent etter O",
+    "basis": "O kap. 22",
+    "applicability": "Kun hvis slike private skoler tas inn",
+    "owner": "Skoleeier / øverste organ",
+    "trigger": "Ved onboarding av dette skoleslaget",
+    "documentation": "Egen anvendelsesprofil",
+    "featureIds": [
+      "F01",
+      "F06",
+      "F07"
+    ],
+    "humanResponsibility": "Bruk ikke samme rettighetsprofil som P-skole; detaljprofil må valideres separat.",
+    "sourceIds": [
+      "S01",
+      "S05"
+    ],
+    "coverage": "Delstøtte / integrasjon / fysisk eller ekstern gjennomføring",
+    "verification": "Område kartlagt; konkret anvendelse og detaljregler må avklares",
+    "legalReviewed": false,
+    "checked": "2026-09-07"
+  }
+]

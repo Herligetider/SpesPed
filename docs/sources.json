@@ -1,0 +1,499 @@
+[
+  {
+    "id": "S01",
+    "title": "Opplæringslova – gjeldende struktur",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/lov-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringslova/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S02",
+    "title": "Privatskolelova – gjeldende struktur",
+    "url": "https://www.udir.no/regelverkstolkninger/Privatskole/lov-om-frittstaande-skolar-friskolelova/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S03",
+    "title": "Opplæringsforskrifta",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/forskrift-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringsforskrifta/",
+    "type": "Forskrift",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S04",
+    "title": "Privatskoleforskrifta",
+    "url": "https://www.udir.no/regelverkstolkninger/privatskole/forskrift-til-privatskolelova-privatskoleforskrifta/",
+    "type": "Forskrift",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S05",
+    "title": "Udir: tilpasset opplæring og individuell tilrettelegging",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/skole-og-opplaring/veileder-for-tilpasset-opplaring-og-individuell-tilrettelegging/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S06",
+    "title": "Udir: vedtak, organisering og kompetanse",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/skole-og-opplaring/veileder-for-tilpasset-opplaring-og-individuell-tilrettelegging/vedtak-om-individuell-tilrettelegging/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S07",
+    "title": "Udir: individuell opplæringsplan",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/skole-og-opplaring/veileder-for-tilpasset-opplaring-og-individuell-tilrettelegging/individuell-opplaringsplan-iop/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S08",
+    "title": "Udir: årlig evaluering av utbyttet",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/skole-og-opplaring/veileder-for-tilpasset-opplaring-og-individuell-tilrettelegging/arlig-evaluering-av-utbyttet/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S09",
+    "title": "Udir: underveisvurdering",
+    "url": "https://www.udir.no/eksamen-og-prover/vurdering/om-vurdering/underveisvurdering/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S10",
+    "title": "Udir: halvårsvurdering",
+    "url": "https://www.udir.no/eksamen-og-prover/vurdering/underveisvurdering/halvarsvurdering/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S11",
+    "title": "Opplæringsforskrifta § 11-1: foreldremøte og foreldresamtale",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/forskrift-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringsforskrifta/tredje-delen--fellesreglar-for-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-for-barn-og-unge/kapittel-11-samarbeid-med-foreldra-skolebibliotek-og-saksbehandling-som-gjeld-det-fysiske-skolemiljoet/-11-1-foreldremote-og-foreldresamtale/",
+    "type": "Forskrift",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S12",
+    "title": "Opplæringsforskrifta § 9-6: samtale om utvikling",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/forskrift-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringsforskrifta/tredje-delen--fellesreglar-for-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-for-barn-og-unge/kapittel-9-individuell-vurdering/i.-generelle-reglar/-9-6-samtale-om-utvikling/",
+    "type": "Forskrift",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S13",
+    "title": "Privatskolelova § 5A-6: oppfølging av fravær",
+    "url": "https://www.udir.no/regelverkstolkninger/Privatskole/lov-om-frittstaande-skolar-friskolelova/kapittel-5a-det-beste-for-eleven-medverknad-skoledemokrati-foreldresamarbeid-skolereglar-og-plikt-til-a-delta/-5a-6-elevane-si-plikt-til-a-delta-og-skolens-oppfolgingsplikt/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S14",
+    "title": "Udir: aktivitetsplikten",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/skole-og-opplaring/rundskriv-om-skolemiljo/6.-skolen-har-en-aktivitetsplikt",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S15",
+    "title": "Udir: fysiske inngrep og dokumentasjon",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/skole-og-opplaring/gripe-inn-fysisk-mot-elever-for-a-avverge-skade/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S16",
+    "title": "Udir: personlig meldeplikt til barnevernet",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/meldeplikt-til-barnevernet/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S17",
+    "title": "Regjeringen: avvergingsplikt og taushetsplikt",
+    "url": "https://www.regjeringen.no/no/dokumenter/taushetsplikt-opplysningsrett-og-opplysningsplikt-i-forvaltningen-en-veileder/id2963083/?ch=2",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S18",
+    "title": "Opplæringslova § 24-1: samarbeid og samordning",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/lov-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringslova/sjuande-del--forskjellige-reglar/kapittel-24-samarbeid-samordning-opplysningsplikt-sjolvraderett-og-avgjerder-pa-vegner-av-eleven/-24-1-samarbeid-og-samordning/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S19",
+    "title": "Opplæringslova § 24-5: elevens selvråderett",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/lov-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringslova/sjuande-del--forskjellige-reglar/kapittel-24-samarbeid-samordning-opplysningsplikt-sjolvraderett-og-avgjerder-pa-vegner-av-eleven/-24-5-sjolvraderett-for-dei-som-har-fylt-15-ar/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S20",
+    "title": "Udir: deling og foresattes informasjonsrett",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/personvern-for-barnehage-og-skole/tilgang-til-personopplysningene/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S21",
+    "title": "Opplæringslova § 25-1: opplysninger og skolebytte",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/lov-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringslova/sjuande-del--forskjellige-reglar/kapittel-25-behandling-av-personopplysningar-og-plikt-til-a-delta-i-evalueringar/-25-1-behandling-av-personopplysningar-og-unntak-fra-teieplikt/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S22",
+    "title": "Udir: regelendringer til skolestart 2026",
+    "url": "https://www.udir.no/om-udir/nytt-til-barnehage--og-skolestart-2026/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S23",
+    "title": "Opplæringsforskrifta § 20-3: innhenting ved skolebytte",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/forskrift-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringsforskrifta/femte-delen--forskjellige-reglar/kapittel-20-behandling-av-personopplysningar/-20-3-innhenting-av-opplysningar-ved-skolebyte/",
+    "type": "Forskrift",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S24",
+    "title": "Privatskolelova § 3-5: særskilt språkopplæring",
+    "url": "https://www.udir.no/regelverkstolkninger/Privatskole/lov-om-frittstaande-skolar-friskolelova/kapittel-3-elevane/-3-5.-sarskild-sprakopplaring-for-elevar-fra-spraklege-minoritetar",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S25",
+    "title": "Udir: kartleggingsprøver og årets gjennomføring",
+    "url": "https://www.udir.no/eksamen-og-prover/prover/kartlegging-gs",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S26",
+    "title": "Privatskoleforskrifta § 13-7: fritak fra prøver",
+    "url": "https://www.udir.no/regelverkstolkninger/Privatskole/forskrift-til-privatskolelova-privatskoleforskrifta/fjerde-delen--forskjellige-reglar/kapittel-13-rapportering-og-evaluering-av-opplaringsverksemda/-13-7-fritak-fra-nasjonale-prover-og-kartleggingsprover/",
+    "type": "Forskrift",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S27",
+    "title": "Udir: administrere nasjonale prøver",
+    "url": "https://www.udir.no/eksamen-og-prover/prover/nasjonale-prover/administrere-nasjonale-prover2/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S28",
+    "title": "Udir: internkontroll i skolesektoren",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/veileder-internkontroll-for-barnehage-og-opplaringssektoren/internkontroll-i-barnehage--og-skolesektoren/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S29",
+    "title": "Privatskolelova § 5-2a: styrets internkontroll",
+    "url": "https://www.udir.no/regelverkstolkninger/Privatskole/lov-om-frittstaande-skolar-friskolelova/kapittel-5-styrings--og-radsorgan/-5-2a.-internkontroll",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S30",
+    "title": "Opplæringslova § 17-12: kvalitetsutvikling",
+    "url": "https://www.udir.no/regelverkstolkninger/opplaring/lov-om-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-opplaringslova/fjerde-del--fellesreglar-for-grunnskoleopplaringa-og-den-vidaregaande-opplaringa-for-barn-og-unge/kapittel-17-personalet-i-skolen-skolefagleg-kompetanse-og-kvalitetsutvikling/-17-12-skolefagleg-kompetanse-og-kvalitetsutvikling/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S31",
+    "title": "Udir: statlig innrapportering",
+    "url": "https://www.udir.no/tall-og-forskning/innrapportering/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S32",
+    "title": "Udir: dekning av individuell tilrettelegging i privatskoler",
+    "url": "https://www.udir.no/regelverkstolkninger/Privatskole/Private-skoler/dekning-av-utgifter-til-individuell-tilrettelegging/",
+    "type": "Tolkning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S33",
+    "title": "Montessori Norge: gjeldende læreplanverk",
+    "url": "https://montessorinorge.no/pedagogisk-planverk/",
+    "type": "Læreplanressurs",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S34",
+    "title": "Udirs vedtak 14.12.2023: Montessori vurderingsordning",
+    "url": "https://montessorinorge.no/wp-content/uploads/2025/09/Vedtak-om-godkjenning-av-vurderingsordning-for-montessoriskolenes-ungdomstrinn.pdf",
+    "type": "Godkjenningsvedtak",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S35",
+    "title": "Montessori Norge: vurderingsressurser",
+    "url": "https://montessorinorge.no/vurdering/",
+    "type": "Læreplanressurs",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S36",
+    "title": "Datatilsynet: særlige kategorier og behandlingsgrunnlag",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/om-behandlingsgrunnlag/spesielt-om-sarlige-kategorier-av-personopplysninger/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S37",
+    "title": "Datatilsynet: grunnlag for behandling",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/om-behandlingsgrunnlag/?print=true",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S38",
+    "title": "Datatilsynet: DPIA",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/vurdering-av-personvernkonsekvenser/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S39",
+    "title": "Datatilsynet: databehandleravtalens innhold",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/hvordan-lage-en-databehandleravtale/hva-ma-en-databehandleravtale-inneholde/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S40",
+    "title": "Datatilsynet: overføring ut av EØS",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/overforing-av-personopplysninger-ut-av-eos/?print=true",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S41",
+    "title": "Datatilsynet: innsyn",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/den-registrertes-rettigheter/rett-til-innsyn/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S42",
+    "title": "Datatilsynet: retting og sletting",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/retting-og-sletting/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S43",
+    "title": "Datatilsynet: sletting og unntak",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/den-registrertes-rettigheter/rett-til-sletting/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S44",
+    "title": "Datatilsynet: melding om sikkerhetsbrudd",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/avvik/meld-avvik-til-datatilsynet/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S45",
+    "title": "Datatilsynet: informasjon og åpenhet",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/informasjon-og-apenhet/nar-skal-virksomheten-gi-informasjon/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S46",
+    "title": "Datatilsynet: personvernombud",
+    "url": "https://www.datatilsynet.no/rettigheter-og-plikter/virksomhetenes-plikter/personvernombud/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S47",
+    "title": "Nasjonalarkivet: nytt arkivregelverk fra 2026",
+    "url": "https://www.nasjonalarkivet.no/offentlig-forvaltning/det-nye-arkivregelverket/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S48",
+    "title": "Nasjonalarkivet: privatarkiv og virkeområde",
+    "url": "https://www.nasjonalarkivet.no/privatarkiv-i-ny-arkivlov/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S49",
+    "title": "Nasjonalarkivet: oppgaver på vegne av offentlig organ",
+    "url": "https://www.nasjonalarkivet.no/oppgaver-loyste-pa-vegner-av-offentleg-organ-%C2%A7-7-i-ny-arkivlov/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S50",
+    "title": "Uu-tilsynet: digitale læringsmiljøer",
+    "url": "https://www.uutilsynet.no/veiledning/universell-utforming-av-det-digitale-laeringsmiljoet-i-skolen/2676",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S51",
+    "title": "Uu-tilsynet: krav per sektor og løsning",
+    "url": "https://www.uutilsynet.no/regelverk/regelverk-og-krav/746",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S52",
+    "title": "Helsedirektoratet: helse, miljø, informasjon og internkontroll",
+    "url": "https://www.helsedirektoratet.no/veiledere/helse-og-miljo-i-barnehager-skoler-skolefritidsordninger/godkjenning-internkontroll-tilsyn-og-klage",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S53",
+    "title": "Arbeidstilsynet: arbeidsmiljøloven",
+    "url": "https://www.arbeidstilsynet.no/regelverk/lover/arbeidsmiljoloven--aml/",
+    "type": "Lov",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S54",
+    "title": "Arbeidstilsynet: arbeidsplan og varsling",
+    "url": "https://www.arbeidstilsynet.no/arbeidstid-og-organisering/arbeidstid/arbeidsplan-vaktliste-skift-og-turnus/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S55",
+    "title": "Lovdata: vedtatt ny forvaltningslov, ikrafttredelsesstatus",
+    "url": "https://lovdata.no/nav/lov/2025-06-20-81",
+    "type": "Vedtatt lov; ikrafttredelse må kontrolleres",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S56",
+    "title": "Regjeringen: forvaltningsloven",
+    "url": "https://www.regjeringen.no/no/dokumenter/forvaltningsloven/id449156/",
+    "type": "Lovoversikt",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S57",
+    "title": "Regjeringen: KI-forordningens virkeområde",
+    "url": "https://www.regjeringen.no/no/sub/eos-notatbasen/notatene/2021/juni/forslag-til-forordning-om-kunstig-intelligens-ki-forordningen/id2884935/",
+    "type": "EØS-notat",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S58",
+    "title": "Regjeringen 04.08.2026: ny høring om KI-loven",
+    "url": "https://www.regjeringen.no/no/aktuelt/tung-vil-sende-ki-loven-med-endringer-pa-horing/id3169693/",
+    "type": "Status; ikke selv lovhjemmel",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S59",
+    "title": "EventStorming: mønstre",
+    "url": "https://www.eventstorming.com/patterns/",
+    "type": "Metode",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S60",
+    "title": "Eric Evans: DDD Reference",
+    "url": "https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf",
+    "type": "Metode",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S61",
+    "title": "FastAPI dokumentasjon",
+    "url": "https://fastapi.tiangolo.com/",
+    "type": "Teknisk",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S62",
+    "title": "PostgreSQL radtilgang",
+    "url": "https://www.postgresql.org/docs/current/ddl-rowsecurity.html",
+    "type": "Teknisk",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S63",
+    "title": "OR-Tools planlegging",
+    "url": "https://developers.google.com/optimization/scheduling",
+    "type": "Teknisk",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S64",
+    "title": "Feide dokumentasjon",
+    "url": "https://docs.feide.no/",
+    "type": "Teknisk",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S65",
+    "title": "Montessori Norge: pedagogiske prinsipper",
+    "url": "https://montessorinorge.no/om-montessori/montessoripedagogikk/",
+    "type": "Pedagogisk",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S66",
+    "title": "Udir: personvern og skytjenester",
+    "url": "https://www.udir.no/regelverk-og-tilsyn/personvern-for-barnehage-og-skole/veiledere/personvern-i-skytjenester/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S67",
+    "title": "Udir: meldeplikt, foreldre og beskyttelsesbehov",
+    "url": "https://www.udir.no/kvalitet-og-kompetanse/sikkerhet-og-beredskap/negativ-sosial-kontroll-og-aresmotivert-vold/relevant-regelverk/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S68",
+    "title": "Prop. 41 LS (2025–2026): opphavsrett i undervisning",
+    "url": "https://www.regjeringen.no/no/dokumenter/prop.-41-ls-20252026/id3154279/?ch=5",
+    "type": "Forarbeid; endringsstatus må kontrolleres",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S69",
+    "title": "Regjeringen: offentleglova",
+    "url": "https://www.regjeringen.no/no/dokumenter/offentleglova/id546797/",
+    "type": "Lovoversikt",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S70",
+    "title": "LDO: individuell tilrettelegging i skole",
+    "url": "https://ldo.no/diskrimineringssituasjoner/tilrettelegging-for-funksjonsnedsettelse-barnehage-skole-og-utdanning/",
+    "type": "Veiledning",
+    "checked": "2026-09-07"
+  },
+  {
+    "id": "S71",
+    "title": "GDPR artikkel 30: behandlingsprotokoll",
+    "url": "https://lovdata.no/dokument/NL/lov/2018-06-15-38/gdpr/ARTIKKEL_30",
+    "type": "Forordning",
+    "checked": "2026-09-07"
+  }
+]
