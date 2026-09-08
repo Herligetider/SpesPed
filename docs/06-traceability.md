@@ -10,21 +10,21 @@ This is a planning map, not evidence of implemented compliance. P0–P8 are defi
 | F04 Uttrekk med kildekontroll | L012, L045, L046 | BC02 | P2 |
 | F05 Elevtidslinje og retting | L016, L051 | BC02 | P2 |
 | F06 Kravregister og årshjul | L023, L030, L045, L053, L056, L066, L074, L076, L084, L087, L088, L089, L090 | BC03 | P1 |
-| F07 Henvisning, sakkyndighet og vedtak | L003, L009, L010, L011, L012, L013, L015, L019, L029, L040, L041, L043, L060, L062, L070, L071, L072, L073, L075, L090 | BC04 | P3 |
-| F08 IOP med mål og versjoner | L001, L011, L015, L016, L019, L021 | BC05 | P3 |
+| F07 Henvisning, sakkyndighet og vedtak | L003, L009, L010, L011, L012, L013, L015, L019, L029, L040, L041, L043, L060, L062, L070, L071, L072, L073, L075, L090 | BC04 | P2 |
+| F08 IOP med mål og versjoner | L001, L011, L015, L016, L019, L021 | BC05 | P2 |
 | F09 Læreplan og klassens planer | L004, L006, L015, L021, L044, L071, L073 | BC06 | P3 |
 | F10 Bibliotek for egne opplegg og materiell | L004, L010, L069, L072, L083, L086 | BC06 | P3 |
 | F11 Kartlegging og målinger | L007, L008, L030, L041, L073, L086 | BC09 | P4 |
-| F12 Planlegg neste undervisningsøkt | L004, L006, L008, L010, L041, L043, L044, L070 | BC07 | P3 |
-| F13 Assistentkort og veiledning | L009, L014, L072, L076, L080 | BC07 | P3 |
+| F12 Planlegg neste undervisningsøkt | L004, L006, L008, L010, L041, L043, L044, L070 | BC07 | P2 |
+| F13 Assistentkort og veiledning | L009, L014, L072, L076, L080 | BC07 | P2 |
 | F14 Automatisk timeplan og gruppeforslag | L004, L005, L008, L014, L018, L075, L082 | BC08 | P5 |
-| F15 Gjennomførte timer og avvik | L009, L010, L011, L017, L018, L063 | BC07 | P3 |
-| F16 Rask øktlogg og diktering | L006, L007, L020 | BC07 | P3 |
+| F15 Gjennomførte timer og avvik | L009, L010, L011, L017, L018, L063 | BC07 | P2 |
+| F16 Rask øktlogg og diktering | L006, L007, L020 | BC07 | P2 |
 | F17 Fremgang og neste steg | L007, L008, L016, L017, L020, L067 | BC09 | P4 |
 | F18 Lovpålagte elevdokumenter og rapporter | L017, L022, L035, L060, L069, L089 | BC10 | P4 |
 | F19 Underveis-, halvårs- og sluttvurdering | L020, L021, L022, L023, L024, L025, L027, L028, L029, L031, L032, L041, L060 | BC09 | P4 |
-| F20 Ukesoppdatering per elev | L002, L026, L048 | BC10 | P2 |
-| F21 Gjennomgang, godkjenning og sikker utsending | L002, L003, L017, L026, L027, L032, L033, L038, L047, L048, L049, L060, L061, L063, L069 | BC11 | P2 |
+| F20 E-postutkast til foresatte for valgt tidsintervall | L002, L026, L048 | BC10 | P4 |
+| F21 Gjennomgang, godkjenning og sikker utsending | L002, L003, L017, L026, L027, L032, L033, L038, L047, L048, L049, L060, L061, L063, L069 | BC11 | P4 |
 | F22 Møter, samarbeid og individuell plan | L001, L002, L007, L012, L022, L024, L025, L026, L033, L035, L040, L042, L043, L062, L076, L078, L080 | BC12 | P4 |
 | F23 Fravær og oppfølging | L031, L033, L043 | BC12 | P5 |
 | F24 Skolemiljø og aktivitetsplan | L001, L034, L035, L036, L037, L077, L079 | BC13 | P6 |
@@ -42,5 +42,5 @@ This is a planning map, not evidence of implemented compliance. P0–P8 are defi
 | F36 Ressurser og arbeidsbelastning | L005, L014, L081, L082, L083 | BC08 | P5 |
 | F37 Betingede leder- og driftsplikter | L066, L074, L075, L076, L077, L078, L079, L080, L081, L082, L083, L084, L085, L089 | BC03 | P7 |
 | F38 Varsler, fritak, klager og partsrettigheter | L003, L024, L027, L028, L029, L030, L032, L044, L062, L063, L065, L073, L074, L077, L088 | BC04 | P4 |
-| F39 Tilbakemelding og kontroll av forslag | L016, L051 | BC07 | P3 |
+| F39 Tilbakemelding og kontroll av forslag | L016, L051 | BC07 | P2 |
 | F40 Målbar avlastning | L067, L082 | BC03 | P2 |

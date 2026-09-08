@@ -4,279 +4,1647 @@
     "title": "Skole, brukere og fullmakter",
     "description": "Skoleslag, godkjenning, trinn, skoleår, ansatte, kompetanse, elevtilknytning og tidsavgrenset stedfortreder. Skill rolle fra myndighet i en bestemt sak.",
     "context": "BC01",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Skoleadministrator",
+      "Rektor eller delegert leder"
+    ],
+    "trigger": "Ved oppstart, ansettelse, rollebytte eller vikariat.",
+    "inputs": [
+      "Skoleslag, eier, godkjenning, trinn og skoleår.",
+      "Ansatte, kvalifikasjonsreferanser, elev-/sakstilknytning og fullmaktenes gyldighet."
+    ],
+    "workflow": [
+      "Administrator oppretter skolen og velger en regelprofil som må bekreftes av ansvarlig person.",
+      "Leder knytter ansatte til grupper, elever eller saker og velger hvilke handlinger hver tilknytning tillater.",
+      "Et vikariat får start og slutt. Systemet viser virkningen før endringen lagres og trekker tilgangen tilbake når perioden utløper."
+    ],
+    "outputs": [
+      "Oversikt over bemanning, aktive tilganger, signeringsmyndighet og kommende utløp."
+    ],
+    "rules": [
+      "Rolle, tilgang til innhold og myndighet til å godkjenne er separate tildelinger.",
+      "En teknisk administrator får ikke automatisk lesetilgang til elevdokumenter."
+    ],
+    "acceptanceCriteria": [
+      "Et utløpt vikariat gir avslag ved åpning av både elevside, direkte dokumentlenke og bakgrunnsjobb.",
+      "En lærer uten fullmakt kan bidra til et dokument, men kan ikke utføre den reserverte godkjenningshandlingen."
+    ],
+    "example": "En vikar får tilgang til tre elever mandag–fredag og mister denne tilgangen lørdag uten manuell opprydding.",
+    "dependencyIds": [],
+    "deliveryScope": "P1: grunnoppsett og manuelle tildelinger. F32 kobler senere til identitets- og personalsystemer.",
+    "reviewQuestion": "Hvem tildeler tilgang og godkjenningsmyndighet ved pilotskolen?"
   },
   {
     "id": "F02",
     "title": "Elevprofil og foresattrelasjoner",
     "description": "Styrker, interesser, språk, kommunikasjon og støtte som virker. Foreldreansvar, bosted, representasjon, begrensninger og informasjonsrett registreres med kilde og gyldighet.",
     "context": "BC01",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Kontaktlærer",
+      "Spesialpedagog",
+      "Autorisert administrasjon"
+    ],
+    "trigger": "Ved innskriving, forberedelse til undervisning eller endret familiesituasjon.",
+    "inputs": [
+      "Elevidentitet, innskriving, gruppe og kontaktopplysninger.",
+      "Bekreftede styrker, interesser, språk og støttestrategier; kildebelagte foresattrelasjoner og begrensninger."
+    ],
+    "workflow": [
+      "Elevsiden viser først en kort pedagogisk oversikt og aktuelle oppgaver som brukeren har tilgang til.",
+      "Ansatte kan foreslå endringer i det pedagogiske innholdet med kilde og dato; ansvarlig person bekrefter vesentlige opplysninger.",
+      "Foresattrelasjoner forvaltes separat. Brukeren ser hvem som kan kontaktes, hvilke forhold som må avklares og gyldigheten til grunnlaget."
+    ],
+    "outputs": [
+      "Oppdatert elevoversikt og mottakergrunnlag som andre funksjoner kan bruke."
+    ],
+    "rules": [
+      "Elevprofilen viser kilde og siste vurdering, og beholder motstridende opplysninger som uavklarte.",
+      "Adresse, bosted og foreldreansvar er ikke alene en generell tillatelse til all utlevering."
+    ],
+    "acceptanceCriteria": [
+      "En assistent ser nødvendig støtteinformasjon for sitt oppdrag, uten automatisk tilgang til sakkyndig vurdering eller familiesak.",
+      "Endret foresattrelasjon blir tilgjengelig for ny mottakerkontroll før neste utsending."
+    ],
+    "example": "Før en økt ser pedagogen at eleven foretrekker visuell støtte, hvem som bekreftet dette og når det sist ble vurdert.",
+    "dependencyIds": [
+      "F01"
+    ],
+    "deliveryScope": "P1: identitet, relasjoner og kort manuelt profilinnhold. Kildebasert sammensatt oversikt utvides i P2–P4.",
+    "reviewQuestion": "Hvilke fem–ti opplysninger trenger personalet faktisk å se før en økt?"
   },
   {
     "id": "F03",
     "title": "Felles innboks for elevinformasjon",
     "description": "Notater, e-post fra foresatte, vedlegg, PDF, Word, skannede dokumenter, rapporter og timeplaner. Først manuell import; senere godkjente e-post- og systemkoblinger. Ingen generell innhøsting av alle ansattes e-poster.",
     "context": "BC02",
-    "phase": "P2"
+    "phase": "P2",
+    "users": [
+      "Lærer",
+      "Spesialpedagog",
+      "Autorisert saksbehandler"
+    ],
+    "trigger": "Når et notat, en e-post eller et dokument skal knyttes til elevoppfølging.",
+    "inputs": [
+      "Fritekst, PDF, Word, skannede dokumenter, lagrede e-poster og vedlegg.",
+      "Avsender, mottakstid, opprinnelig dato og foreslått elev dersom kjent."
+    ],
+    "workflow": [
+      "Brukeren skriver et notat eller laster opp en fil til en innboks med status mottatt, under behandling, må avklares eller ferdig.",
+      "Systemet kontrollerer filtype, skadelig innhold og mulige dubletter før dokumentlesing.",
+      "Brukeren vurderer elevkobling og avgrenser nødvendig innhold før materialet blir tilgjengelig i elevens ordinære arbeidsflate."
+    ],
+    "outputs": [
+      "Et bevart kildedokument, importstatus og en oppgave for kontroll i F04."
+    ],
+    "rules": [
+      "Filer med usikker elevkobling blir i en begrenset innboks; navnelikhet gir ikke automatisk tilgang.",
+      "Automatisk e-postinnhenting aktiveres bare for avtalte kilder og filtre via F32."
+    ],
+    "acceptanceCriteria": [
+      "Samme importerte e-post med samme kildeidentitet oppretter ikke to identiske oppfølgingspunkter.",
+      "En e-post som omtaler søsken kan deles i kontrollerte utdrag uten å eksponere hele originalen for begge elevenes team."
+    ],
+    "example": "En lærer laster opp en foresatt-e-post og får spørsmål om hvilken av to elever med samme fornavn opplysningen gjelder.",
+    "dependencyIds": [
+      "F01",
+      "F02",
+      "F27",
+      "F28"
+    ],
+    "deliveryScope": "P2: notater og manuell fil-/e-postimport. Løpende koblinger og større importjobber kommer i P7.",
+    "reviewQuestion": "Hvilke dokumenttyper og innkanaler står for mest dobbeltarbeid i dag?"
   },
   {
     "id": "F04",
     "title": "Uttrekk med kildekontroll",
     "description": "Dokumentlesing og OCR foreslår elevkobling, datoer, mål og tiltak. Bevar avsender, opprinnelig tekst, sidereferanse og hva som er påstand, observasjon eller vurdering. Feiltolkninger og dubletter håndteres.",
     "context": "BC02",
-    "phase": "P2"
+    "phase": "P2",
+    "users": [
+      "Lærer",
+      "Spesialpedagog",
+      "Dokumentansvarlig"
+    ],
+    "trigger": "Et nytt dokument er akseptert i innboksen, eller en tidligere tolking må rettes.",
+    "inputs": [
+      "Original dokumentversjon med tekst eller skannede sider.",
+      "Forslag til elev, dokumenttype, datoer, mål, tiltak og oppfølgingspunkter."
+    ],
+    "workflow": [
+      "Systemet viser originalen ved siden av foreslåtte felt og lar brukeren hoppe til relevant side eller tekstutdrag.",
+      "Brukeren godtar, retter eller forkaster hvert viktig uttrekk; uklar tekst merkes for manuell avklaring.",
+      "Bekreftede felt blir gjenbrukbare opplysninger med kobling til original, avsender og dokumentversjon."
+    ],
+    "outputs": [
+      "Bekreftet strukturert informasjon og en liste over åpne tolkningsspørsmål."
+    ],
+    "rules": [
+      "Et foreldresitat, en ansattobservasjon og en faglig vurdering beholder hver sin type og opphav.",
+      "Innhold i importerte dokumenter behandles som data og kan ikke instruere programmet til å endre tilgang eller sende informasjon."
+    ],
+    "acceptanceCriteria": [
+      "Feillesing av et timeantall kan rettes før det inngår i planlegging eller rapport.",
+      "En bekreftet påstand kan åpnes med riktig kildeversjon og sidereferanse; manglende lesetilgang gir ikke innsyn via forhåndsvisning."
+    ],
+    "example": "OCR foreslår 80 timer, men originalen viser 30. Pedagogen retter tallet og bekrefter hvilken vedtaksbestemmelse det tilhører.",
+    "dependencyIds": [
+      "F03",
+      "F33"
+    ],
+    "deliveryScope": "P2: grunnleggende uttrekk og kontroll. Mer spesialiserte dokumentfelt legges til sammen med de aktuelle fagmodulene.",
+    "reviewQuestion": "Hvilke felt må alltid kontrolleres manuelt, og hvilke kan presenteres som mindre kritiske forslag?"
   },
   {
     "id": "F05",
     "title": "Elevtidslinje og retting",
     "description": "Søk i relevant, autorisert informasjon. Hendelsesdato og registreringsdato holdes adskilt. Innspill kan bestrides; nyere informasjon kan erstatte operative oppsummeringer med sporbar historikk.",
     "context": "BC02",
-    "phase": "P2"
+    "phase": "P2",
+    "users": [
+      "Elevens lærerteam",
+      "Spesialpedagog",
+      "Autorisert saksbehandler"
+    ],
+    "trigger": "Når noen trenger oversikt over et forløp, søker etter en opplysning eller oppdager feil.",
+    "inputs": [
+      "Bekreftede opplysninger og kildelenker.",
+      "Hendelsesdato, registreringsdato, emne, måltilknytning og eventuell uenighet."
+    ],
+    "workflow": [
+      "Brukeren filtrerer tidslinjen etter periode, tema, mål, kilde eller dokumenttype.",
+      "Et element kan åpnes for kontekst, kildelesing og oversikt over planer eller rapporter som har brukt det.",
+      "Ved retting registreres begrunnelse og ny versjon. Systemet viser berørte utkast og sender allerede delte dokumenter til en egen oppfølgingsvurdering."
+    ],
+    "outputs": [
+      "Søkbar tidslinje, rettingshistorikk og oversikt over berørte avledninger."
+    ],
+    "rules": [
+      "Registreringsdato skal ikke erstatte tidspunktet noe faktisk hendte.",
+      "Retting av feil elevkobling må også fjerne feil tilgang fra søk, oppsummeringer og andre operative avledninger."
+    ],
+    "acceptanceCriteria": [
+      "Et notat skrevet i oktober om en hendelse i september kan finnes på begge relevante datoer med tydelig merking.",
+      "En feil elevkobling gjør berørte utkast utdaterte og gir ingen fortsatt kildetilgang gjennom gamle lenker."
+    ],
+    "example": "Læreren finner alle bekreftede observasjoner om leseflyt siden forrige målrevisjon, med motstridende observasjoner synlige.",
+    "dependencyIds": [
+      "F03",
+      "F04",
+      "F27"
+    ],
+    "deliveryScope": "P2: filtrering, kildesøk og retting. Konsekvensoversikten utvides når nye dokumenttyper innføres.",
+    "reviewQuestion": "Hvilke filtre og rettingssituasjoner er viktigst i en vanlig skoleuke?"
   },
   {
     "id": "F06",
     "title": "Kravregister og årshjul",
     "description": "Versjonerte lovkrav, forskrifter, godkjenningsvedtak, lokale rutiner og produktvalg. Beregn hvilke krav som gjelder hvem og når; vis kilde, ansvar, dokumentbehov og uavklarte forhold.",
     "context": "BC03",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Rektor",
+      "Skoleeier",
+      "Regelansvarlig",
+      "Ansatte med oppfølgingsansvar"
+    ],
+    "trigger": "Ved skolestart, relevante hendelser eller godkjent endring i et regelgrunnlag.",
+    "inputs": [
+      "Kravregister, skoleprofil, lokale rutiner, dokumentmaler og godkjente tidsregler.",
+      "Elev-/saksforhold som avgjør om et krav gjelder."
+    ],
+    "workflow": [
+      "Regelansvarlig vurderer hvilke regler og lokale rutiner som gjelder skolen, med kilde og gyldighet.",
+      "Systemet oppretter konkrete oppgaver med ansvarlig, tidsregel og eventuell lokal påminnelsesdato.",
+      "Ansatte ser sin arbeidsliste, legger til utført handling eller dokumentasjon og sender uavklarte spørsmål til rett ansvarlig."
+    ],
+    "outputs": [
+      "Årshjul, rollebasert arbeidsliste og spor fra oppgave til gjeldende grunnlag."
+    ],
+    "rules": [
+      "Lovkrav, veiledning, lokal rutine og valgfri produktfunksjon merkes forskjellig.",
+      "Manglende anvendelsesgrunnlag gir uavklart status; opplastet dokument lukker ikke automatisk den underliggende plikten."
+    ],
+    "acceptanceCriteria": [
+      "En lokal rapportfrist kan endres uten å omskrive lovens tidsregel eller historiske oppgaver.",
+      "En regelendring viser hvilke åpne oppgaver som berøres før en autorisert person aktiverer endringen."
+    ],
+    "example": "Rektor ser at en årlig evaluering mangler ansvarlig pedagog, mens en frivillig e-postrutine vises som skolens eget valg.",
+    "dependencyIds": [
+      "F01"
+    ],
+    "deliveryScope": "P1: manuelt godkjente regelprofiler og oppgaver. Omfattende endringsanalyse og ledelsesoversikt utvides i P6–P7.",
+    "reviewQuestion": "Hvilke lokale frister og rutiner skal være med, og hvem vedlikeholder dem?"
   },
   {
     "id": "F07",
     "title": "Henvisning, sakkyndighet og vedtak",
     "description": "Samle henvisningsgrunnlag, nødvendig samtykke/tillatelse og PPT-dokumentasjon. Registrer innhold, omfang, organisering, kompetanse, gyldighet og vedtaksmyndighet. Hold ITO, assistanse og fysisk tilrettelegging atskilt.",
     "context": "BC04",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Spesialpedagog",
+      "Rektor",
+      "Autorisert saksbehandler"
+    ],
+    "trigger": "Ved nytt støttebehov, henvisning, sakkyndig vurdering eller vedtak.",
+    "inputs": [
+      "Tidligere tiltak og utbytte, relevant samtykke, PPT-dokumenter og vedtaksoriginal.",
+      "Myndighet, gyldighetsperiode, fag, omfang, organisering og kompetansekrav."
+    ],
+    "workflow": [
+      "Brukeren oppretter en sak eller registrerer dokumenter i en eksisterende sak.",
+      "Systemet skiller anbefalinger i sakkyndig vurdering fra rettigheter og vilkår i vedtaket; brukeren bekrefter nøkkelfeltene.",
+      "Ansvarlig kan følge henvisning, ventende avklaringer, mottatt vedtak og behov for ny vurdering fra én saksoversikt."
+    ],
+    "outputs": [
+      "Bekreftet vedtaksgrunnlag, anbefalingsoversikt og saksoppgaver som IOP og timeplan kan bruke."
+    ],
+    "rules": [
+      "ITO, personlig assistanse og fysisk tilrettelegging registreres som forskjellige kategorier.",
+      "Ufullstendig eller utløpt dokumentgrunnlag utløser avklaring; systemet endrer ikke elevens tilbud automatisk."
+    ],
+    "acceptanceCriteria": [
+      "Et avvik mellom PPTs anbefalte omfang og vedtaket vises tydelig og blandes ikke til ett tall.",
+      "Planlegging kan spore hvert registrert omfang til riktig bestemmelse, enhet og periode."
+    ],
+    "example": "Et vedtak gir både ITO og assistanse. Pedagogen bekrefter to separate rammer før de brukes i øktplanlegging.",
+    "dependencyIds": [
+      "F02",
+      "F04",
+      "F06"
+    ],
+    "deliveryScope": "P2: import og bekreftelse av eksisterende vedtak/sakkyndighet. P3: full henvisnings- og saksflyt; P4: klager via F38.",
+    "reviewQuestion": "Hvilke vedtaksformuleringer og enheter bruker kommunene som pilotskolen samarbeider med?"
   },
   {
     "id": "F08",
     "title": "IOP med mål og versjoner",
     "description": "Generer og rediger IOP-utkast innenfor vedtaket. Koble mål, delmål, tiltak, arena, ansvar og evaluering. Dokumenter elev- og foreldreinnspill; kontroller endringer ved nye vedtak.",
     "context": "BC05",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Ansvarlig spesialpedagog",
+      "Faglærer",
+      "Elev-/foresattinnspill registrert av ansatte"
+    ],
+    "trigger": "Ved eksisterende IOP som skal brukes, opprettelse av ny plan eller relevant endring.",
+    "inputs": [
+      "Aktuelt vedtak, sakkyndige anbefalinger, læreplan og bekreftet elevgrunnlag.",
+      "Eksisterende IOP, delmål, tiltak, ansvar, organisering og vurderingsmåte."
+    ],
+    "workflow": [
+      "Brukeren registrerer en eksisterende IOP eller ber om et nytt utkast og kontrollerer koblingen til vedtaket.",
+      "Mål og tiltak redigeres med forventet handling, arena, støtte og hvordan utvikling skal observeres; elev- og foresattinnspill tas med.",
+      "Ansvarlig gjennomgår og aktiverer en datert revisjon. Endringer som krever nytt vedtak blir en avklaringsoppgave."
+    ],
+    "outputs": [
+      "Aktiv IOP-revisjon med mål som kan brukes i økter, kartlegging og evaluering."
+    ],
+    "rules": [
+      "Sakkyndig vurdering alene gir ikke grunnlag for å utvide eller redusere vedtakets rammer.",
+      "Historiske økter og vurderinger beholder koblingen til målversjonen som gjaldt da."
+    ],
+    "acceptanceCriteria": [
+      "En ny målrevisjon endrer ikke teksten i tidligere års dokumentasjon.",
+      "Et forslag utenfor bekreftet vedtaksramme kan ikke aktiveres som om det allerede var godkjent."
+    ],
+    "example": "Et bredt lesemål deles i observerbare delmål; neste økt bruker det aktive delmålet og viser hvor det kommer fra.",
+    "dependencyIds": [
+      "F07",
+      "F04"
+    ],
+    "deliveryScope": "P2: registrer og bekreft eksisterende godkjent IOP og mål. P3: generering, bidrag, revisjon og aktivering av nye planer.",
+    "reviewQuestion": "Hvordan formulerer dere mål som er nyttige i økten og samtidig egner seg for evaluering?"
   },
   {
     "id": "F09",
     "title": "Læreplan og klassens planer",
     "description": "Skolens godkjente læreplan, fag- og timefordeling, halvårsplaner og ukeplaner. Koble tema til elevmål; varsle om endringer og ta hensyn til Montessori og aldersblanding.",
     "context": "BC06",
-    "phase": "P3"
+    "phase": "P3",
+    "users": [
+      "Kontaktlærer",
+      "Faglærer",
+      "Spesialpedagog"
+    ],
+    "trigger": "Ved planlegging av skoleår, tema eller endring i klassens plan.",
+    "inputs": [
+      "Skolens godkjente læreplan og vurderingsordning.",
+      "Klasse-/gruppeplaner med tema, periode, læringsmål og planlagte aktiviteter."
+    ],
+    "workflow": [
+      "Læreren importerer eller skriver en plan og bekrefter perioder og målreferanser.",
+      "Spesialpedagogen ser aktuelle klassetemaer sammen med elevens mål og velger meningsfulle koblinger.",
+      "Når en plan publiseres i ny versjon, vises berørte kommende økter slik at ansvarlig kan beholde eller endre dem."
+    ],
+    "outputs": [
+      "Versjonert klasseplan og eksplisitte koblinger mellom klassens tema og elevens arbeid."
+    ],
+    "rules": [
+      "Felles tema skal ikke automatisk gjøre elevens mål eller vanskelighetsgrad identisk med klassens.",
+      "Aldersblandede grupper og lengre Montessori-arbeidsperioder må støttes uten krav om én plan per enkelttrinn."
+    ],
+    "acceptanceCriteria": [
+      "Flytting av et tema oppdaterer forslag til fremtidige økter uten å endre gjennomførte økter.",
+      "En elev kan arbeide med samme tema som klassen og ha egne konkrete mål og materiell."
+    ],
+    "example": "Klassen arbeider med verdensdeler; eleven trener lesing og begreper med tilpassede kort fra samme tema.",
+    "dependencyIds": [
+      "F01",
+      "F06"
+    ],
+    "deliveryScope": "P3: planregister og koblinger. P2 kan bruke manuelt bekreftet tema i en enkeltøkt uten full importfunksjon.",
+    "reviewQuestion": "Hvordan er halvårsplaner og aldersblandede temaer strukturert hos dere?"
   },
   {
     "id": "F10",
     "title": "Bibliotek for egne opplegg og materiell",
     "description": "Import, søk, gjenbruk og deling av pedagogens opplegg med rettigheter, alder, ferdigheter og tidsbruk. Oversikt over materiell, plassering, antall og dokumenterte Montessori-presentasjoner.",
     "context": "BC06",
-    "phase": "P3"
+    "phase": "P3",
+    "users": [
+      "Lærer",
+      "Spesialpedagog",
+      "Materiellansvarlig"
+    ],
+    "trigger": "Når et eget opplegg skal lagres, finnes igjen, tilpasses eller deles.",
+    "inputs": [
+      "Egne dokumenter, presentasjoner og praktiske opplegg.",
+      "Mål, forkunnskaper, varighet, materiell, plassering, antall og bruksrettigheter."
+    ],
+    "workflow": [
+      "Brukeren legger inn opplegget og bekrefter forslag til beskrivende merker.",
+      "Ved øktplanlegging søkes det etter passende egne ressurser; pedagogen ser originalen og hvorfor den kan passe.",
+      "En tilpasning lagres som egen versjon eller variant, med kobling til originalen og registrert erfaring etter bruk."
+    ],
+    "outputs": [
+      "Søkbart ressursbibliotek og materielloversikt med gjenbrukbare opplegg."
+    ],
+    "rules": [
+      "Skolens egne opplegg skal kunne foretrekkes som kilde før nye aktiviteter foreslås.",
+      "Bruksrettigheter styrer deling, kopiering og AI-bruk; fysisk antall kobles til reservasjoner i F14."
+    ],
+    "acceptanceCriteria": [
+      "En privat ressurs blir ikke søkbar for hele skolen før eieren har valgt en tillatt deling.",
+      "En tilpasset Montessori-presentasjon beholder spor til original og synlige endringer."
+    ],
+    "example": "Pedagogen finner et tidligere brukt perlemateriellopplegg, tilpasser varighet og reserverer det nødvendige materiellet.",
+    "dependencyIds": [
+      "F01",
+      "F03"
+    ],
+    "deliveryScope": "P3: bibliotek, varianter og materiellregister. P5: tilgjengelighet i timeplanlegging.",
+    "reviewQuestion": "Hvilke merker og beskrivelser gjør egne opplegg raske å finne igjen?"
   },
   {
     "id": "F11",
     "title": "Kartlegging og målinger",
     "description": "Registrer instrument, versjon, resultater og gjennomføringsbetingelser. Hold standardiserte prøver atskilt fra observasjoner; bruk faglig godkjente intervaller, lisensvilkår og gyldige fritak.",
     "context": "BC09",
-    "phase": "P4"
+    "phase": "P4",
+    "users": [
+      "Kvalifisert kartlegger",
+      "Lærer",
+      "Spesialpedagog"
+    ],
+    "trigger": "Ved planlagt kartlegging, nytt oppfølgingsbehov eller foreslått ny måling.",
+    "inputs": [
+      "Instrument, versjon, bruksrett, aktuelle mål og faglig intervallveiledning.",
+      "Dato, råresultat, skala, tilpasninger og gjennomføringsbetingelser."
+    ],
+    "workflow": [
+      "Pedagogen velger kartlegging og ser forkunnskaper, lisensbegrensninger og eventuelle tidligere resultater.",
+      "Resultatet registreres med instrumentets skala og forhold som kan påvirke tolkingen; ansvarlig bekrefter registreringen.",
+      "Systemet foreslår oppfølging og eventuelt tidspunkt for ny kartlegging med synlig kilde og begrunnelse. Pedagogen velger videre bruk."
+    ],
+    "outputs": [
+      "Kontrollerte kartleggingsresultater, sammenlignbar historikk og avtalt oppfølging."
+    ],
+    "rules": [
+      "AI skal ikke finne på testintervaller, normer eller diagnoser.",
+      "Ulike instrumenter, versjoner og tilpasninger vises separat når direkte sammenligning ikke er begrunnet."
+    ],
+    "acceptanceCriteria": [
+      "En verdi utenfor instrumentets skala blir avvist eller må avklares før bekreftelse.",
+      "Et forslag til ny prøve uten godkjent intervallgrunnlag merkes som et åpent faglig spørsmål."
+    ],
+    "example": "En leseprøve med ekstra støtte markeres med gjennomføringsbetingelsene før pedagogen vurderer utvikling siden sist.",
+    "dependencyIds": [
+      "F02",
+      "F04",
+      "F06"
+    ],
+    "deliveryScope": "P4: instrumentregister, resultatføring og faglig vurderte påminnelser. Automatisk resultatimport krever F32.",
+    "reviewQuestion": "Hvilke kartlegginger brukes, og finnes det dokumenterte intervaller og regler for gjenbruk?"
   },
   {
     "id": "F12",
     "title": "Planlegg neste undervisningsøkt",
     "description": "Bruk aktive mål, siste gjennomføring, klassens tema og tilgjengelige ressurser. Mål, materiell, konkrete trinn, støtte, tilpasninger og observasjonspunkt. Faglig gjennomgang før bruk.",
     "context": "BC07",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Spesialpedagog",
+      "Lærer"
+    ],
+    "trigger": "Når pedagogen skal forberede neste økt eller tilpasse et eksisterende opplegg.",
+    "inputs": [
+      "Aktive mål og rammer, siste relevante notat, bekreftede støttestrategier og klassens tema.",
+      "Tilgjengelig tid, arena, deltakere, materiell og pedagogens egne ressurser."
+    ],
+    "workflow": [
+      "Pedagogen velger elev, mål og øktlengde; systemet viser hvilket grunnlag det vil bruke.",
+      "Et utkast beskriver mål, forberedelse, materiell, konkrete steg, støtte, alternativ ved vansker og hva som skal observeres.",
+      "Pedagogen endrer eller avviser forslag, kontrollerer at det passer eleven og godkjenner økten for gjennomføring."
+    ],
+    "outputs": [
+      "Et praktisk øktopplegg med kilder, ansvarlig og tydelig godkjent versjon."
+    ],
+    "rules": [
+      "Manglende eller motstridende grunnlag vises; systemet dikter ikke opp hva eleven mestrer.",
+      "Øktforslaget kan ikke endre vedtak eller aktiv IOP. Nye aktiviteter merkes som forslag, ikke som dokumentert tidligere erfaring.",
+      "For elever uten ITO brukes et bekreftet ordinært undervisningsmål; IOP er ikke et generelt inngangskrav for øktplanlegging."
+    ],
+    "acceptanceCriteria": [
+      "Ved regenerering beholdes pedagogens tidligere versjon og redigeringer til brukeren velger å erstatte dem.",
+      "En økt kan planlegges manuelt når AI er utilgjengelig, med samme mål- og godkjenningskontroll."
+    ],
+    "example": "Pedagogen velger 25 minutter og et aktivt lesemål. Utkastet bruker klassens tema og et kjent opplegg, med en enklere variant ved behov.",
+    "dependencyIds": [
+      "F02",
+      "F04",
+      "F07",
+      "F08",
+      "F33"
+    ],
+    "deliveryScope": "P2: én elev og én økt med bekreftet eksisterende grunnlag og manuelt tema/materiell. P3: fullt bibliotek og klasseplan; P5: timeplan/grupper.",
+    "reviewQuestion": "Hvilke deler av et øktopplegg må alltid være med for at det kan brukes uten ekstra planlegging?"
   },
   {
     "id": "F13",
     "title": "Assistentkort og veiledning",
     "description": "Gjennomføringskort som kan forstås på omtrent fem minutter. Materiell, tre–fem trinn, hvordan støtte, avtalt forenkling og kontaktperson; korte tilbakemeldinger. Krev nødvendig opplæring i tillegg.",
     "context": "BC07",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Assistent",
+      "Ansvarlig lærer eller spesialpedagog"
+    ],
+    "trigger": "Når en assistent får et avgrenset oppdrag knyttet til en godkjent økt.",
+    "inputs": [
+      "Godkjent økt, avtalt assistentrolle, nødvendig elevstøtte og kontaktperson.",
+      "Materiell, plassering, praktiske steg og avtalte forenklinger."
+    ],
+    "workflow": [
+      "Systemet lager et kort fra den godkjente økten med mål i enkelt språk, materiell og tre–fem hovedsteg.",
+      "Ansvarlig pedagog kontrollerer kortet og tildeler det til assistenten for en bestemt økt/periode.",
+      "Assistenten åpner kortet, kan stille et spørsmål og etterpå gi en kort tilbakemelding om hva som ble gjort og hvor hjelp trengs."
+    ],
+    "outputs": [
+      "Kort gjennomføringsveiledning og tilbakemelding til den faglig ansvarlige."
+    ],
+    "rules": [
+      "Kortet skal normalt kunne forstås på omtrent fem minutter, og må prøves med faktiske assistenter.",
+      "Kortet gir ikke selvstendig undervisningsansvar og erstatter ikke nødvendig opplæring eller veiledning."
+    ],
+    "acceptanceCriteria": [
+      "Assistenten får bare innhold som trengs for det tildelte oppdraget, uten lenker som åpner hele elevmappen.",
+      "En relevant endring i økten merker kortet som utdatert og krever ny pedagogisk kontroll."
+    ],
+    "example": "Assistenten ser hvilket materiell som skal hentes, hvordan støtte skal gis, hva som kan forenkles og hvem som kontaktes ved spørsmål.",
+    "dependencyIds": [
+      "F01",
+      "F12",
+      "F27"
+    ],
+    "deliveryScope": "P2: enkelt kort og kort tilbakemelding. P3: flere maler og veiledningsoppfølging.",
+    "reviewQuestion": "Hva må stå på kortet for at en assistent med liten forberedelsestid kan gjennomføre oppdraget trygt og forståelig?"
   },
   {
     "id": "F14",
     "title": "Automatisk timeplan og gruppeforslag",
     "description": "Faste krav, pedagogiske preferanser, kompetanse, elevbehov, inkludering, rom og materiell. Forklar gruppeforslag; lås økter; vis uløselige konflikter og omplanlegg ved fravær.",
     "context": "BC08",
-    "phase": "P5"
+    "phase": "P5",
+    "users": [
+      "Spesialpedagog",
+      "Timeplanansvarlig",
+      "Rektor"
+    ],
+    "trigger": "Ved ny planperiode, endret bemanning eller behov for omplanlegging.",
+    "inputs": [
+      "Klasse- og elevplaner, vedtaksrammer, kompetanse, tilgjengelighet, rom og materiell.",
+      "Pedagogisk vurderte gruppevalg, faste begrensninger, ønskede tidspunkter og låste økter."
+    ],
+    "workflow": [
+      "Planleggeren registrerer hva som er ufravikelig, og hva som er en preferanse.",
+      "Systemet foreslår gjennomførbare plasseringer og grupper med forklaring på valg, ressursbruk og eventuelle udekkede behov.",
+      "Planleggeren sammenligner alternativer, låser gode økter og publiserer etter pedagogisk kontroll; senere endringer vises som en konkret differanse."
+    ],
+    "outputs": [
+      "Godkjent timeplan, gruppeoppsett og forklarte konflikter/kapasitetsmangler."
+    ],
+    "rules": [
+      "Faste rettighets- eller kompetansekrav kan ikke automatisk nedgraderes for å få planen til å gå opp.",
+      "Gruppeforslag trenger faglig vurdering og må ta hensyn til inkludering, elevbehov og Montessori-arbeidsperioder."
+    ],
+    "acceptanceCriteria": [
+      "Et uløselig forslag oppgir hvilke konkrete begrensninger som kolliderer i stedet for å publisere en ugyldig plan.",
+      "Samme ansatt eller samme eksemplar av materiell kan ikke dobbeltreserveres ved samtidig publisering."
+    ],
+    "example": "To elever kan jobbe med samme tema, men bare én trenger individuell økt. Systemet viser hvorfor de ikke kan grupperes i den aktuelle timen.",
+    "dependencyIds": [
+      "F07",
+      "F09",
+      "F10",
+      "F12",
+      "F36"
+    ],
+    "deliveryScope": "P5: automatiske forslag og omplanlegging. Manuell plassering av enkeltøkter finnes fra P2.",
+    "reviewQuestion": "Hvilke timeplanbegrensninger er absolutte, og hvilke kan pedagogen velge å fravike?"
   },
   {
     "id": "F15",
     "title": "Gjennomførte timer og avvik",
     "description": "Registrer per elev faktisk deltakelse, varighet, støtteform, bemanning og årsak til bortfall. Sammenstill med vedtak uten å likestille assistentminutter med undervisning eller automatisk fordele gruppetid feil.",
     "context": "BC07",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Lærer",
+      "Spesialpedagog",
+      "Assistent innenfor oppdraget"
+    ],
+    "trigger": "Etter en økt, avlysning eller retting av tidligere registrert gjennomføring.",
+    "inputs": [
+      "Planlagt økt som valgfritt utgangspunkt.",
+      "Faktisk deltakelse, varighet, støtteform, bemanning og årsak til avvik."
+    ],
+    "workflow": [
+      "Brukeren bekrefter hvem som deltok og registrerer faktisk tid og aktivitet; planlagte verdier vises bare som forslag.",
+      "Ved avvik velges relevant årsak, for eksempel elevfravær, manglende bemanning eller endret opplegg, med oppfølgingsansvar ved behov.",
+      "Systemet viser sammenstilling av planlagt og gjennomført støtte etter registrerte kategorier og vedtaksrammer."
+    ],
+    "outputs": [
+      "Etterprøvbar gjennomføringslogg og oversikt over bortfall som må vurderes."
+    ],
+    "rules": [
+      "Assistentstøtte og ITO-tid summeres ikke som samme ytelse.",
+      "Elevtid og ansattressurs telles separat; gruppetid fordeles etter faktisk deltakelse og relevante vedtaksregler."
+    ],
+    "acceptanceCriteria": [
+      "En publisert timeplan oppretter ingen gjennomførte minutter før noen har registrert faktisk gjennomføring.",
+      "En gruppeøkt på 30 minutter med to deltakende elever kan vise 30 minutter per elev og 30 minutter ansattressurs uten dobbel ressursbelastning."
+    ],
+    "example": "En planlagt økt på 30 minutter blir 20 minutter for én elev. Bare den faktiske deltakelsen inngår i senere evaluering.",
+    "dependencyIds": [
+      "F07",
+      "F12"
+    ],
+    "deliveryScope": "P2: faktisk gjennomføring og avvik per økt. P3: vedtakssammenstilling; P5: samlet timeplan- og ressursavstemming.",
+    "reviewQuestion": "Hvordan registreres gruppetid og bortfall i dag, og hva trenger ledelsen for å følge opp?"
   },
   {
     "id": "F16",
     "title": "Rask øktlogg og diktering",
     "description": "Strukturert kortnotat på cirka ett minutt, med valgfri fritekst. Senere diktering med kontroll av transkripsjon, uttrykkelig opptaksvalg og begrenset lagring av lyd.",
     "context": "BC07",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Lærer",
+      "Spesialpedagog",
+      "Assistent med avgrenset oppdrag"
+    ],
+    "trigger": "Etter undervisning eller en relevant observasjon i skolehverdagen.",
+    "inputs": [
+      "Valgt elev/økt, tidspunkt og eventuelt mål.",
+      "Kort observasjon, grad/type støtte og valgfritt forslag til neste steg."
+    ],
+    "workflow": [
+      "Brukeren åpner en kort logg fra økten eller elevsiden; kjente felt fylles som synlige forslag.",
+      "Brukeren skriver et kort notat eller senere dikterer og kontrollerer transkripsjonen.",
+      "Notatet lagres én gang og kan gjenbrukes i tidslinje, neste økt, vurdering og rapport med opprinnelig avsender."
+    ],
+    "outputs": [
+      "Et kort datert notat med mål-/øktkobling og tydelig opphav."
+    ],
+    "rules": [
+      "Observasjon og tolkning holdes gjenkjennelig fra hverandre; fritekst er mulig uten et omfattende obligatorisk skjema.",
+      "Diktering gjelder et uttrykkelig valgt notatopptak; det innebærer ikke kontinuerlig opptak av barn eller klasserom."
+    ],
+    "acceptanceCriteria": [
+      "En vanlig logg kan gjennomføres i brukertest med median tidsbruk høyst ett minutt uten tap av nødvendig informasjon.",
+      "En ikke godkjent transkripsjon brukes ikke som bekreftet elevopplysning i genererte dokumenter."
+    ],
+    "example": "Pedagogen skriver «leste tre ord selv med bildekort» og velger det aktuelle målet; opplysningen er tilgjengelig ved neste økt.",
+    "dependencyIds": [
+      "F02",
+      "F05"
+    ],
+    "deliveryScope": "P2: kort tekstlogg og gjenbruk. P7: diktering etter lokal tale-, tilgangs- og lagringsavklaring.",
+    "reviewQuestion": "Hvilke to–fire felt er nyttige nok til at personalet faktisk vil fylle dem ut?"
   },
   {
     "id": "F17",
     "title": "Fremgang og neste steg",
     "description": "Vis utvikling per mål og hvilke observasjoner den bygger på. Manglende belegg skal være synlig; foreslå justering med faglig begrunnelse og hensyn til dagsform og kontekst.",
     "context": "BC09",
-    "phase": "P4"
+    "phase": "P4",
+    "users": [
+      "Spesialpedagog",
+      "Faglærer"
+    ],
+    "trigger": "Ved måloppfølging, planendring eller forberedelse til evaluering.",
+    "inputs": [
+      "Målversjoner, relevante observasjoner, kartlegginger og gjennomførte tiltak.",
+      "Tidligere faglige vurderinger og gjennomføringsbetingelser."
+    ],
+    "workflow": [
+      "Pedagogen velger et mål og en periode og får en oversikt over støttepunkter, variasjon og manglende belegg.",
+      "Systemet foreslår en forsiktig oppsummering og mulige neste steg med kildehenvisninger.",
+      "Pedagogen bekrefter sin vurdering og velger videreføring, tilpasning eller behov for mer informasjon."
+    ],
+    "outputs": [
+      "Datert faglig vurdering per mål og valgte neste steg."
+    ],
+    "rules": [
+      "Planlagt aktivitet og høy registreringsfrekvens er ikke i seg selv læringsfremgang.",
+      "Dagsform, støtte og ulike målemetoder skal være synlige; ingen automatisk samlet elevskår."
+    ],
+    "acceptanceCriteria": [
+      "Når det mangler observasjoner, vises utilstrekkelig grunnlag fremfor en påstand om stagnasjon eller mestring.",
+      "Endring i testmetode gjør sammenligningsbegrensningen synlig i graf og tekst."
+    ],
+    "example": "Flere notater viser mestring med støtte, men bare ett uten. Pedagogen kan ikke få dette presentert som stabil selvstendig mestring.",
+    "dependencyIds": [
+      "F08",
+      "F11",
+      "F15",
+      "F16"
+    ],
+    "deliveryScope": "P4: målvisning, sammenstilling og godkjent utviklingsvurdering.",
+    "reviewQuestion": "Hva regner dere som tilstrekkelig belegg for å videreføre eller endre et mål?"
   },
   {
     "id": "F18",
     "title": "Lovpålagte elevdokumenter og rapporter",
     "description": "Rapporttyper og maler styres av gjeldende krav. Generer blant annet årlig ITO-evaluering fra relevant dokumentasjon; kontroller innhold, perioder, kilder, mangler og nødvendige faglige godkjenninger.",
     "context": "BC10",
-    "phase": "P4"
+    "phase": "P4",
+    "users": [
+      "Spesialpedagog",
+      "Faglærer",
+      "Ansvarlig leder"
+    ],
+    "trigger": "Når en relevant rapportplikt skal oppfylles eller en godkjent lokal rapport bestilles.",
+    "inputs": [
+      "Dokumenttype, gjeldende regel/mal, elev, periode og ansvarlig.",
+      "Vedtak, historiske IOP-mål, gjennomført opplæring, kartlegginger og faglige vurderinger."
+    ],
+    "workflow": [
+      "Brukeren åpner rapportoppgaven og ser hvilke innholdskrav, kilder og bidrag som mangler.",
+      "Systemet lager et redigerbart utkast med kildehenvisninger for faktapåstander og tydelige avklaringsfelt.",
+      "Bidragsytere kontrollerer sine deler; ansvarlig godkjenner riktig dokumentversjon og sender den videre til mottakerkontroll i F21."
+    ],
+    "outputs": [
+      "Gjennomgått rapport, kildemanifest og dokumentasjon av faglig godkjenning."
+    ],
+    "rules": [
+      "Årlig ITO-evaluering, lokal halvårsrapport og ordinær vurdering bruker hver sin type og anvendelsesregel.",
+      "En rapport beskriver faktisk gjennomføring og utbytte; systemet oppfinner ikke manglende aktiviteter eller resultater."
+    ],
+    "acceptanceCriteria": [
+      "En rapport over en periode med to IOP-revisjoner viser hvilket målgrunnlag som gjaldt når.",
+      "Manglende obligatoriske opplysninger blir avklart eller håndtert av ansvarlig før dokumentet kan ferdigstilles etter den aktuelle malen."
+    ],
+    "example": "Den årlige evalueringen henter øktlogger og målutvikling og synliggjør bortfalt undervisning som pedagogen må kommentere.",
+    "dependencyIds": [
+      "F06",
+      "F08",
+      "F15",
+      "F17",
+      "F27"
+    ],
+    "deliveryScope": "P4: de første godkjente elevrapportmalene og bidragsflyten; flere lokale maler legges til etter behov.",
+    "reviewQuestion": "Hvilke rapportmaler skal støttes først, og hvem gjennomgår og godkjenner hver type?"
   },
   {
     "id": "F19",
     "title": "Underveis-, halvårs- og sluttvurdering",
     "description": "Samle lærernes innspill og elevens egenvurdering. Lag utkast til veiledende vurdering og møtegrunnlag. Faglærer fastsetter karakterer; Montessori-regler, fritak og fag som avsluttes tidlig styres særskilt.",
     "context": "BC09",
-    "phase": "P4"
+    "phase": "P4",
+    "users": [
+      "Faglærer",
+      "Kontaktlærer",
+      "Spesialpedagog som bidragsyter"
+    ],
+    "trigger": "Ved løpende vurdering, halvårsvurdering eller sluttvurdering.",
+    "inputs": [
+      "Gjeldende læreplan/vurderingsordning, fagets avslutning, eventuelle fritak og relevant IOP.",
+      "Lærerens faglige grunnlag, elevens egenvurdering og relevante dokumenterte observasjoner."
+    ],
+    "workflow": [
+      "Læreren velger vurderingstype og får riktige felt for trinn, fag og skolens ordning.",
+      "Systemet samler innspill og foreslår formuleringer om kompetanse og videre arbeid som læreren kan redigere.",
+      "Faglærer fastsetter vurdering og eventuell karakter; faktisk formidling eller registrering i autoritativt system dokumenteres separat."
+    ],
+    "outputs": [
+      "Gjennomgått vurderingsinnspill, eventuell lærerfastsatt karakter og status for formidling."
+    ],
+    "rules": [
+      "IOP-mål kan ikke ukritisk erstatte karaktergrunnlaget i fag.",
+      "Montessori-unntak, fritak og tidlig avsluttede fag følger registrert ordning, ikke en generell aldersregel."
+    ],
+    "acceptanceCriteria": [
+      "Samme trinn ved offentlig skole og godkjent Montessori-ordning kan få forskjellige relevante vurderingsfelt.",
+      "AI foreslår ingen karakter og ferdigstiller ikke en vurdering på vegne av faglærer."
+    ],
+    "example": "Kontaktlæreren samler faglærernes halvårsinnspill og ser hvilke som fortsatt mangler før samtalen.",
+    "dependencyIds": [
+      "F06",
+      "F09",
+      "F17"
+    ],
+    "deliveryScope": "P4: vurderingsinnspill, manuell karakterfastsetting der relevant og formidlingsstatus. F32 støtter senere overføring.",
+    "reviewQuestion": "Hvilke deler føres i eksisterende skolesystem, og hvor kan dette programmet spare arbeid uten dobbeltføring?"
   },
   {
     "id": "F20",
-    "title": "Ukesoppdatering per elev",
-    "description": "Kort, forståelig utkast om arbeid, mestring og neste uke. Bare foresatte som mottakere i første versjon; senere elevtilpasset variant. Velg relevant innhold, og vis manglende grunnlag uten å fylle inn antakelser.",
+    "title": "E-postutkast til foresatte for valgt tidsintervall",
+    "description": "Generer redigerbare e-poster per elev basert på et valgt fra-/til-intervall. Ansvarlig velger formål, innhold, språk og mottakere. Valgfri gjentakelse kan klargjøre nye utkast; ingen fast ukerytme eller automatisk utsending. Foreldrekommunikasjon er en senere funksjon og styrer ikke første komplette arbeidsflyt.",
     "context": "BC10",
-    "phase": "P2"
+    "phase": "P4",
+    "users": [
+      "Kontaktlærer",
+      "Spesialpedagog",
+      "Annen autorisert pedagog"
+    ],
+    "trigger": "Når en pedagog ønsker en foresatt-e-post, eller en uttrykkelig aktivert utkastplan når neste tidspunkt.",
+    "inputs": [
+      "Én elev, fra-/til-dato, formål, relevante temaer/mål, språk, ønsket lengde og foreslåtte mottakere.",
+      "Bekreftede opplysninger fra perioden, nødvendige bakgrunnsreferanser og eventuelle separat merkede fremtidige planer.",
+      "Valgfritt: utkastfrekvens, periodeavgrensning, første tidspunkt, ansvarlig og sluttdato for gjentakelse."
+    ],
+    "workflow": [
+      "Brukeren åpner «Lag e-post», velger datoer direkte eller en snarvei som siste 14 dager, forrige måned eller siden forrige sendte periode. Beregnede datoer vises alltid før generering.",
+      "Systemet viser hvilke opplysninger som inngår, hvilke som mangler og eventuell overlapp med tidligere delte perioder. Brukeren kan avgrense temaer og velge relevant innhold.",
+      "Systemet lager emne og brødtekst med arbeid, konkrete observasjoner, relevante avtaler og eventuelle neste steg. Kildene vises i en intern gjennomgangsflate.",
+      "Pedagogen redigerer, kontrollerer faktapåstander og velger mottakerspesifikt innhold. F21 håndterer godkjenning og eventuell utsending gjennom skolens tillatte kanal.",
+      "Hvis gjentakelse ønskes, aktiverer brukeren en egen utkastplan, for eksempel hver 14. dag eller månedlig. Nye utkast går til ansvarlig for gjennomgang; planen kan pauses, endres og avsluttes."
+    ],
+    "outputs": [
+      "Et datert e-postutkast med emne, brødtekst, valgt periode, kilder, ansvarlig og status.",
+      "Ved valgfri gjentakelse: oversikt over neste utkasttidspunkt, neste periode og tidligere kjøringer."
+    ],
+    "rules": [
+      "Oppsummeringsperiode og utkastfrekvens er forskjellige valg. Manuell bestilling er utgangspunktet, uten automatisk aktivert ukentlig rutine.",
+      "Begge valgte kalenderdatoer inngår i perioden i skolens tidssone, og fra-dato kan ikke være etter til-dato. Hendelsesdato avgjør periodeplassering; opprettelsestidspunktet fryser hvilket kjent materiale utkastet bygget på.",
+      "Et sent registrert notat om en hendelse i perioden vises som nytt grunnlag for revisjon. Det endrer aldri et godkjent eller sendt brev i det stille.",
+      "Perioder med overlapp er tillatt med synlig varsel. «Siden sist» krever valgt mottaker og formål og bruker forrige bekreftet sendte periode for denne kombinasjonen, ikke et forkastet, mislykket eller uavklart utkast. Brukeren får avklare hull og rettelser.",
+      "Manglende grunnlag gir et synlig avklaringsbehov eller mulighet for manuelt brev. Fremtidige planer merkes som planer og blandes ikke inn som gjennomførte aktiviteter.",
+      "Bare berettigede foresatte er mottakere i første versjon. Sensitive sakstyper og opplysninger om andre elever tas ikke automatisk med; godkjenning gjelder én konkret versjon, aldri fremtidige brev.",
+      "Utkastplaner uten aktiv ansvarlig pauses for omfordeling. Ved forsinket kjøring vises én oppsummering av manglende perioder til ansvarlig fremfor automatisk masseoppretting av brev."
+    ],
+    "acceptanceCriteria": [
+      "Datoene 1.–15. oktober gir et utkast med relevant kjent grunnlag fra hele begge grensedagene, og datoene vises i gjennomgangen.",
+      "En valgfri plan hver 14. dag oppretter høyst ett utkast per planversjon, elev og periode ved gjentatt jobbkjøring; den sender ingen e-post.",
+      "Et utkast uten observasjoner påstår ikke at eleven har hatt fremgang. Brukeren kan avbryte eller skrive et manuelt brev med annet bekreftet formål.",
+      "Et relevant sent registrert notat som tas inn i teksten, en endret periode eller en redigert oversettelse krever en ny dokumentrevisjon og ny relevant godkjenning.",
+      "En ugyldig eller uavklart foresattrelasjon blokkerer utlevering også når mottakeren stod i en tidligere e-post.",
+      "Fra-dato etter til-dato avvises. «Siden sist» uten et bekreftet tidligere sendingsgrunnlag ber brukeren velge datoer og antar ikke en periode."
+    ],
+    "example": "Læreren velger 1.–20. oktober for å oppsummere et avsluttet tema. Senere velger hun en månedlig utkastplan for samme elev. Ingen av valgene innebærer automatisk utsending.",
+    "dependencyIds": [
+      "F02",
+      "F05",
+      "F16",
+      "F21",
+      "F33"
+    ],
+    "deliveryScope": "P4: manuelle perioder, e-postutkast og valgfri styrt gjentakelse. Full e-postkobling og portalutvidelser kommer i P7. F20 er ikke et akseptansekrav for P2-piloten.",
+    "reviewQuestion": "Hvilke formål, perioder og innholdstyper gjør en foresatt-e-post nyttig, og trenger skolen gjentatte utkast i det hele tatt?"
   },
   {
     "id": "F21",
     "title": "Gjennomgang, godkjenning og sikker utsending",
     "description": "Godkjenn eksakt innhold, vedlegg, mottakere og kanal. Endringer gjør godkjenning ugyldig. Støtt eksplisitt utsending, kvittering, feil, usikkert leveringsutfall, rettelser og sikker foresattportal.",
     "context": "BC11",
-    "phase": "P2"
+    "phase": "P4",
+    "users": [
+      "Faglig godkjenner",
+      "Autorisert avsender",
+      "Foresatt eller annen berettiget mottaker"
+    ],
+    "trigger": "Når et dokument eller e-postutkast skal ferdigstilles, deles eller korrigeres etter deling.",
+    "inputs": [
+      "Eksakt dokumentrevisjon, emne, brødtekst, vedlegg og eventuell språkvariant.",
+      "Mottakergrunnlag, formål, valgt kanal og godkjenningsfullmakter."
+    ],
+    "workflow": [
+      "Faglig ansvarlig ser teksten sammen med kilder, endringer og mangler og godkjenner den konkrete versjonen.",
+      "Avsender velger mottaker og ser en forhåndsvisning av akkurat det vedkommende vil motta, inkludert vedlegg.",
+      "Systemet kontrollerer gjeldende mottakerrett og kanal før eksplisitt utsending og følger resultatet til bekreftet transportutfall eller avklaringsbehov.",
+      "Ved feil velges retting, ny versjon eller videre oppfølging; tidligere utsending beholdes som eget faktisk hendelsesforløp."
+    ],
+    "outputs": [
+      "Godkjent dokument, mottakerspesifikk utleveringspakke og sporbar utsendingsstatus."
+    ],
+    "rules": [
+      "Redigering av godkjent innhold eller vedlegg krever ny innholdsgodkjenning; ny mottaker eller kanal krever ny utleveringskontroll.",
+      "Vanlig e-post brukes bare når skolens godkjente kanal- og innholdspolicy tillater det. Ellers kan e-posten varsle om innhold via sikker kanal.",
+      "Ferdig utkast, eksportert fil, akseptert transport og lest innhold er forskjellige statuser. Personlige/akutte meldeplikter følger egne løp i F25."
+    ],
+    "acceptanceCriteria": [
+      "En foresatt som mister relevant tilgang mens en melding står i kø, kan ikke motta pakken uten ny avklaring.",
+      "Ved ukjent leveringsutfall avstemmes leverandørreferansen før eventuell ny innsending, slik at timeout ikke gir blind dobbeltutsending.",
+      "Kopiering til ekstern e-postklient registreres som klargjort/eksportert, og vises ikke som bekreftet sendt uten eget grunnlag."
+    ],
+    "example": "To foresatte får hver sin vurderte innholdspakke; interne kildenotater og andre foresattes adresser følger ikke automatisk med.",
+    "dependencyIds": [
+      "F01",
+      "F02",
+      "F27",
+      "F28"
+    ],
+    "deliveryScope": "P4: felles dokumentgodkjenning, mottakerkontroll, kontrollert eksport og første sikre utsendingsadapter. P7: full portal og flere kanaler.",
+    "reviewQuestion": "Hvilke dokumenter skal hvem godkjenne, og hvilke utsendingskanaler er allerede godkjent ved skolen?"
   },
   {
     "id": "F22",
     "title": "Møter, samarbeid og individuell plan",
     "description": "Møteforberedelse, innspill, referatutkast, ansvar, oppgaver og frister. Samarbeid med PPT og andre tjenester etter relevant grunnlag. Individuell plan etter velferdslovgivning holdes atskilt fra IOP.",
     "context": "BC12",
-    "phase": "P4"
+    "phase": "P4",
+    "users": [
+      "Kontaktlærer",
+      "Spesialpedagog",
+      "Møteleder",
+      "Koordinator"
+    ],
+    "trigger": "Ved planlagt samtale, samarbeidsmøte eller koordinert oppfølging.",
+    "inputs": [
+      "Møtetype, deltakere, formål, relevant elevgrunnlag og tidligere avtaler.",
+      "Innspill fra elev, foresatte og tjenester med avklart delingsgrunnlag."
+    ],
+    "workflow": [
+      "Møteleder velger formål og deltakere og får forslag til agenda, utestående oppgaver og relevant grunnlag.",
+      "Under eller etter møtet registreres konkrete avtaler, elevens syn, ansvarlige og frister; referatutkast kan genereres fra notater.",
+      "Møteleder bekrefter referatet og fordeler oppfølging; deltakere får avgrenset informasjon etter sin rolle."
+    ],
+    "outputs": [
+      "Møteagenda, gjennomgått referat og oppgaver med eier og oppfølgingsdato."
+    ],
+    "rules": [
+      "Deltakelse i ett møte gir ikke automatisk tilgang til hele elevsaken.",
+      "Individuell plan på tvers av velferdstjenester er en egen plantype og skal ikke forveksles med IOP."
+    ],
+    "acceptanceCriteria": [
+      "Et gjennomført møte kan registreres uten at systemet krever et unødvendig omfattende referat.",
+      "En oppgave forsvinner ikke ved neste møte; den viser utført handling eller fortsatt åpent ansvar."
+    ],
+    "example": "Før en foreldresamtale får kontaktlæreren siste måloppfølging og åpne avtaler, og kan registrere tre nye tiltak med ansvarlig.",
+    "dependencyIds": [
+      "F02",
+      "F05",
+      "F06"
+    ],
+    "deliveryScope": "P4: møteforberedelse, referat og oppgaver. P7: kalenderkobling og selektiv ekstern samhandling.",
+    "reviewQuestion": "Hvilke møteformer trenger egne maler, og hva er et tilstrekkelig kort referat?"
   },
   {
     "id": "F23",
     "title": "Fravær og oppfølging",
     "description": "Hent eller før fravær, registrer kontakt og tiltak, foreslå oppfølging og gjør ansvar synlig. Skill elevfravær fra avlyst undervisning og fra manglende lærerressurs.",
     "context": "BC12",
-    "phase": "P5"
+    "phase": "P5",
+    "users": [
+      "Kontaktlærer",
+      "Spesialpedagog",
+      "Fraværsansvarlig"
+    ],
+    "trigger": "Ved nytt fravær, gjentatte fraværsmønstre eller behov for oppfølging.",
+    "inputs": [
+      "Fraværsregistrering fra autoritativt system eller manuell føring med kilde.",
+      "Berørte timer, kontaktforsøk, nødvendige årsaksopplysninger og avtalte tiltak."
+    ],
+    "workflow": [
+      "Systemet viser fravær sammen med planlagt og faktisk undervisning uten å slå kategoriene sammen.",
+      "Ansvarlig vurderer situasjonen og registrerer kontakt, elev-/foresattinnspill og oppfølging.",
+      "Ved avtalt oppfølgingsdato vises hva som er gjort, hva som mangler og om tiltak må endres."
+    ],
+    "outputs": [
+      "Fraværsoversikt og oppfølgingsforløp med tydelig ansvar."
+    ],
+    "rules": [
+      "Elevfravær, avlyst økt og manglende lærerressurs er ulike hendelser med forskjellige oppfølgingsbehov.",
+      "Systemet kan varsle om registrerte mønstre, men skal ikke utlede diagnose eller årsak fra fravær alene."
+    ],
+    "acceptanceCriteria": [
+      "Samme fraværsregistrering importert flere ganger gir én gjeldende oppføring med kildeversjoner.",
+      "En avlyst spesialpedagogisk økt registreres ikke som elevfravær når eleven var på skolen."
+    ],
+    "example": "Læreren ser at eleven ofte mister samme aktivitet, undersøker årsaken og avtaler et konkret tiltak med ny oppfølgingsdato.",
+    "dependencyIds": [
+      "F02",
+      "F06",
+      "F15",
+      "F22"
+    ],
+    "deliveryScope": "P5: registrering, avstemming og oppfølging. Løpende synkronisering med fraværssystem inngår i P7.",
+    "reviewQuestion": "Hvor føres fravær i dag, og hvilke situasjoner utløser faktisk oppfølging hos dere?"
   },
   {
     "id": "F24",
     "title": "Skolemiljø og aktivitetsplan",
     "description": "Egen begrenset sak med varsel, undersøkelser, elevens syn, tiltak, ansvar og evaluering. Dokumenter faktisk handling; rute saker om ansatte til korrekt mottaker.",
     "context": "BC13",
-    "phase": "P6"
+    "phase": "P6",
+    "users": [
+      "Alle ansatte som melder fra",
+      "Ansvarlig skoleleder",
+      "Tildelte saksmedarbeidere"
+    ],
+    "trigger": "Når skolen får kjennskap til et mulig utrygt skolemiljø eller følger opp tiltak.",
+    "inputs": [
+      "Bekymring, tidspunkt, berørte personer og faktisk varsling.",
+      "Undersøkelser, elevens syn, problemforståelse, tiltak, ansvarlige og evalueringsdatoer."
+    ],
+    "workflow": [
+      "Ansatt registrerer bekymringen i en egen begrenset sak og ser riktig varslingsvei.",
+      "Ansvarlig følger undersøkelser og lager en konkret aktivitetsplan med tiltak og ansvar.",
+      "Utførte handlinger registreres separat fra planen; ved evaluering vurderes elevens situasjon og behov for videre tiltak."
+    ],
+    "outputs": [
+      "Beskyttet saksforløp, aktivitetsplan og dokumentasjon av faktisk oppfølging."
+    ],
+    "rules": [
+      "Saker som gjelder ansatte eller leder må kunne gå til riktig overordnet uten å bli synlige for den saken gjelder.",
+      "Tilgang til undervisningsnotater gir ikke automatisk tilgang til skolemiljøsaken eller omvendt."
+    ],
+    "acceptanceCriteria": [
+      "Opprettelse av en plan setter ikke tiltakene til gjennomført.",
+      "En sak om nærmeste leder følger konfigurert alternativ mottakervei og stopper ikke i vedkommendes godkjenningskø."
+    ],
+    "example": "En lærer registrerer elevens opplevelse; rektor fordeler undersøkelser og følger opp om de avtalte tiltakene faktisk virker.",
+    "dependencyIds": [
+      "F01",
+      "F06",
+      "F27",
+      "F28"
+    ],
+    "deliveryScope": "P6: eget saksrom, varslingsvei, aktivitetsplan og evaluering.",
+    "reviewQuestion": "Hvordan varsles og fordeles slike saker i dag, inkludert saker som gjelder ansatte eller ledelsen?"
   },
   {
     "id": "F25",
     "title": "Bekymring, barnevern og akutt oppfølging",
     "description": "Beskyttet dokumentasjon, ansvarlig avsenders vurdering, riktige kontaktpunkter og registrering av melding/handling. Akutte og personlige plikter skal ikke forsinkes av AI eller krav om rektorgodkjenning.",
     "context": "BC13",
-    "phase": "P6"
+    "phase": "P6",
+    "users": [
+      "Ansatt med bekymring eller personlig meldeplikt",
+      "Autorisert støtteperson"
+    ],
+    "trigger": "Ved alvorlig bekymring, vurdering av meldeplikt eller behov for akutt handling.",
+    "inputs": [
+      "Konkrete observasjoner/opplysninger, kilde og tidspunkt.",
+      "Ansvarlig persons vurdering, kontaktpunkt og faktisk handling eller melding."
+    ],
+    "workflow": [
+      "Brukeren får tydelig tilgang til relevante kontaktveier og kan handle uten å vente på dokumentgenerering.",
+      "Nødvendig faktagrunnlag registreres i en beskyttet sak; eventuelt utkast gjennomgås av den ansvarlige avsenderen.",
+      "Faktisk melding og kontakt registreres med mottaker og tidspunkt, og videre oppfølging gis til rett ansvarlig."
+    ],
+    "outputs": [
+      "Avgrenset bekymringsgrunnlag, meldings-/handlingsspor og oppfølgingsoppgaver."
+    ],
+    "rules": [
+      "AI avgjør ikke om det foreligger omsorgssvikt eller en personlig meldeplikt.",
+      "Akutte og personlige plikter krever ikke ordinær rektorgodkjenning i programmet. Foresatte kopieres ikke automatisk."
+    ],
+    "acceptanceCriteria": [
+      "Brukeren kan registrere en allerede utført akutt handling etterpå uten at systemet krever et forhåndsgodkjent utkast.",
+      "En vanlig e-postoppsummering i F20 henter ikke automatisk inn bekymringssakens innhold."
+    ],
+    "example": "En ansatt kontakter riktig tjeneste og dokumenterer deretter hva som ble formidlet og hvilke oppfølgingshandlinger som er avtalt.",
+    "dependencyIds": [
+      "F01",
+      "F06",
+      "F27",
+      "F28"
+    ],
+    "deliveryScope": "P6: beskyttet dokumentasjon og handlingsspor med egne ruter. Nødvendig manuell handling er alltid mulig uten systemet.",
+    "reviewQuestion": "Hvilke støtte- og kontaktveier skal være tilgjengelige uten å forsinke den ansvarlige ansattes handling?"
   },
   {
     "id": "F26",
     "title": "Fysiske inngrep og forebygging",
     "description": "Egen hendelsesregistrering med beskrivelse, inngrep, elevens syn og faktisk varsling. Gjentatte/alvorlige hendelser følges opp i riktig organisatorisk løp.",
     "context": "BC13",
-    "phase": "P6"
+    "phase": "P6",
+    "users": [
+      "Involvert ansatt",
+      "Rektor",
+      "Ansvarlig oppfølger"
+    ],
+    "trigger": "Etter et fysisk inngrep eller ved gjennomgang av forebyggende tiltak.",
+    "inputs": [
+      "Tid, sted, hendelsesforløp, hva som ble gjort og hvem som var involvert.",
+      "Elevens egen beskrivelse, faktisk varsling og relevante oppfølgingspunkter."
+    ],
+    "workflow": [
+      "Ansatt fyller ut et eget hendelsesskjema med faktiske forhold fremfor en generell øktlogg.",
+      "Systemet viser manglende nødvendige felt og varslingsoppgaver etter skolens godkjente regelprofil.",
+      "Ansvarlig gjennomgår hendelsen og følger opp forebygging og eventuelle gjentakelser med avgrenset tilgang."
+    ],
+    "outputs": [
+      "Hendelsesregistrering, varslingsspor og avtalte forebyggende tiltak."
+    ],
+    "rules": [
+      "Registrert varslingsbehov og faktisk varsling er separate statuser.",
+      "Programmet gir ikke AI-genererte instruksjoner for fysisk maktbruk og avgjør ikke automatisk om et inngrep var lovlig."
+    ],
+    "acceptanceCriteria": [
+      "Manglende elevperspektiv vises som et punkt for ansvarlig oppfølging, med mulighet til å beskrive hvorfor det ikke foreligger ennå.",
+      "Gjentatte hendelser kan vises for rett ansvarlig uten å eksponere sakstekst i ordinære elevoppsummeringer."
+    ],
+    "example": "Etter en hendelse registreres faktisk varsling og elevens forklaring, mens et nytt forebyggende tiltak får ansvarlig og oppfølgingstid.",
+    "dependencyIds": [
+      "F01",
+      "F06",
+      "F27",
+      "F28"
+    ],
+    "deliveryScope": "P6: eget hendelsesskjema, varsling og forebyggende oppfølging.",
+    "reviewQuestion": "Hvilke lokale skjemaer, varslingsveier og oppfølgingsrutiner skal funksjonen støtte?"
   },
   {
     "id": "F27",
     "title": "Personvern, tilgang og innsyn",
     "description": "Formålsstyrt tilgang per skole, elev og sak; sikker innlogging og revisjonsspor. Innsyn, retting, begrensning og informasjon til registrerte. Administratortilgang gir ikke automatisk rett til elevinnhold.",
     "context": "BC14",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Ansatte innenfor oppdrag",
+      "Personvern-/innsynsansvarlig",
+      "Autorisert driftspersonell"
+    ],
+    "trigger": "Ved enhver tilgang eller deling, og når en registrert ber om innsyn, retting eller annen håndtering.",
+    "inputs": [
+      "Skole-, elev- og sakstilknytning, formål, gjeldende rettigheter og dataklassifisering.",
+      "Forespørsel, identitets-/representasjonsgrunnlag, omfang og relevant tidsregel."
+    ],
+    "workflow": [
+      "Tilgang kontrolleres ved åpning, søk, generering, eksport og utsending; avslag viser en praktisk avklaringsvei uten å røpe skjermet innhold.",
+      "Innsynsansvarlig registrerer en forespørsel, avklarer identitet og omfang og får en samlet oversikt over relevante opplysninger og avledninger.",
+      "Ansvarlig vurderer skjerming, retting eller andre tiltak og registrerer svar og utførelse med sporbar begrunnelse."
+    ],
+    "outputs": [
+      "Formålsavgrenset tilgang, innsynspakke og spor etter rettighetshåndtering."
+    ],
+    "rules": [
+      "Tekniske logger skal vise hvem som gjorde hva uten å kopiere all sensitiv dokumenttekst.",
+      "Sletting, bevaring og innsyn er ulike vurderinger; en forespørsel gir ikke automatisk fri tilgang eller sletting av alt."
+    ],
+    "acceptanceCriteria": [
+      "Bytte av elev-ID i en lenke, eksport eller AI-forespørsel gir ikke tilgang til en annen elev.",
+      "En innsynspakke inneholder ikke skjermede opplysninger om andre personer bare fordi de finnes i samme e-posttråd."
+    ],
+    "example": "Ved et innsynskrav finner ansvarlig både originalnotater og relevante genererte oppsummeringer, og vurderer innholdet før utlevering.",
+    "dependencyIds": [
+      "F01"
+    ],
+    "deliveryScope": "P1: tilgang, revisjonsspor og mottak av forespørsler. Utvidet sammenstilling og gjennomføring følger datatypene i P2–P7.",
+    "reviewQuestion": "Hvem behandler innsyn og tilgangsavvik, og hvordan godkjennes unntak eller stedfortredertilgang?"
   },
   {
     "id": "F28",
     "title": "Dokumentforvaltning og arkiv",
     "description": "Dokumentklasser, bevarings-/sletteplan, rettslig sperre, arkivoverføring og kvittering. Slett operative avledninger når grunnlaget krever det. Ingen generell sletting ved skoleårets slutt.",
     "context": "BC14",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Dokument-/arkivansvarlig",
+      "Saksansvarlig",
+      "Autorisert drift"
+    ],
+    "trigger": "Når dokument opprettes, ferdigstilles, skal arkiveres eller når en godkjent disponeringsregel utløses.",
+    "inputs": [
+      "Dokumenttype, eier, kildeversjon, saksreferanse og bevarings-/sletteregel.",
+      "Eventuell rettslig sperre, avhengige kopier og kvittering fra autoritativt arkiv."
+    ],
+    "workflow": [
+      "Dokumentet klassifiseres og får en livssyklus; uavklart regel sendes til ansvarlig.",
+      "Ferdige dokumenter kan overføres til riktig arkiv med metadata og status for mottak.",
+      "Ved sletting eller annen disponering kontrolleres sperrer, nødvendige avledninger og faktisk resultat; feil blir synlige oppgaver."
+    ],
+    "outputs": [
+      "Dokumentoversikt med versjoner, bevaringsgrunnlag, sperrer og arkiv-/disponeringsstatus."
+    ],
+    "rules": [
+      "Skoleårsslutt er ikke en generell slettekommando; regelen må passe dokumenttypen og skolen.",
+      "Operative søkeindekser og genererte avledninger må følge vurdert disponering, også etter gjenoppretting fra sikkerhetskopi."
+    ],
+    "acceptanceCriteria": [
+      "Et arkivkall uten bekreftet mottak merkes ikke som vellykket arkivert.",
+      "En aktiv rettslig sperre stanser berørt sletting og oppgir ansvarlig avklaringsvei."
+    ],
+    "example": "En ferdig årsrapport overføres med riktig metadata, mens arbeidskopier får en separat vurdert livssyklus.",
+    "dependencyIds": [
+      "F01",
+      "F06"
+    ],
+    "deliveryScope": "P1: klassifisering, grunnregler og sperrer. P4: rapportlivssyklus; P7: full arkivkobling og kontrollert overføring.",
+    "reviewQuestion": "Hvilket system er formelt arkiv, og hvilke dokumentklasser og bevaringsregler skal gjelde?"
   },
   {
     "id": "F29",
     "title": "Ledelsesoversikt og internkontroll",
     "description": "Oppgaver, ansvar, avvik, risiko og oppfølgingsstatus. Vis manglende opplysninger særskilt; et ferdig dokument betyr ikke at elevens rett er oppfylt. Styret og skoleeier får riktig aggregert informasjon.",
     "context": "BC03",
-    "phase": "P6"
+    "phase": "P6",
+    "users": [
+      "Rektor",
+      "Skoleeier eller styre",
+      "Ansvarlige oppfølgere"
+    ],
+    "trigger": "Ved daglig prioritering, internkontroll eller ledelsens gjennomgang.",
+    "inputs": [
+      "Oppgaver, frister, faktiske avvik og utførte oppfølgingshandlinger.",
+      "Aggregerte ressurs- og dokumentasjonsdata med relevant tilgangsgrunnlag."
+    ],
+    "workflow": [
+      "Leder ser hva som mangler ansvarlig, nærmer seg frist eller har dokumentert avvik.",
+      "En sak kan åpnes innenfor fullmakten; leder fordeler tiltak og følger opp utførelse.",
+      "Ved gjennomgang vurderes om tiltaket løste forholdet; status og begrunnelse oppdateres separat fra dokumentferdigstilling."
+    ],
+    "outputs": [
+      "Prioritert ledelsesoversikt, avviksforløp og dokumentasjon av internkontroll."
+    ],
+    "rules": [
+      "Ingen data skal vises som grønn status når de nødvendige opplysningene er ukjente.",
+      "Elev- og personalopplysninger aggregeres for eier/styre når detaljinnsyn ikke er nødvendig eller tillatt."
+    ],
+    "acceptanceCriteria": [
+      "En ferdig rapport lukker ikke automatisk et registrert avvik om manglende undervisning.",
+      "En visning for styret røper ikke identifiserbar sakstekst gjennom små grupper eller filtrering uten særskilt vurdering."
+    ],
+    "example": "Rektor ser at flere planlagte tiltak mangler bemanning, fordeler ansvar og følger den faktiske korrigeringen.",
+    "dependencyIds": [
+      "F06",
+      "F15",
+      "F27"
+    ],
+    "deliveryScope": "P6: ledelsesoversikt og avvikshåndtering. P7: flere organisatoriske rapportområder.",
+    "reviewQuestion": "Hvilke få indikatorer hjelper ledelsen å handle, og hvilke ville bare skape mer rapportering?"
   },
   {
     "id": "F30",
     "title": "Offentlig rapportering og administrasjon",
     "description": "Forbered kontrollerte uttrekk til GSI, elevdata, tilsyn og relevante tilskudds-/refusjonsprosesser. Avstem mot skoleadministrative kilder; menneskelig attestasjon og integrasjon etter tilgjengelige grensesnitt.",
     "context": "BC03",
-    "phase": "P7"
+    "phase": "P7",
+    "users": [
+      "Skoleadministrator",
+      "Rektor",
+      "Skoleeier"
+    ],
+    "trigger": "Ved pålagt innrapportering, tilsyn eller relevant tilskudds-/refusjonsprosess.",
+    "inputs": [
+      "Gjeldende rapportspesifikasjon og periode.",
+      "Kontrollerte data fra elev-, bemannings-, vedtaks- og andre autoritative systemer."
+    ],
+    "workflow": [
+      "Ansvarlig velger rapporttype og ser definisjon, kilder og hvilke felt programmet kan bidra med.",
+      "Systemet beregner eller sammenstiller et uttrekk og viser avstemmingsforskjeller og mangler.",
+      "Ansvarlig attesterer innholdet og eksporterer eller sender via avtalt grensesnitt; innleveringskvittering registreres der den finnes."
+    ],
+    "outputs": [
+      "Kontrollert uttrekk, avstemmingsoversikt og faktisk innleveringsstatus."
+    ],
+    "rules": [
+      "Definisjoner og rapportversjoner må gjelde riktig periode; manglende data skal ikke automatisk bli null.",
+      "Et klargjort uttrekk er ikke bevis på at det er levert til myndigheten."
+    ],
+    "acceptanceCriteria": [
+      "Tall kan spores til kildene og beregningsdefinisjonen som ble brukt i akkurat denne rapportversjonen.",
+      "Uenighet med skoleadministrativt system vises før attestasjon og overskrives ikke i det stille."
+    ],
+    "example": "Administrator forbereder et GSI-grunnlag og får synlige avvik mot elevregisteret som må avklares før innlevering.",
+    "dependencyIds": [
+      "F06",
+      "F28",
+      "F29",
+      "F32"
+    ],
+    "deliveryScope": "P7: prioriterte uttrekk etter bekreftede spesifikasjoner; manuell innlevering er mulig når det ikke finnes egnet API.",
+    "reviewQuestion": "Hvilke offentlige uttrekk krever mest manuelt arbeid, og hvilke systemer eier tallene?"
   },
   {
     "id": "F31",
     "title": "Tilgjengelighet og språk",
     "description": "Tastatur, skjermleser, god lesbarhet, tilgjengelige dokumenter og støtte for bokmål/nynorsk. Oversettelsesutkast og tolkeoppfølging når nødvendig; faglig og språklig kontroll av viktig innhold.",
     "context": "BC01",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Alle ansatte",
+      "Foresatte som mottakere",
+      "Innholdsansvarlige"
+    ],
+    "trigger": "I alle skjermbilder, dokumenter og kommunikasjonssituasjoner.",
+    "inputs": [
+      "Brukerens språkvalg og behov for tilgjengelig presentasjon.",
+      "Originaltekst, dokumentstruktur og eventuelle språk-/tolkebehov for mottakeren."
+    ],
+    "workflow": [
+      "Brukeren skal kunne fullføre sentrale oppgaver med tastatur og hjelpemidler uten å måtte bruke en alternativ mindreverdig arbeidsflyt.",
+      "Innhold vises med klare felt, lesbare feilbeskjeder og tilgjengelige dokumentmaler.",
+      "Ved oversettelse opprettes en egen språkvariant; en kompetent person kontrollerer viktig innhold før bruk eller deling."
+    ],
+    "outputs": [
+      "Tilgjengelige arbeidsflater og dokumenter, språkvarianter og eventuell tolkeoppfølging."
+    ],
+    "rules": [
+      "Bokmål/nynorsk og språkvalg må gjelde både redigering, feilbeskjeder og relevante eksportmaler.",
+      "En oversettelse arver ikke automatisk godkjenning fra originalen, og AI-oversettelse erstatter ikke nødvendig kvalifisert kommunikasjon."
+    ],
+    "acceptanceCriteria": [
+      "En bruker kan registrere notat, gjennomgå kilde og godkjenne en økt med bare tastatur.",
+      "Mottakerens dokument har logisk leserekkefølge og tydelig struktur ved skjermleserprøving."
+    ],
+    "example": "En lærer bruker nynorsk i arbeidsflaten og kontrollerer en oversatt foresatt-e-post side om side med originalen.",
+    "dependencyIds": [
+      "F01"
+    ],
+    "deliveryScope": "P1: tilgjengelig grunnflate og språkstruktur. Hver fase må verifisere nye skjermbilder og dokumenttyper; flere språk følger konkrete behov.",
+    "reviewQuestion": "Hvilke språk og hjelpemidler må inngå i pilotens faktiske brukertester?"
   },
   {
     "id": "F32",
     "title": "Integrasjoner og datautveksling",
     "description": "Feide/annen identitet, skoleadministrasjon, LMS, e-post, kalender, dokumentarkiv og sikker post. Avtaler, tillatelser, minimalt datatilfang, dublettkontroll og manuell import/eksport som reserve.",
     "context": "BC16",
-    "phase": "P7"
+    "phase": "P7",
+    "users": [
+      "Skoleadministrator",
+      "Integrasjonsansvarlig",
+      "Ansatte som bruker import/eksport"
+    ],
+    "trigger": "Ved oppsett av en systemkobling, synkronisering eller kontrollert manuell utveksling.",
+    "inputs": [
+      "Avtalt system, skole, datatyper, tilgangsomfang og hvilken kilde som er autoritativ.",
+      "Eksterne identifikatorer, filformat/API-versjon, siste synkroniseringspunkt og feilstatus."
+    ],
+    "workflow": [
+      "Administrator aktiverer bare godkjente datatyper og kontrollerer kobling mellom eksterne og interne identiteter.",
+      "Import kjøres med forhåndsvisning der det er nødvendig; endringer avstemmes og konflikter sendes til ansvarlig.",
+      "Systemet viser siste vellykkede overføring, feil og mulig manuell reserve, og kan pauses eller frakobles."
+    ],
+    "outputs": [
+      "Avstemt datautveksling med dokumentert eierskap, status og sporbar kobling."
+    ],
+    "rules": [
+      "En kobling gir ikke ansatte eller bakgrunnsjobber større myndighet enn den godkjente behandlingen tillater.",
+      "E-posttilgang må avgrenses til avtalte mapper/kilder; generelle innbokser skal ikke ukritisk importeres."
+    ],
+    "acceptanceCriteria": [
+      "Gjennomkjøring av samme import oppretter ikke nye kopier av samme elev, melding eller vedtak.",
+      "Frakobling stanser nye overføringer og viser hvem som håndterer gjenværende data og ventende jobber."
+    ],
+    "example": "Elevregisteret oppdaterer gruppetilknytning, mens programmet varsler om en uklar foresattkobling i stedet for å gjette.",
+    "dependencyIds": [
+      "F01",
+      "F27",
+      "F28",
+      "F34"
+    ],
+    "deliveryScope": "P7: prioriterte identitets-, skole-, e-post-, kalender- og arkivkoblinger. Tidlige faser bruker smale adaptere og kontrollert manuell import.",
+    "reviewQuestion": "Hvilke eksisterende systemer skal kobles først, og hvilke data skal aldri ha to redigerbare hovedkilder?"
   },
   {
     "id": "F33",
     "title": "AI med utskiftbar modell og kvalitetskontroll",
     "description": "Serverstyrt gateway for generering, søk, OCR og tale. API i utvikling med syntetiske data, egen server i produksjon. Kilder, modellversjon, evalueringer, kostnadsgrenser og ingen stille ekstern reserve.",
     "context": "BC15",
-    "phase": "P2"
+    "phase": "P2",
+    "users": [
+      "Lærer og spesialpedagog som bestiller forslag",
+      "Modell-/driftsansvarlig"
+    ],
+    "trigger": "Når en bruker bestiller dokumentlesing, øktforslag, rapporttekst eller annen godkjent AI-operasjon.",
+    "inputs": [
+      "Et avgrenset formål og bare autoriserte kilder som trengs for oppgaven.",
+      "Modell-/promptversjon, behandlingsmiljø, kvalitetskrav og ressursgrenser."
+    ],
+    "workflow": [
+      "Systemet bygger et avgrenset kildegrunnlag etter tilgangskontroll og viser status for genereringen.",
+      "Modellen returnerer et forslag med kildekoblinger og synlige mangler; resultatet går til menneskelig gjennomgang.",
+      "Modellansvarlig kan prøve og godkjenne en ny modellversjon mot faste syntetiske eksempler før den aktiveres."
+    ],
+    "outputs": [
+      "Gjennomgåelige forslag, sporbar modellkjøring og kvalitets-/driftsstatus."
+    ],
+    "rules": [
+      "Ekstern API brukes i utvikling med syntetiske data. All AI i produksjon skal bruke egen godkjent server, også AI-basert OCR, embeddings og tale når aktivert.",
+      "Ingen stille ekstern reserve, automatisk diagnose, karakterfastsetting eller endring av vedtak. Kildeinstruksjoner skal ikke overstyre systemets regler."
+    ],
+    "acceptanceCriteria": [
+      "Samme brukerflyt kan bruke en utviklingsadapter og en lokal adapter uten at elev-/planbegrepene endres.",
+      "Ved lokal modellfeil forblir produksjonsdata lokale, og brukeren kan fortsette med manuell redigering.",
+      "Forslag uten støtte for faktapåstander viser manglende grunnlag og blir ikke presentert som bekreftet informasjon."
+    ],
+    "example": "En modelloppgradering prøves mot de samme norske økt- og rapporteksemplene før driftsansvarlig velger å aktivere den.",
+    "dependencyIds": [
+      "F27",
+      "F34"
+    ],
+    "deliveryScope": "P2: øktforslag via utviklingsadapter og manuell reserve. P4: dokumentutkast. Lokal produksjonsbehandling må være klar før AI-pilot med virkelige elevdata.",
+    "reviewQuestion": "Hvilke konkrete feil ville gjøre et AI-forslag ubrukelig, og hvilken kvalitet må en lokal modell oppnå?"
   },
   {
     "id": "F34",
     "title": "Drift, sikkerhet og beredskap",
     "description": "Kryptering, nøkkelstyring, sikkerhetskopier, prøvd gjenoppretting, overvåking uten elevtekst, oppdateringer og hendelseshåndtering. Manuelle arbeidsflyter skal fungere ved AI-feil.",
     "context": "BC15",
-    "phase": "P1"
+    "phase": "P1",
+    "users": [
+      "Driftsansvarlig",
+      "Sikkerhetsansvarlig",
+      "Skoleledelse"
+    ],
+    "trigger": "Ved daglig drift, oppdatering, feil eller gjenoppretting.",
+    "inputs": [
+      "Godkjent driftsoppsett, nøkkel-/tilgangsforvaltning og avtalte gjenopprettingsmål.",
+      "Teknisk status, sikkerhetskopier, hendelser og ansvarlige kontaktpunkter."
+    ],
+    "workflow": [
+      "Driftsansvarlig ser tjenestestatus, køer og feil uten at elevtekst kopieres til generelle driftslogger.",
+      "Sikkerhetskopier og oppdateringer følges opp etter avtalt rutine, med praktisk prøving av gjenoppretting.",
+      "Ved hendelse avgrenses tilgang og berørte operasjoner; ansvarlig følger teknisk retting og nødvendig organisatorisk håndtering."
+    ],
+    "outputs": [
+      "Overvåket tjeneste, dokumentert gjenoppretting og håndterte drifts-/sikkerhetshendelser."
+    ],
+    "rules": [
+      "AI-feil skal ikke blokkere all manuell planlegging og notatføring når resten av tjenesten fungerer.",
+      "Gjenoppretting må også ta hensyn til etterfølgende tilgangsendringer, rettelser og disposisjonsbeslutninger."
+    ],
+    "acceptanceCriteria": [
+      "En prøvd gjenoppretting kan vise at dokumenter, nøkler, rettigheter og nødvendige disposisjonsoppgaver henger sammen.",
+      "Meldingskøens status viser ukjent leveringsutfall fremfor å sende alt på nytt etter omstart."
+    ],
+    "example": "Ved modellstans kan læreren fortsatt åpne det sist godkjente assistentkortet og registrere gjennomføringen.",
+    "dependencyIds": [
+      "F01"
+    ],
+    "deliveryScope": "P1: sikker grunnplattform og prøvd reservekopi. Driftskrav utvides per fase; P8 fullfører produksjonsverifisering.",
+    "reviewQuestion": "Hvem eier drift og beredskap, og hvor lenge kan skolen tåle at hver sentral funksjon er utilgjengelig?"
   },
   {
     "id": "F35",
     "title": "Skoleår, overganger og skolebytte",
     "description": "Oppdater tilknytning, rettigheter, planer og krav ved nytt år/trinn/skole. Selektiv overføringspakke med konkret delingsgrunnlag, nødvendig innhold, mottakerkontroll og kvittering.",
     "context": "BC14",
-    "phase": "P7"
+    "phase": "P7",
+    "users": [
+      "Skoleadministrator",
+      "Kontaktlærer",
+      "Spesialpedagog",
+      "Overføringsansvarlig"
+    ],
+    "trigger": "Ved nytt skoleår, trinn-/gruppeskifte eller overgang til en annen skole.",
+    "inputs": [
+      "Nye tilknytninger, datoer, aktive planer og relevante overføringsbehov.",
+      "Mottakerskole, konkret delingsgrunnlag, nødvendig innhold og eventuelle begrensninger."
+    ],
+    "workflow": [
+      "Års-/overgangsveiviseren viser hvilke tilganger, planer og oppgaver som må videreføres eller avklares.",
+      "Ansvarlig velger nødvendige opplysninger til en separat overføringspakke og kontrollerer grunnlag og mottaker.",
+      "Faktisk overføring og mottak registreres; historiske tilknytninger beholdes etter riktig dokumentregel."
+    ],
+    "outputs": [
+      "Oppdaterte tilknytninger, overgangsoppgaver og kontrollert overføringspakke."
+    ],
+    "rules": [
+      "Skolebytte gir ikke automatisk ny skole tilgang til hele elevmappen.",
+      "Nytt skoleår nullstiller ikke utestående oppfølging eller sletter historiske vedtak og mål."
+    ],
+    "acceptanceCriteria": [
+      "Gammel lærertilknytning utløper som planlagt uten å endre tidligere forfatter- og godkjenningsspor.",
+      "Overføringspakken viser hvilke opplysninger som deles på hvilket grunnlag, og kan ikke regnes som mottatt uten relevant bekreftelse."
+    ],
+    "example": "Ved overgang til ungdomstrinnet videreføres nødvendige støtteoppgaver mens tilgang og deling vurderes særskilt for mottakerskolen.",
+    "dependencyIds": [
+      "F01",
+      "F06",
+      "F21",
+      "F28"
+    ],
+    "deliveryScope": "P7: årsveiviser og selektive skoleoverføringer. Grunnleggende datert tilknytning finnes i P1.",
+    "reviewQuestion": "Hvilken informasjon trenger mottakerskolen faktisk, og hvem godkjenner hver type overføring?"
   },
   {
     "id": "F36",
     "title": "Ressurser og arbeidsbelastning",
     "description": "Kompetanse, tilgjengelighet, planleggingstid, veiledning, pauser og faktiske ressursbehov. Foreslå avlastning og synliggjør kapasitetsmangel; støtt gjeldende arbeidsavtaler og lokale arbeidstidsregler.",
     "context": "BC08",
-    "phase": "P5"
+    "phase": "P5",
+    "users": [
+      "Rektor",
+      "Spesialpedagog",
+      "Timeplanansvarlig"
+    ],
+    "trigger": "Ved ressursplanlegging, kapasitetsmangel eller endret bemanning.",
+    "inputs": [
+      "Tilgjengelig arbeidstid, kvalifikasjoner, oppdrag, forberedelse, veiledning og pauser.",
+      "Undervisningsbehov, lokalt avklarte arbeidstidsregler og ressursreservasjoner."
+    ],
+    "workflow": [
+      "Leder registrerer tilgjengelig kapasitet og nødvendig tid rundt undervisningen.",
+      "Systemet sammenstiller oppdrag og behov med kapasitet og viser konkret underdekning.",
+      "Leder prøver alternative fordelinger som kan brukes av F14, og følger opp forhold som krever bemanning eller endret organisering."
+    ],
+    "outputs": [
+      "Ressursoversikt og forklarte kapasitetsbehov, inkludert forberedelse og veiledning."
+    ],
+    "rules": [
+      "Planleggingstid og veiledning skal ikke behandles som ubegrensede gratisressurser.",
+      "Funksjonen støtter planlegging og avlastning; den skal ikke gi skjult individuell prestasjonsrangering."
+    ],
+    "acceptanceCriteria": [
+      "Et oppdrag med 30 minutters økt og avtalt forberedelse belaster begge delene av kapasiteten.",
+      "Manglende kvalifisert bemanning vises som et udekket behov, ikke som en automatisk tildeling til en ukvalifisert erstatter."
+    ],
+    "example": "Leder ser at assistentoppfølging krever veiledningstid hos pedagogen før en ny gruppe kan settes inn i planen.",
+    "dependencyIds": [
+      "F01",
+      "F07"
+    ],
+    "deliveryScope": "P5: kapasitet, kompetanse og belastning koblet til timeplan. Eventuell HR-import kommer via F32.",
+    "reviewQuestion": "Hvilken tid rundt elevøktene mangler i dagens ressursoversikter?"
   },
   {
     "id": "F37",
     "title": "Betingede leder- og driftsplikter",
     "description": "Krav- og oppfølgingsmoduler for opptak, skyss, SFO, helse/miljø, forsikring, bemanning, anskaffelser og økonomi der de gjelder. Integrer med fagsystemer og behold ansvar hos rett funksjon.",
     "context": "BC03",
-    "phase": "P7"
+    "phase": "P7",
+    "users": [
+      "Rektor",
+      "Skoleeier eller styre",
+      "Utpekt administrativ ansvarlig"
+    ],
+    "trigger": "Når et betinget leder-/driftsområde gjelder skolen eller en konkret sak.",
+    "inputs": [
+      "Bekreftet anvendelse av relevante områder: opptak, skyss, SFO, fysisk miljø, bemanning, forsikring, anskaffelser og økonomi.",
+      "Ansvar, kildesystem, dokumentkrav, hendelser og lokale rutiner."
+    ],
+    "workflow": [
+      "Leder aktiverer et konkret område først når ansvar og anvendelige regler er avklart.",
+      "Hver oppgave får formål, eier, fristgrunnlag og lenke til riktig fagsystem eller nødvendig dokumentasjon.",
+      "Ansvarlig registrerer gjennomført oppfølging; ledelsen ser uavklarte forhold og avvik uten å samle unødvendige detaljdata i elevsystemet."
+    ],
+    "outputs": [
+      "Avgrensede administrative arbeidslister og koblinger til etablerte fagsystemer."
+    ],
+    "rules": [
+      "Dette er flere betingede delområder; de skal ikke presenteres som en ferdig universell samsvarsmodul.",
+      "Lønn, regnskap, helsebehandling og teknisk byggdrift forblir hos ansvarlige funksjoner med mindre en konkret integrasjon er avtalt."
+    ],
+    "acceptanceCriteria": [
+      "Et område uten avklart regel eller eier vises som uavklart og kan ikke erklæres oppfylt automatisk.",
+      "Et kontrollpunkt kan referere til et autoritativt eksternt system uten å kopiere hele saksmappen."
+    ],
+    "example": "Et skyssbehov gir en oppgave til rett administrativ rolle med nødvendige elevopplysninger og kontakt til vedtaksprosessen.",
+    "dependencyIds": [
+      "F06",
+      "F29",
+      "F32"
+    ],
+    "deliveryScope": "P7: hvert godkjent delområde leveres separat med egen brukerflyt eller avtalt ekstern systemgrense.",
+    "reviewQuestion": "Hvilke av disse områdene skal programmet støtte direkte, og hvilke trenger bare en oppfølgingslenke?"
   },
   {
     "id": "F38",
     "title": "Varsler, fritak, klager og partsrettigheter",
     "description": "Riktig myndighet, saksgrunnlag, høring, begrunnelse, underretning, frist og klagepakke. Skill klage på vedtak, gjennomføring og sluttvurdering; tidsberegning er regelstyrt.",
     "context": "BC04",
-    "phase": "P4"
+    "phase": "P4",
+    "users": [
+      "Autorisert saksbehandler",
+      "Rektor",
+      "Faglærer ved relevant vurderingssak"
+    ],
+    "trigger": "Ved varselbehov, søknad om fritak, klage eller annen partsrettighet.",
+    "inputs": [
+      "Sakstype, relevant beslutning/vurdering, tidspunkt for underretning og partsforhold.",
+      "Faktagrunnlag, aktuelt regelgrunnlag og ansvarlig myndighet."
+    ],
+    "workflow": [
+      "Brukeren velger riktig sakstype og får en sjekkliste for denne prosessen.",
+      "Systemet sammenstiller grunnlag og forslag til begrunnelse eller klagepakke, og viser hvilke frister som er beregnet fra hvilke hendelser.",
+      "Ansvarlig gjennomgår, treffer beslutning innenfor sin myndighet eller oversender til rett instans, og registrerer faktisk underretning og videre status."
+    ],
+    "outputs": [
+      "Saksspesifikt varsel, vedtaks-/klagegrunnlag og sporbar prosess."
+    ],
+    "rules": [
+      "Klage på enkeltvedtak, gjennomføring og sluttvurdering deler ikke automatisk frist eller avgjørelsesmyndighet.",
+      "Et registrert fritak må angi hva det gjelder; fritak fra vurdering er ikke automatisk fritak fra opplæring."
+    ],
+    "acceptanceCriteria": [
+      "Endret underretningsdato viser behov for ny fristvurdering og omskriver ikke tidligere dokumentasjon i det stille.",
+      "En bruker uten vedtaksmyndighet kan klargjøre saken, men kan ikke registrere et eget vedtak som gyldig myndighetsavgjørelse."
+    ],
+    "example": "En klage på gjennomføringen knyttes til dokumentert bortfall og riktig prosess, uten å bli behandlet som en karakterklage.",
+    "dependencyIds": [
+      "F06",
+      "F07",
+      "F21",
+      "F28"
+    ],
+    "deliveryScope": "P4: prioriterte varsel-, fritaks- og klagetyper med eksplisitte regelprofiler.",
+    "reviewQuestion": "Hvilke sakstyper håndterer skolen selv, og hvilke skal alltid videre til kommunen eller annen instans?"
   },
   {
     "id": "F39",
     "title": "Tilbakemelding og kontroll av forslag",
     "description": "Pedagogen kan godta, endre, avvise og begrunne forslag. Oppdateringer av elevgrunnlaget viser berørte planer og rapporter; brukeren velger hva som skal endres.",
     "context": "BC07",
-    "phase": "P3"
+    "phase": "P2",
+    "users": [
+      "Alle pedagoger som vurderer forslag",
+      "Faglig ansvarlig"
+    ],
+    "trigger": "Når et forslag skal vurderes, eller kildemateriale endres etter at det er brukt.",
+    "inputs": [
+      "Forslag, kildeversjoner, tidligere redigeringer og brukerens begrunnelse.",
+      "Endringer i vedtak, mål, opplysninger eller ressursgrunnlag som kan påvirke eksisterende innhold."
+    ],
+    "workflow": [
+      "Brukeren kan godta, redigere eller forkaste forslaget og eventuelt gi en kort begrunnelse.",
+      "Ved ny generering vises forskjeller og hvilke egne endringer som vil bli berørt før brukeren velger versjon.",
+      "Når en kilde rettes, viser systemet berørte økter, kort og dokumentutkast; ansvarlig velger nødvendig revisjon eller oppfølging av allerede delte dokumenter."
+    ],
+    "outputs": [
+      "Sporbar pedagogisk beslutning og kontrollert oppdatering av avhengig innhold."
+    ],
+    "rules": [
+      "Avvisning av et AI-forslag endrer ikke de underliggende elevopplysningene.",
+      "Godkjenning gjelder en eksakt versjon; en ny modellkjøring kan ikke stille erstatte godkjent innhold."
+    ],
+    "acceptanceCriteria": [
+      "Pedagogens manuelt endrede støtteinstruksjon beholdes til vedkommende uttrykkelig velger en annen versjon.",
+      "Retting av feil elevkobling gjør berørte operative forslag utilgjengelige eller utdaterte og viser nødvendig videre oppfølging."
+    ],
+    "example": "Pedagogen avviser en for vanskelig aktivitet og beholder sitt eget alternativ; neste generering overskriver det ikke automatisk.",
+    "dependencyIds": [
+      "F04",
+      "F05",
+      "F33"
+    ],
+    "deliveryScope": "P2: kontroll av øktforslag og kilder. P3–P4: samme mønster utvides til IOP, rapporter og e-post.",
+    "reviewQuestion": "Hvilke endringer skal kreve ny godkjenning, og hvordan bør konsekvenser vises uten å skape varslingsstøy?"
   },
   {
     "id": "F40",
     "title": "Målbar avlastning",
     "description": "Mål samlet arbeidstid inkludert kontroll, retting og dobbeltføring. Evaluer assistentkort og rapportkvalitet. Bruk aggregert innsikt og frivillige studier, uten rangering av ansatte eller elever.",
     "context": "BC03",
-    "phase": "P2"
+    "phase": "P2",
+    "users": [
+      "Produktansvarlig",
+      "Skoleledelse",
+      "Frivillige pilotdeltakere"
+    ],
+    "trigger": "Ved etablering av pilot, evaluering av en arbeidsflyt eller vesentlig endring i funksjonen.",
+    "inputs": [
+      "Baseline for dagens arbeidsmåte og avtalte målepunkter.",
+      "Samlet oppgavetid, kontroll/korreksjon, dobbeltføring og deltakernes vurdering av nytte."
+    ],
+    "workflow": [
+      "Piloten velger konkrete oppgaver, for eksempel forberedelse av økt og kort notatføring.",
+      "Samme type oppgave måles før og med programmet, inkludert etterarbeid og kvalitetskontroll.",
+      "Resultater sammenstilles på egnet aggregert nivå og brukes til å forbedre eller utsette funksjoner som ikke avlaster."
+    ],
+    "outputs": [
+      "Etterprøvbar vurdering av spart arbeid og konkrete forbedringsbehov."
+    ],
+    "rules": [
+      "Lav genereringstid er ikke det samme som spart arbeid; retting, lesing og feiloppfølging skal med.",
+      "Målingen skal ikke skape skjult overvåking, ekstra elevdatafangst eller rangering av ansatte."
+    ],
+    "acceptanceCriteria": [
+      "En funksjon som sparer fem minutter skriving, men krever ti minutter ekstra kontroll, vises som økt samlet tidsbruk.",
+      "P2 kan evalueres på øktforberedelse, assistentforståelse og notatføring uten at foreldre-e-post er implementert."
+    ],
+    "example": "Piloten sammenligner en vanlig øktforberedelse med og uten programmet og spør assistenten hva som fortsatt var uklart i kortet.",
+    "dependencyIds": [
+      "F01"
+    ],
+    "deliveryScope": "P2: baseline og praktisk evaluering av første undervisningsflyt. Senere faser måler rapport- og kommunikasjonsarbeid når disse tas i bruk.",
+    "reviewQuestion": "Hvilke oppgaver bruker dere mest tid på, og hva er en meningsfull reduksjon uten tap av kvalitet?"
   }
 ]

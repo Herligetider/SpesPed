@@ -1,10 +1,10 @@
 # Event storming – Spesped
 
-Version 0.1 · 7 September 2026 · First modelling pass based on the requirements, not a workshop validated by school staff.
+Version 0.2 · 8 September 2026 · First modelling pass based on the requirements, not a workshop validated by school staff.
 
 ## Outcome and scope
 
-Reduce the total work teachers and special educators spend collecting information, planning teaching, following up learners and preparing defensible documentation. Include public primary/lower-secondary schools and publicly funded private Montessori schools, grades 1–10. Weekly updates initially address eligible parents/guardians only. Statutory communication to learners remains a separate obligation.
+Reduce the total work teachers and special educators spend collecting information, planning teaching, following up learners and preparing defensible documentation. Include public primary/lower-secondary schools and publicly funded private Montessori schools, grades 1–10. Parent emails cover an explicitly selected date range, with optional recurring draft preparation and no default weekly cadence. Their first release addresses eligible parents/guardians only. The first delivery slice prioritizes session preparation and actual teaching records; email drafting follows in P4. Statutory communication to learners remains a separate obligation.
 
 The Norwegian legal and feature registries precede this model. The English terms below are internal domain language; users can continue working in Norwegian. The model is provisional where real schools use different language or authority arrangements.
 
@@ -43,6 +43,8 @@ flowchart LR
 ```
 
 This timeline branches. An incoming concern may trigger urgent safeguarding without waiting for normal evidence confirmation. A source can be disputed. A learner may receive ordinary adapted teaching without an IEP. A school environment case is not an IEP. A report may need revision, and an uncertain delivery outcome requires reconciliation.
+
+The first pilot combines ES02, the existing-plan intake subset of ES03–ES04, and a single-session path through ES05–ES06. It ends with a useful recorded observation for the next session. ES07 is a later communication flow. See the [Norwegian walkthrough for domain review](08-first-workflow-review.no.md).
 
 ## Flow ES01 – onboard a school and establish applicable rules
 
@@ -104,6 +106,7 @@ Features: F08, F09, F17, F39. Legal areas: L015–L019, L021.
 
 | Actor / trigger | Command | Resulting event | Policy / exception | Read model |
 |---|---|---|---|---|
+| Authorized educator | `RegisterExistingPlan` | `ExistingPlanRegistered` | Preserve original approval/source; confirm identity, effective goals and decision references without generating a new IEP | Existing plan basis for P2 |
 | Responsible special educator | `RequestPlanDraft` | `PlanDraftRequested` | Retrieve active decision and authorized evidence | Decision, curriculum and learner strengths |
 | Drafting service | `ProposePlanRevision` | `PlanRevisionProposed` | Each proposed goal and adaptation has an explicit basis | Draft with source links |
 | Teacher / learner / parent input recorded | `RecordPlanContribution` | `PlanContributionRecorded` | Distinguish participation from formal approval | Contributions and unresolved differences |
@@ -121,11 +124,14 @@ Features: F09, F10, F12–F14, F36, F39. Legal areas: L004–L005, L009–L015, 
 1. A class teacher publishes a plan: `ClassPlanPublished`.
 2. A special educator requests proposals: `SessionProposalsRequested`.
 3. The service proposes goals, resources and adaptations: `SessionPlanProposed`.
-4. The educator confirms pedagogically acceptable grouping: `GroupSuitabilityConfirmed`.
-5. The scheduler calculates a candidate: `ScheduleProposalCreated` or `ScheduleConflictDetected`.
-6. A timetable planner reviews changes and locked slots: `SchedulePublished`.
-7. The responsible teacher approves an assistant brief: `AssistantBriefApproved`.
-8. The assigned assistant opens the brief: `AssistantBriefAccessed`.
+4. The educator approves the concrete session plan: `SessionPlanApproved`.
+5. The educator confirms pedagogically acceptable grouping: `GroupSuitabilityConfirmed`.
+6. The scheduler calculates a candidate: `ScheduleProposalCreated` or `ScheduleConflictDetected`.
+7. A timetable planner reviews changes and locked slots: `SchedulePublished`.
+8. The responsible teacher approves an assistant brief: `AssistantBriefApproved`.
+9. The assigned assistant opens the brief: `AssistantBriefAccessed`.
+
+In P2, an educator manually chooses one session slot and confirms its participants, resources and responsibilities. The automated grouping/scheduling steps arrive in P5. Session approval and brief approval are required in both paths.
 
 Scheduling policy uses checked constraints: staff availability and competence, support decision, minutes, overlapping learners, location, materials, protected class activities, preparation and guidance time. Preferences such as a preferred time of day are separate. No available schedule can change a learner's entitlement.
 
@@ -150,26 +156,34 @@ Policy: actual delivery updates the entitlement ledger through explicit classifi
 
 Hotspots H09–H10: student absence, provider cancellation and missing staffing are different facts; changes in test conditions can make apparent score changes misleading.
 
-## Flow ES07 – produce a weekly parent update
+## Flow ES07 – prepare a parent email for a selected period
 
-Features: F18, F20, F21, F27, F33. Legal areas: L002, L045–L060. The weekly cadence itself is a product choice.
+Features: F20, F21, F27, F33; shares document infrastructure with F18. Legal areas: L002, L045–L060. The selected period and optional draft recurrence are product choices. This flow is introduced at P4 and is not the first pilot's completion condition.
 
 | Actor / trigger | Command | Resulting event | Policy / exception | Read model |
 |---|---|---|---|---|
-| Configured weekly cutoff / teacher request | `RequestWeeklyUpdateDraft` | `WeeklyUpdateDraftRequested` | One learner, one period, authorized evidence | Weekly evidence and next plan |
-| Drafting service | `ProposeDocumentRevision` | `DocumentRevisionProposed` | Cite facts internally; exclude unsupported claims | Draft beside sources |
-| Assigned teacher/special educator | `ReviewDocumentRevision` | `DocumentReviewCompleted` or `RevisionRequested` | Real review, editing and evidence inspection | Gaps and changes |
-| Authorized educator | `ApproveDocumentContent` | `DocumentContentApproved` | Approval is bound to exact revision and content digest | Final text and attachments |
-| Authorized sender | `AuthorizeDisclosure` | `DisclosureAuthorized` | Check each guardian's entitlement, purpose, content and channel | Recipient-specific preview |
-| Authorized sender | `RequestDispatch` | `DispatchRequested` | Re-check current access and approval; use an idempotency key | Dispatch confirmation |
-| Delivery connector | `RecordDeliveryOutcome` | `DeliveryAccepted`, `DeliveryFailed` or `DeliveryOutcomeUnknown` | Unknown outcome reconciles before retry | Delivery history |
-| Confirmed provider receipt / portal access | `RecordReceipt` | `DeliveryReceiptRecorded` | Transport acceptance and actual access have different meanings | Receipt evidence |
+| Teacher / special educator | `RequestParentEmailDraft` | `ParentEmailDraftRequested` | One learner, explicit date range, purpose and evidence cutoff; preview resolved dates | Period evidence, gaps and prior communication coverage |
+| Teacher choosing optional recurrence | `ConfigureEmailDraftSchedule` | `EmailDraftScheduleConfigured` | Frequency, period rule, owner, timezone, next run and end date are separate fields | Schedule preview |
+| Responsible teacher | `ActivateEmailDraftSchedule` | `EmailDraftScheduleActivated` | Manual on-demand use remains available; activation grants no future dispatch approval | Active schedules |
+| Active schedule becomes due | `GenerateScheduledParentEmailDraft` | `ParentEmailDraftRequested` or `DraftGenerationSkipped` | Deduplicate by schedule revision, learner and period; pause if owner/access is invalid | New draft or actionable skip reason |
+| Responsible teacher | `PauseEmailDraftSchedule` / `EndEmailDraftSchedule` | `EmailDraftSchedulePaused` / `EmailDraftScheduleEnded` | Pending drafts remain identifiable; queued jobs recheck schedule state | Schedule history |
+| Drafting service | `ProposeDocumentRevision` | `DocumentRevisionProposed` | Subject and body; facts supported internally; planned next steps labelled separately | Draft beside sources |
+| Assigned teacher/special educator | `ReviewDocumentRevision` | `DocumentReviewCompleted` or `RevisionRequested` | Edit and inspect evidence; insufficient material can lead to cancellation or manual drafting | Gaps and changes |
+| Authorized educator | `ApproveDocumentContent` | `DocumentContentApproved` | Approval binds to exact subject, body, attachments and language revision | Final content |
+| Authorized sender | `AuthorizeDisclosure` | `DisclosureAuthorized` | Check each guardian's entitlement, purpose, content and approved channel | Recipient-specific preview |
+| Authorized sender | `RequestDispatch` | `DispatchRequested` | Re-check access and approvals; explicit action and idempotency key required | Dispatch confirmation |
+| Delivery connector | `RecordDeliveryOutcome` | `DeliveryAccepted`, `DeliveryFailed` or `DeliveryOutcomeUnknown` | Reconcile unknown outcome before retry | Delivery history |
+| Confirmed provider receipt / portal access | `RecordReceipt` | `DeliveryReceiptRecorded` | Transport acceptance and actual access are distinct | Receipt evidence |
 
-Initial recipient policy: `WeeklyParentUpdate` allows eligible guardians, not student accounts. This must not block an annual ITO evaluation or another document for which the learner is an entitled recipient.
+Period policy: the two UI dates are inclusive in the school's timezone. Select evidence by occurrence date, and freeze the known source versions at `EvidenceCutoff`. Older background is explicitly marked as context; future activity is a plan. A late-entered observation within the period raises a revision need instead of silently modifying approved/sent content. Changing the period creates a new unapproved revision.
 
-Any edit to approved text, attachments, language variant or recipient-specific package requires the relevant new approval. Revoked guardian access before dispatch blocks release. A portal can revoke future access, but the system must not claim it can erase copies already read or downloaded.
+Shortcuts such as “last 14 days”, “previous month” and “since last sent period” always resolve to visible dates. “Since last” requires a selected recipient and purpose and uses a confirmed sent package's period for that combination, not an abandoned draft, failed transmission or uncertain outcome. Without such a baseline, the teacher chooses dates. Reject a start date after the end date. Overlap is allowed with an explicit warning. If a job misses several periods, ask the responsible user to choose catch-up periods instead of automatically producing a backlog of messages.
 
-Hotspots H11–H12: guardian status is more than a contact list; approval must not accidentally become consent to an unspecified future series of messages.
+Initial recipient policy: the `ParentEmail` document type allows eligible guardians. A later learner-facing type has its own audience rules. Statutory learner communication remains separately available. A safe ordinary email may carry approved content; protected content uses the school's permitted secure channel or a minimal notification. Exporting/copying a draft to an external client is recorded as prepared/exported, not as verified sent.
+
+Any edit to approved text, attachments or language variant requires the relevant new content approval. Changing recipient/purpose/channel requires new disclosure authorization. Revoked guardian access before dispatch blocks release. A portal may revoke future access but cannot erase copies already downloaded.
+
+Hotspots H11–H12 and H16: guardian entitlement, exact-package approval, useful periods and optional recurrence must be validated with the school. No schedule authorizes automatic sending.
 
 ## Flow ES08 – annual ITO evaluation and other formal assessment
 
@@ -262,6 +276,7 @@ Features: F06, F29–F34, F37, F40. Legal areas: L053–L059, L064–L090.
 | POL10 | Changing evidence or rules identifies affected outputs; final records require an explicit correction process | ES02, ES04, ES08, ES11, ES12 |
 | POL11 | External retry must not produce duplicate submissions; uncertain outcomes are reconciled | ES07, ES11, ES12 |
 | POL12 | Any cross-school reuse must be permitted for that content; student-specific evidence is never pooled as teaching material | ES02, ES05, ES12 |
+| POL13 | Summary period, evidence cutoff, draft recurrence and dispatch authorization are separate concepts | ES07, ES08 |
 
 ## Hotspots to validate with practitioners
 
@@ -282,5 +297,6 @@ Features: F06, F29–F34, F37, F40. Legal areas: L053–L059, L064–L090.
 | H13 Document authority | Rule-driven reviewer roles; one or more depending on type | School owner |
 | H14 Records authority | Identify the authoritative system for each record class | Archive/records owner |
 | H15 Production inference | Entire approved AI processing chain local; capacity benchmark required | Technical owner |
+| H16 Email period and recurrence | Explicit dates; on-demand default; opt-in drafts only; visible overlap and late evidence | Teachers / special educator |
 
 The next workshop should use three anonymized scenarios: a normal teaching week, a changed ITO decision mid-year and a difficult guardian/school-transfer case. Ask participants to correct the events and authority boundaries before freezing class names. No external stakeholders have yet validated this model.

@@ -1,12 +1,12 @@
 # Implementation plan – Spesped
 
-Version 0.1 · 7 September 2026. Planning only; no application has been built or deployed. All 40 capabilities remain in scope. The legal register distinguishes sourced national requirements from areas needing local/detail review. The DDD model is a first pass to validate with practitioners.
+Version 0.2 · 8 September 2026. Planning only; no application has been built or deployed. All 40 capabilities remain in scope. The legal register distinguishes sourced national requirements from areas needing local/detail review. The DDD model is a first pass to validate with practitioners.
 
 ## Delivery strategy
 
-Deliver usable workflows through a modular monolith. Begin with school/access configuration and a complete intake-to-parent-update flow, then add teaching/IEP, assessment/reporting, scheduling, protected cases and integrations. A phase may expose a capability manually before automating it. The [traceability matrix](06-traceability.md) records the first delivery phase; the extensions below remain required for full scope.
+Deliver usable workflows through a modular monolith. Begin with school/access configuration and a complete intake-to-teaching-session-to-observation flow using confirmed existing plans. Then extend IEP authoring, assessment/reporting, optional parent communication, scheduling, protected cases and integrations. A phase may expose a capability manually before automating it. The [traceability matrix](06-traceability.md) records the first delivery phase; the extensions below remain required for full scope.
 
-Weekly updates initially go only to eligible parents/guardians. A later learner-facing variant is retained in the backlog. Other legally required communications keep their own audience rules from the start.
+Parent email drafting moves to P4. It supports explicit date ranges and optional recurring draft preparation; there is no default weekly cadence and no automatic sending. The first release of this communication type goes only to eligible parents/guardians; a later learner-facing variant retains its own policy. Statutory communication has separate audience rules. The [Norwegian first-workflow walkthrough](08-first-workflow-review.no.md) is the initial domain-review entry point.
 
 Every increment has three parallel concerns: user workflow, domain invariants and evidence of correct operation. We measure saved effort after review and correction. A fast generator that creates more review work fails the product goal.
 
@@ -52,7 +52,7 @@ Dependencies: none. Work from the current planning artifacts.
 - Decide the system of record for each data class: enrollment, guardian rights, official grades, decisions, finalized reports, attendance and archives.
 - Resolve the minimum deployment facts: host specification, expected learners/concurrent users, IT ownership, backup location and incident contact.
 - Record legal/application hotspots and a responsibility matrix. The 90-row registry is input, not an approved executable ruleset.
-- Observe current work and measure baseline time for notes, sessions, weekly updates and annual reporting. Use synthetic material in the development environment.
+- Observe current work and measure baseline time for notes, session preparation and assistant guidance; establish separate baselines for parent emails and annual reporting when those workflows are introduced. Use synthetic material in the development environment.
 - Select implementation libraries and CI/deployment approach; pin versions only after verifying current support.
 
 Exit: reviewed vocabulary and workflows, initial public/Montessori rule profiles, approved implementation ADRs, synthetic scenarios and a measured workflow baseline. Unresolved local questions remain explicit and cannot be marked compliant.
@@ -71,27 +71,27 @@ Features: F01, F02, F06, F27, F28, F31, F34. Contexts: BC01, BC03, BC14–BC16.
 
 Exit: a user cannot retrieve another school's content through direct IDs, search, exports or jobs; expired assignments are refused. A restored environment re-applies current access and erasure/disposition controls. No real pupil data until the P1 privacy and processing gates have been satisfied.
 
-## P2 – first vertical slice: intake → reviewed parent update
+## P2 – first vertical slice: intake → reviewed session → actual delivery and note
 
-Features: F03–F05, F20–F21, F33, F40; extend F27/F28. Contexts: BC02, BC10–BC11, BC15.
+Features: F03–F05, limited existing-document intake for F07–F08, F12–F13, F15–F16, F33, F39–F40; extend F27/F28. Contexts: BC02, BC04–BC05, BC07, BC15. BC01/BC03/BC14 provide the P1 foundation.
 
-- Manual notes, document upload, controlled email-file import and duplicate detection.
-- OCR/text extraction, subject association and field confirmation with original source beside the proposal.
-- Preserve occurrence date, recorded date, attribution, contradictions and correction history.
-- An authorized weekly evidence view with a minimal parent update draft.
-- Document revision control, contribution/review, content approval and recipient-specific disclosure authorization.
-- Explicit dispatch through a configured secure channel; development uses a sandbox delivery adapter. Delivery state and reconciliation are visible.
-- A minimal authenticated guardian reading page when the pilot uses the built-in portal; the complete portal is extended at P7.
-- Remote development AI adapter, local adapter contract and deterministic fake model for repeatable workflow verification.
-- Workload measurements covering review and editing time.
+- Manual notes, document upload, controlled email-file import, duplicate detection and source/learner confirmation.
+- OCR/text extraction with original beside proposed fields; preserve occurrence date, recorded date, attribution and contradictions.
+- Register an existing authoritative decision and approved IEP with confirmed source references, relevant scope and selected active goals. Preserve original approval evidence; do not require new IEP generation or a complete referral process in this slice.
+- Select one learner, one goal, duration, manually entered class theme and available materials. For ordinary adapted teaching without ITO, use a confirmed ordinary teaching goal without requiring an IEP.
+- Generate or manually edit a concrete session plan, with clear sources, steps, adaptations and observation points. Record review and exact approved revision.
+- Generate and approve a short assistant brief where an assistant is involved; access is tied to the assigned support task.
+- Place the session manually, record actual participation/time/category or cancellation and capture a short observation useful for the next session.
+- Handle source corrections, changed plans, rejected proposals, unavailable AI and uncertain saves without duplicating or silently replacing accepted work.
+- Use a synthetic development AI adapter, local adapter contract and deterministic fake model. Measure total planning/review/note effort and assistant comprehension.
 
-Exit: demonstrate a complete synthetic update for an eligible guardian. Wrong learner, excessive source material, unverified guardian, changed attachment, revoked access and duplicate submission cases must be refused or handled correctly. The system must show a useful “insufficient evidence” outcome.
+Exit: demonstrate a complete synthetic teaching cycle, from confirmed source material to a useful next-session observation. Wrong learner, unsupported claims, expired assignment, stale assistant brief, cancellation and source correction must have explicit outcomes. A planned session cannot count as delivered. Show a useful manual path when AI is unavailable.
 
-Scope note: the first version does not send weekly updates to learners. This is tested per document type, so statutory learner access remains possible.
+Scope: first delivered support for F07/F08 is existing-plan intake, not complete casework or IEP authoring. Automated scheduling arrives at P5. Parent email, recurring drafts, guardian portal and external dispatch are not P2 acceptance dependencies. Before any real-data AI pilot, pull forward the required local-processing subset of P8.
 
-## P3 – support decision → IEP → teaching → delivery
+## P3 – extend casework, IEP authoring and reusable teaching plans
 
-Features: F07–F10, F12–F13, F15–F16, F39; basic manual schedule ahead of F14 automation. Contexts: BC04–BC08.
+New feature areas: F09–F10. Extend F07–F08, F12–F13, F15–F16 and F39 beyond the P2 subset; basic manual schedule ahead of F14 automation. Contexts: BC04–BC08.
 
 - Referral case, participation/consent references, expert-assessment import and formal decision register.
 - Typed decision provisions with quantity units, effective period, support category, organization and competence constraints.
@@ -104,9 +104,9 @@ Features: F07–F10, F12–F13, F15–F16, F39; basic manual schedule ahead of F
 
 Exit: a fictitious learner can move from imported decision to reviewed IEP to planned/delivered session and next-step proposal. A changed decision triggers review without rewriting history. Assistant time cannot silently satisfy a teaching entitlement. An unavailable resource cannot be shown as reserved.
 
-## P4 – assessment, statutory documents and collaborative review
+## P4 – assessment, statutory documents and optional parent communication
 
-Features: F11, F17–F19, F22, F38; extend F18/F21. Contexts: BC03–BC05, BC09–BC12.
+Features: F11, F17–F22, F38; extend F39 to these document types. Contexts: BC03–BC05, BC09–BC12, BC15.
 
 - Assessment instruments, versions, result scales, test conditions and professionally maintained reassessment guidance.
 - Progress reviews linked to goal revisions, with insufficient/conflicting evidence displayed.
@@ -116,8 +116,14 @@ Features: F11, F17–F19, F22, F38; extend F18/F21. Contexts: BC03–BC05, BC09�
 - Document templates mapped to requirements; separate local half-year report templates from statutory annual ITO evaluation.
 - Grade-warning, exemption and appeal workflows with human authority and type-specific timing.
 - Secure preparation and export of formal documents; no automated final grades or legal decisions.
+- Parent email subject/body generation for an explicit start/end date, with topic selection, evidence preview, internal citations and separately labelled future plans.
+- Optional recurring draft schedule: frequency, period rule, timezone, owner, next run and pause/end. Default to on-demand drafting; due jobs request reviewable drafts only.
+- Inclusive local date boundaries, evidence cutoff, late notes, empty periods, overlapping coverage and visible recipient/purpose-specific “since last confirmed sent period” semantics.
+- Shared content review, exact-revision approval, recipient-specific disclosure checks and explicit dispatch through the first approved secure adapter; use sandbox delivery in development.
+- Reconcile duplicate submissions and unknown transport outcomes. Controlled copy/export remains available but does not claim verified delivery.
+- A minimal authenticated recipient page only if needed by the pilot's selected secure channel; the full portal remains P7.
 
-Exit: public and Montessori scenarios select the correct document obligations. Missing evidence cannot become a positive progress claim. A document draft cannot close an unperformed conversation or unfulfilled support requirement. Formal approval authority is tested by document type rather than requiring both teacher and special educator for every output.
+Exit: public and Montessori scenarios select the correct document obligations. Missing evidence cannot become a positive progress claim. A document draft cannot close an unperformed conversation or unfulfilled support requirement. Formal approval authority is tested by document type rather than requiring both teacher and special educator for every output. Parent email scenarios verify selected dates, late evidence, no-evidence outcomes, paused schedules, per-period idempotency, changed approvals, revoked recipients and explicit sending. Successful recurring draft creation must produce zero dispatch requests until a sender acts.
 
 ## P5 – scheduling, staffing and attendance follow-up
 
@@ -143,11 +149,11 @@ Features: F24–F26, F29; extend F06/F22/F27. Contexts: BC03, BC12–BC14.
 - Deviations, remedial tasks, rule-specific evidence and management dashboards that distinguish unresolved, overdue and satisfied states.
 - Restricted case access, safe exports and practical unavailable-system procedures.
 
-Exit: protected details do not leak into generic lesson prompts or weekly updates. Emergency/personal reporting is possible without the ordinary report queue. Creating a plan does not mark the underlying issue resolved. Leadership can see responsibility and status without blanket access to every sensitive detail.
+Exit: protected details do not leak into generic lesson prompts or parent email drafts. Emergency/personal reporting is possible without the ordinary report queue. Creating a plan does not mark the underlying issue resolved. Leadership can see responsibility and status without blanket access to every sensitive detail.
 
 ## P7 – complete integrations and conditional administration
 
-Features: F30, F32, F35, F37; complete extensions of F16, F21 and F28. Contexts: BC03, BC11, BC14–BC16.
+Features: F30, F32, F35, F37; complete extensions of F16, F20–F21 and F28. Contexts: BC03, BC11, BC14–BC16.
 
 - Prioritize the pilot's actual identity, school administration, calendar, mail, archive and secure delivery systems. Confirm API availability and agreements; do not assume connectors exist.
 - Authorized mailbox folders/selections, import reconciliation, deduplication and error recovery. No unrestricted collection from staff mailboxes.
@@ -183,16 +189,19 @@ Exit: the production system passes the approved acceptance scenarios, legal/priv
 |---|---|---|
 | B01 | A teacher sees only assigned learners | Changing a learnerId or queued job context cannot bypass authorization |
 | B02 | A parent email is linked to the right learner | Ambiguous names require confirmation; original attribution remains |
-| B03 | One note feeds a weekly draft | Every factual sentence has adequate support or an explicit gap |
-| B04 | A teacher edits and approves an update | Any edit after approval invalidates the corresponding approval |
-| B05 | An eligible guardian receives a frozen package | Recipient rights checked at dispatch; unknown outcomes reconcile |
-| B06 | A decision is translated into an IEP proposal | Proposed scope cannot silently exceed or reduce the decision |
+| B03 | Confirmed existing plan and one note inform a session proposal (P2) | Goals and factual claims have sources; gaps remain explicit |
+| B04 | A teacher edits and approves a session and assistant brief (P2) | Changing relevant content requires new approval; previous edits remain available |
+| B05 | Actual participation and a short note feed the next session (P2) | No planned minutes count as delivery; cancellation and partial participation are explicit |
+| B06 | A decision is translated into a new IEP proposal (P3) | Proposed scope cannot silently exceed or reduce the decision |
 | B07 | An assistant gets a brief and records delivery | Brief access is scoped; actual minutes remain separate from plan |
 | B08 | An annual evaluation uses the correct year and goals | Historical revisions and delivery gaps remain visible |
 | B09 | A scheduler explains an impossible week | No hard constraint is silently converted to a preference |
 | B10 | A protected concern gets the correct route | No routine approval queue delays a personal/urgent duty |
 | B11 | A source correction reveals affected documents | Draft invalidation and sent-document correction are distinct |
 | B12 | The same workflow runs with local inference | Production cannot contact a remote development model |
+| B13 | A teacher requests a parent email for a chosen period (P4) | Inclusive dates, source cutoff, late notes and overlap are explicit; no invented progress |
+| B14 | An opt-in schedule creates a new draft (P4) | Repeated execution creates one request per schedule revision/learner/period and never auto-sends |
+| B15 | An eligible guardian receives an approved package (P4) | Current rights are checked; unknown outcomes reconcile; edits require new approval |
 
 ## Verification plan
 
@@ -204,7 +213,8 @@ Tests should cover meaningful invariants and failure modes, not merely mirror fi
 4. AI evaluation: Norwegian quality, valid source support, unsupported-claim rate, wrong-learner leakage, prompt injection in uploaded documents, excessive disclosure and contradictory evidence. Evaluate the full pipeline and each changed model/prompt/template version.
 5. Legal profile fixtures: public grade 8; Montessori grade 8; Montessori subject completed early; ITO annual review; learner with assistance only; under-15 and over-15 authority scenarios without treating age as a universal privacy rule.
 6. Human usability: observed time for input, review, editing and retrieval; assistant comprehension; keyboard/screen-reader completion; user ability to reject a poor suggestion.
-7. Operations: recovery to agreed objectives, source erasure propagated to indexes, retained records preserved lawfully, provider failure, unknown delivery outcome and local inference outage.
+7. Period communication: custom date ranges, relative shortcuts, timezone/daylight-saving boundaries, late records, empty periods, overlap, unknown previous send status, schedule edits/pauses/owner revocation, missed runs and duplicate job delivery. These verify P4; they are not prerequisites for the teaching-only P2 slice.
+8. Operations: recovery to agreed objectives, source erasure propagated to indexes, retained records preserved lawfully, provider failure, unknown delivery outcome and local inference outage.
 
 Initial release targets are proposals to validate: zero cross-learner/cross-school disclosure in the adversarial test suite; all evaluated factual report statements traceable to supporting material; all invalid approval/recipient scenarios blocked; median routine note entry ≤ 60 seconds and normal assistant-brief orientation ≤ 5 minutes. No finite test suite proves universal absence of AI error or complete legal compliance.
 

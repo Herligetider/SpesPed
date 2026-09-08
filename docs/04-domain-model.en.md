@@ -1,6 +1,6 @@
 # Domain model – Spesped
 
-Version 0.1 · 7 September 2026. Derived from [event storming](03-event-storming.en.md), with unresolved hotspots retained. This is a proposed model, not a database schema or validated implementation.
+Version 0.2 · 8 September 2026. Derived from [event storming](03-event-storming.en.md), with unresolved hotspots retained. This is a proposed model, not a database schema or validated implementation.
 
 Use a shared vocabulary inside each bounded context, keep transaction boundaries small, and reference other aggregates by identity. These principles follow [Eric Evans' DDD reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf); the contexts, classes and invariants below are specific design proposals for this product.
 
@@ -25,7 +25,8 @@ Use a shared vocabulary inside each bounded context, keep transaction boundaries
 | `ProgressReview` | Vurdering av utvikling | An educator's interpretation of relevant evidence |
 | `AssessmentStatement` | Underveis-/halvårsvurdering | A formal or formative assessment under the applicable scheme |
 | `AnnualSupportEvaluation` | Årlig ITO-evaluering | A report type, not a generic annual report for every pupil |
-| `WeeklyParentUpdate` | Ukesoppdatering til foresatte | A voluntary communication type with initial guardian-only routing |
+| `ParentEmail` | E-post til foresatte | A document type with subject/body, explicit summary period and initial guardian-only routing |
+| `EmailDraftSchedule` | Valgfri plan for e-postutkast | Opt-in recurrence that requests drafts for resolved periods; never authorizes dispatch |
 | `ContentApproval` | Faglig godkjenning | Approval of an exact document revision |
 | `DisclosureAuthorization` | Godkjenning av utlevering | Permission for a particular recipient/package/purpose/channel |
 | `Dispatch` | Utsending | An external transmission attempt with reconciled outcome |
@@ -49,7 +50,7 @@ These are module boundaries in an initial modular monolith. A context is not a r
 | BC07 | Teaching Practice – core | Session plans, assistant briefs, actual delivery, observations and selected next steps | F12, F13, F15, F16, F39 |
 | BC08 | Resource Scheduling – core | Availability, requirements, pedagogically accepted groups and schedule proposals | F14, F36 |
 | BC09 | Assessment & Progress – core | Instruments/results, progress reviews and assessment statements | F11, F17, F19 |
-| BC10 | Document Preparation & Review – core | Evidence snapshots, document revisions, contributions and content approval | F18, F20 |
+| BC10 | Document Preparation & Review – core | Evidence snapshots, document revisions, optional email draft schedules, contributions and content approval | F18, F20 |
 | BC11 | Family Communication – core/supporting | Recipient packages, disclosure authorization, portal grants and dispatch state | F21 |
 | BC12 | Collaboration & Attendance – supporting | Meetings, follow-up tasks, attendance episodes and coordinated support | F22, F23 |
 | BC13 | Safeguarding – distinct protected context | Environment cases, physical interventions and concern-report workflows | F24–F26 |
@@ -120,7 +121,7 @@ Relationship choices:
 | BC04 | `AppealCase` / `AppealSubmission` | Decision/assessment reference, type, deadline basis, reviewer and outcome | Apply the deadline and authority for this appeal type |
 | BC04 | `ExemptionDecision` | Subject/fag, basis, authority, effective period | Exemption from assessment does not imply exemption from teaching |
 | BC05 | `LearnerSupportProfile` | Strengths, preferences, communication and confirmed support strategies | No inferred diagnosis or obsolete permanent child label |
-| BC05 | `IndividualEducationPlan` / `PlanRevision`, `LearningGoal`, `Adaptation` | DecisionId/version, goals, organization, contributions, effective period | An activated revision stays within its referenced decision |
+| BC05 | `IndividualEducationPlan` / `PlanRevision`, `LearningGoal`, `Adaptation` | DecisionId/version, goals, organization, contributions, effective period, origin and source approval references | An activated revision stays within its referenced decision; an imported plan retains its original authority and approval evidence |
 | BC06 | `CurriculumScheme` / `CurriculumGoal`, `AssessmentScheme` | School approval, subjects, grade/completion rules, versions | Montessori exceptions require the corresponding approved scheme |
 | BC06 | `ClassLearningPlan` / `ThemePeriod` | Class/group, school year, themes and curriculum references | Publication creates a version for downstream session references |
 | BC06 | `TeachingResource` / `ResourceRevision` | Authorship, license, method, prerequisites, permitted uses | Sharing or AI processing cannot exceed recorded usage rights |
@@ -134,7 +135,8 @@ Relationship choices:
 | BC09 | `ProgressReview` / `GoalFinding` | Goal revision, evidence references, educator judgement | Unsupported development is an evidence gap, not a fact |
 | BC09 | `AssessmentStatement` / `SubjectAssessment` | Scheme, period, teacher judgement, grade if applicable | Only an authorized human finalizes a grade or formal assessment |
 | BC10 | `DocumentCase` / `DocumentRevision`, `ReviewContribution`, `ContentApproval` | Type, period, source snapshot, text, attachments, approval | Editing an approved revision creates a new unapproved revision |
-| BC10 | `EvidenceSnapshot` / `SnapshotEntry` | Authorized references, versions, period, basis manifest | Snapshot material is limited to this purpose; it is not all learner data |
+| BC10 | `EvidenceSnapshot` / `SnapshotEntry` | Authorized references, versions, summary period, evidence cutoff and basis manifest | Snapshot material is purpose-limited; late evidence raises review without silently modifying a frozen revision |
+| BC10 | `EmailDraftSchedule` / `ScheduleRevision`, `DraftRun` | Learner, purpose, period rule, recurrence, timezone, owner, state and run outcomes | Explicit activation; one draft request per schedule revision/learner/resolved period; no dispatch authority |
 | BC11 | `DisclosurePackage` / `RecipientAuthorization`, `PortalAccessGrant` | Frozen content, recipient, purpose, channel, expiration | Package authorization is recipient-specific and rechecked before release |
 | BC11 | `Dispatch` / `DispatchAttempt`, `DeliveryReceipt` | Package digest, idempotency key, provider reference, outcome | Unknown transmission outcome is not retried as a new submission |
 | BC12 | `CollaborationCase` / `Meeting`, `ActionItem` | Participants, permitted purpose, contributions, decisions and tasks | Meeting attendance does not create universal access to case records |
@@ -156,6 +158,9 @@ Relationship choices:
 | `SchoolId`, `LearnerId`, `CaseId`, `RevisionId` | Typed opaque identifiers; include school/tenant context in contracts |
 | `EffectivePeriod` | Inclusive/exclusive semantics specified; start precedes end; open-ended periods supported |
 | `AcademicPeriod` | School year, term, start/end dates, school calendar reference |
+| `SummaryPeriod` | Inclusive UI dates with start ≤ end and school timezone; convert to a half-open interval ending at the following local midnight, without assuming every day has 24 hours |
+| `EvidenceCutoff` | Snapshot creation instant and source-version manifest; occurrence date controls period membership, recorded time determines what was known |
+| `DraftRecurrence` | Explicit cadence, anchor, next run, end condition and period selection rule; separate from summary duration and dispatch |
 | `OccurrenceTime` / `RecordedTime` | Event time versus when staff entered it; corrections preserve both |
 | `DurationMinutes` | Non-negative integer for actual duration; no assumed 45/60-minute lesson unit |
 | `EntitlementQuantity` | Quantity, unit, reference period, support category, decision clause and counting basis |
@@ -184,7 +189,9 @@ Domain services express policy; ports isolate external dependencies. A domain se
 | `PlanScopeValidator` | Compare proposed plan organization and scope with the applicable decision |
 | `EntitlementCoverageCalculator` | Classify delivery and calculate coverage without confusing staff and learner time |
 | `ScheduleConstraintChecker` | Check fixed requirements; combine with an optimizer through a port |
-| `EvidenceSelectionPolicy` | Select minimal permitted inputs, preserving versions and exclusions |
+| `EvidenceSelectionPolicy` | Select minimal permitted inputs by occurrence period and cutoff, preserving versions, explicit background and exclusions |
+| `EmailDraftPeriodResolver` | Resolve manual/relative periods and recurrence rules; “since last” is recipient/purpose-specific; show overlap, late evidence and missed periods |
+| `EmailDraftEligibilityPolicy` | Validate active schedule, assigned owner, current access and duplicate run key before requesting a draft |
 | `DocumentCompletenessPolicy` | Validate a template's required elements without judging pedagogical truth |
 | `RecordDispositionPolicy` | Combine record category, statutory/local rule, legal hold and archive state |
 | `IdentityProviderPort` / `SchoolRegistryPort` | Authentication and scoped master-data synchronization |
@@ -211,11 +218,15 @@ IEP state: `Draft → InReview → Approved → Active → Superseded/Closed`, w
 
 Obligation state: `Unresolved → Applicable → Due → EvidenceSubmitted → ReviewedSatisfied`, with separate `NotApplicable`, `Overdue`, `WaivedWhereLawful` and reopening transitions. Only a permitted explicit evaluation may move from submitted evidence to satisfied.
 
+Draft schedule state: `Configured → Active ↔ Paused → Ended`, with revision changes and recorded runs. Missing owner/access pauses work for reassignment. Due jobs request a document draft only; no transition creates a `DisclosureAuthorization`.
+
 ## Example object collaboration
 
-Synthetic example: `learner-demo-001`, a fictitious learner. A teacher records an observation about using an agreed learning material independently. `EvidenceItem` stores the attributed observation; `ProgressReview` references it for one goal revision. `DocumentCase` requests an `EvidenceSnapshot` for the week and proposes a `WeeklyParentUpdate`. A teacher approves revision 3. `DisclosurePackage` selects one currently eligible guardian and freezes the package. `Dispatch` sends that package once after an explicit user action.
+First pilot example: `learner-demo-001` is fictitious. `EducationDecision` and an imported `IndividualEducationPlan` retain confirmed source references and active goals. `TeachingSessionPlan` references one goal and the latest authorized `EvidenceItem`; the teacher edits and approves a practical activity. Its `AssistantBrief` exposes only the assigned support instructions. `SessionDelivery` records actual participation, and a new observation feeds the next session. This P2 flow does not require external communication.
 
-If the observation was attached to the wrong learner, the correction marks the draft/snapshot stale and removes unauthorized derivatives. If already sent, a responsible person evaluates correction and breach handling. If the guardian relation changes while queued, release is refused pending a new eligibility decision. Neither case is solved by silently rewriting history.
+Later communication example: a teacher requests a `ParentEmail` for 1–20 October. `DocumentCase` records purpose and `SummaryPeriod`; `EvidenceSnapshot` fixes permitted source revisions known at `EvidenceCutoff`. The teacher approves revision 3 with subject/body and any attachments. `DisclosurePackage` selects an eligible guardian and freezes the recipient-specific package. `Dispatch` attempts transmission after explicit authorization and reconciles the outcome. An optional monthly `EmailDraftSchedule` can later request another draft; it cannot reuse revision 3's approval.
+
+If an observation was attached to the wrong learner, correction removes unauthorized derivatives and flags affected plans/documents. A note entered on 22 October about 15 October is eligible evidence for a new revision covering 1–20 October; it never silently rewrites the approved letter. If already sent, the responsible person assesses correction and breach handling. If guardian rights change while queued, release is refused pending a new eligibility decision.
 
 ## Consistency, events and retention
 

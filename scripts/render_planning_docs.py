@@ -17,6 +17,17 @@ feature_by_id = {f["id"]: f for f in features}
 assert len(source_by_id) == len(sources)
 assert len(feature_by_id) == len(features)
 assert len({r["id"] for r in requirements}) == len(requirements)
+for f in features:
+    for key in ("trigger", "example", "deliveryScope", "reviewQuestion"):
+        assert isinstance(f.get(key), str) and f[key].strip(), (f["id"], key)
+    for key in ("users", "inputs", "workflow", "outputs", "rules", "acceptanceCriteria"):
+        assert isinstance(f.get(key), list) and f[key], (f["id"], key)
+        assert all(isinstance(item, str) and item.strip() for item in f[key]), (f["id"], key)
+    assert len(f["workflow"]) >= 3, f["id"]
+    assert len(f["acceptanceCriteria"]) >= 2, f["id"]
+    assert isinstance(f.get("dependencyIds"), list), f["id"]
+    assert len(set(f["dependencyIds"])) == len(f["dependencyIds"]), f["id"]
+    assert all(d in feature_by_id and d != f["id"] for d in f["dependencyIds"]), f["id"]
 for r in requirements:
     assert r["featureIds"] and r["sourceIds"], r["id"]
     assert all(f in feature_by_id for f in r["featureIds"]), r["id"]
@@ -31,7 +42,7 @@ def source_links(ids):
 
 legal = """# Lovkrav og funksjonsdekning – grunnskolen
 
-Kartlagt 7. september 2026. Arbeidsversjon 0.1. Omfatter offentlige grunnskoler og private montessoriskoler med statstilskudd, 1.–10. trinn. Andre private skoler har en separat betinget profil.
+Kartlagt 7. september 2026. Produktkoblinger oppdatert 8. september 2026; dette er ingen ny juridisk kontroll. Omfatter offentlige grunnskoler og private montessoriskoler med statstilskudd, 1.–10. trinn. Andre private skoler har en separat betinget profil.
 
 Dette er et kildebelagt produkt- og kravregister, ikke en juridisk godkjenning av en ferdig løsning. Kildedatoen betyr at kilden ble kontrollert i denne kartleggingen; den er ikke en ikrafttredelsesdato. Skolens konkrete kommunale forskrifter, godkjenning, delegering, arkivplan og avtaler er ikke mottatt. Registeret kan derfor ikke betegnes som en uttømmende bekreftelse på alle plikter ved en bestemt skole.
 
@@ -52,7 +63,7 @@ Kravområdene L079–L090 er bevisst markert som områder som trenger mer konkre
 ## Kildekonflikter og endringer som påvirker designet
 
 - Godkjente Montessori-unntak er knyttet til skolens ordning. Vedtak fra 2023 viser eldre forskriftsnumre; nåværende bestemmelse og godkjenning må knyttes sammen.
-- Halvårsvurdering uten karakter er ikke automatisk en plikt til en skriftlig halvårsrapport. Ukesoppdatering og ettminuttsnotat er produktvalg.
+- Halvårsvurdering uten karakter er ikke automatisk en plikt til en skriftlig halvårsrapport. E-postutkast for valgte perioder og ettminuttsnotat er produktvalg.
 - Gjeldende lovstruktur bruker O § 3-6 for særskilt språkopplæring. Enkelte veiledninger og henvisninger bruker andre/eldre numre; aktiv lovtekst må styre regelpakken.
 - Skolebyttereglene er endret fra august 2026. Eldre veiledning om deling bare med tillatelse beskriver ikke alle nåværende situasjoner.
 - Arkivregelverket er endret fra januar 2026. Ingen universell oppbevaringsfrist eller automatisk regel om «Noark for alle» er fastsatt her.
@@ -85,14 +96,44 @@ Skoleeier utpeker ansvarlig for juridisk vurdering og regelvedlikehold. Gå gjen
 
 feature_doc = """# Funksjonskatalog
 
-Alle foreslåtte funksjoner er med. Fase angir rekkefølge, ikke at senere funksjoner er fjernet. Produktmålet og dokumenttypene er beskrevet i [produktgrunnlaget](00-product-brief.no.md). BC-numrene viser til den engelske [domenemodellen](04-domain-model.en.md).
+Arbeidsversjon 0.2 · 8. september 2026. Alle 40 funksjonsområder er beholdt og konkretisert for faglig gjennomgang. Beskrivelsene er produktforslag, ikke implementerte funksjoner eller en ny juridisk kontroll. Akseptansekriteriene beskriver observerbar atferd som en leveranse senere skal verifiseres mot.
 
-Første versjon av ukesoppdatering går bare til foresatte med relevant informasjonsrett. Elevtilpasset mottak inngår senere. Offentlige rapporter og lovpålagt informasjon til eleven har egne mottakerregler og blir ikke begrenset av dette produktvalget.
+Første komplette arbeidsflyt prioriterer innsamling → bekreftet elev-/plangrunnlag → undervisningsøkt → assistentkort → faktisk gjennomføring og kort notat. [Arbeidsflyten for faglig gjennomgang](08-first-workflow-review.no.md) viser et konkret eksempel og avvik som må fungere.
 
+F20 støtter e-postutkast til foresatte for et valgt tidsintervall og valgfri gjentakelse av utkast. En fast ukerytme er ikke prioritert eller aktivert som standard. Foreldre-e-post ligger i P4 og er ikke nødvendig for første pilotflyt. Første versjon av denne kommunikasjonen går bare til foresatte med relevant informasjonsrett. Elevtilpasset mottak inngår senere; lovpålagt informasjon til eleven har egne mottakerregler.
+
+Hver funksjon beskriver brukere, inndata, arbeidssteg, resultat, regler, akseptansekriterier og et eksempel. Avhengigheter viser funksjoner som må bidra med relevant grunnstøtte, ikke at alle deres senere utvidelser må være ferdige først. «Første leveranse» avgrenser hva fasen faktisk skal inneholde; hele beskrivelsen dekker også senere utvidelser.
+
+Produktmålet og dokumenttypene finnes i [produktgrunnlaget](00-product-brief.no.md). BC-numrene viser til [domenemodellen](04-domain-model.en.md), og fasene til [implementasjonsplanen](05-implementation-plan.en.md). Generelle krav til tilgang, kilder, menneskelig kontroll og manuell reserve gjelder på tvers av funksjonene.
+
+## Til den som gjør faglig gjennomgang
+
+Les først arbeidsflyten og funksjonene F03–F08, F12–F16, F33 og F39–F40. Vurder om eksemplene ligner hverdagen, hva som mangler, hvilke felt som skaper merarbeid og hva som må endres i akseptansekriteriene. Spørsmålet på slutten av hver funksjon er et konkret punkt til gjennomgangen, ikke et krav om å avklare alt før dokumentene kan leses.
+
+## Funksjonsoversikt
+
+| ID | Funksjon | Første leveranse |
+|---|---|---|
 """
 for f in features:
+    feature_doc += f'| [{f["id"]}](#{f["id"].lower()}) | {f["title"]} | {f["phase"]} |\n'
+feature_doc += "\n"
+for f in features:
     links = [r["id"] for r in requirements if f["id"] in r["featureIds"]]
-    feature_doc += f'## {f["id"]} {f["title"]}\n\n{f["description"]}\n\nDomene: {f["context"]}. Første leveranse: {f["phase"]}. Kravkoblinger: {", ".join(links) or "Produktmål; ingen særskilt lovplikt"}.\n\n'
+    feature_doc += f'<a id="{f["id"].lower()}"></a>\n\n## {f["id"]} {f["title"]}\n\n{f["description"]}\n\n'
+    feature_doc += f'**Brukere:** {", ".join(f["users"])}.\n\n**Når brukes den:** {f["trigger"]}\n\n'
+    for label, key in (("Inndata", "inputs"), ("Slik fungerer det", "workflow"),
+                       ("Resultat", "outputs"), ("Regler og avvik", "rules"),
+                       ("Akseptansekriterier", "acceptanceCriteria")):
+        feature_doc += f"### {label}\n\n"
+        for i, item in enumerate(f[key], start=1):
+            prefix = f"{i}." if key == "workflow" else "-"
+            feature_doc += f"{prefix} {item}\n"
+        feature_doc += "\n"
+    dependencies = ", ".join(f'[{d}](#{d.lower()})' for d in f["dependencyIds"]) or "Ingen særskilte funksjonsavhengigheter"
+    feature_doc += f'**Eksempel:** {f["example"]}\n\n**Avhengigheter:** {dependencies}.\n\n'
+    feature_doc += f'**Første leveranse og utvidelser:** {f["deliveryScope"]}\n\n**Til faglig gjennomgang:** {f["reviewQuestion"]}\n\n'
+    feature_doc += f'Domene: {f["context"]}. Første leveranse: {f["phase"]}. Kravkoblinger: {", ".join(links) or "Produktmål; ingen særskilt lovplikt"}.\n\n'
 (DOCS / "02-feature-catalog.no.md").write_text(feature_doc.rstrip() + "\n")
 
 trace = """# Traceability: obligations → capabilities → contexts → phases
