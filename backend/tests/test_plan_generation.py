@@ -213,3 +213,83 @@ def test_generated_revision_of_import_retains_original_approval_only_on_imported
     history=e.client.get(path(e)+'/revisions').json()['items']
     previous=next(r for r in history if r['content']['id'] == imported['content']['id'])
     assert previous['content']['origin'] == 'imported' and previous['content']['original_approval'] == imported['content']['original_approval']
+
+
+def test_complete_goal_metadata_port_preserves_pending_exact_dependencies_without_flush(generated_env):
+    from sqlalchemy import event,inspect
+    from spesped.auth import Actor
+    from spesped.db import utcnow
+    from spesped.contexts.plans.projections import teaching_goal_basis,goal_binding_is_current,generation_bindings_are_current
+    from spesped.contexts.plans.models import ProfileStatement,PlanGenerationBasis
+    from spesped.contexts.entitlements.models import ExpertAssessment,Recommendation,EducationDecision,DecisionRevision,DecisionProvision
+    from spesped.contexts.evidence.models import EvidenceItem,EvidenceRevision,SourceSubjectLink,SourceItem,SourceRevision
+    from spesped.contexts.platform.models import ModelRelease
+    e=generated_env;p=proposal(e,generate(e))
+    applied=post(e.client,path(e)+'/suggestion-reviews',e.h,selection(e,p,selected_fields=[],selected_goal_keys=['reading']),200)
+    active=activate(e.client,e.ids,e.h,applied);goal=active['content']['goals'][0]
+    # Each session starts from the same committed valid aggregate. Staged new
+    # rows deliberately omit required values: this read must never flush them.
+    cases=('assessment','profile','source_link','source_item_delete','source_revision_new','source_revision_owner_expired','evidence_item_delete','evidence_revision_delete','recommendation_new','basis_delete','decision','decision_revision_new','provision_delete','current_plan','current_revision','current_goal','goal_new','allocation_delete')
+    direct_cases=set(cases)-{'current_revision','current_goal','goal_new','allocation_delete'}
+    for kind in cases:
+        with e.factory() as db:
+            db.info['plans_runtime']=e.runtime
+            binding=teaching_goal_basis(db,Actor(e.ids['reviewer']),e.ids['school'],e.ids['a'],goal['id'])
+            assert goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding)
+            if kind == 'assessment':obj=db.get(ExpertAssessment,e.assessment['id']);obj.state='disputed'
+            elif kind == 'profile':obj=db.get(ProfileStatement,e.statement['id']);obj.state='disputed'
+            elif kind == 'source_link':obj=db.get(SourceSubjectLink,e.expert_item['source']['link_id']);obj.revoked_at=utcnow()
+            elif kind in {'source_item_delete','source_revision_new','source_revision_owner_expired'}:
+                link=db.get(SourceSubjectLink,e.expert_item['source']['link_id'])
+                if kind == 'source_item_delete':obj=db.get(SourceItem,link.source_id);db.delete(obj)
+                elif kind == 'source_revision_new':obj=SourceRevision(school_id=e.ids['school'],source_id=link.source_id,revision=999);db.add(obj)
+                else:
+                    obj=db.scalar(select(SourceRevision).where(SourceRevision.source_id == link.source_id,SourceRevision.revision == link.source_revision))
+                    db.expire(obj,['source_id']);obj.source_id=key()
+            elif kind == 'evidence_item_delete':obj=db.get(EvidenceItem,e.expert_item['id']);db.delete(obj)
+            elif kind == 'evidence_revision_delete':obj=db.scalar(select(EvidenceRevision).where(EvidenceRevision.evidence_id == e.expert_item['id']));db.delete(obj)
+            elif kind == 'recommendation_new':obj=Recommendation(school_id=e.ids['school'],assessment_id=e.assessment['id']);db.add(obj)
+            elif kind == 'basis_delete':obj=db.get(PlanGenerationBasis,e.basis['id']);db.delete(obj)
+            elif kind == 'decision':obj=db.get(EducationDecision,active['content']['decision_id']);obj.state='draft'
+            elif kind == 'decision_revision_new':obj=DecisionRevision(school_id=e.ids['school'],decision_id=active['content']['decision_id']);db.add(obj)
+            elif kind == 'provision_delete':obj=db.get(DecisionProvision,active['content']['allocations'][0]['provision_id']);db.delete(obj)
+            elif kind == 'current_plan':obj=db.get(service.IndividualEducationPlan,active['id']);obj.active_revision_id=None
+            elif kind == 'current_revision':obj=db.get(PlanRevision,active['content']['id']);obj.state='historical'
+            elif kind == 'current_goal':obj=db.get(GoalRevision,goal['id']);obj.status='closed'
+            elif kind == 'goal_new':obj=GoalRevision(school_id=e.ids['school'],plan_revision_id=active['content']['id']);db.add(obj)
+            else:obj=db.get(service.ProvisionAllocation,active['content']['allocations'][0]['id']);db.delete(obj)
+            pending=(set(db.new),set(db.dirty),set(db.deleted));values=dict(inspect(obj).dict)
+            flushes=[];statements=[]
+            event.listen(db,'before_flush',lambda *_:flushes.append(True))
+            def executed(conn,cursor,statement,parameters,context,executemany):statements.append(statement.lower())
+            engine=db.get_bind();event.listen(engine,'before_cursor_execute',executed)
+            try:
+                assert goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding) is False,kind
+                if kind in direct_cases:
+                    assert generation_bindings_are_current(db,e.ids['school'],e.ids['a'],active['content']['generation_lineage'],e.runtime) is False,kind
+                assert not flushes,kind
+                assert (set(db.new),set(db.dirty),set(db.deleted)) == pending,kind
+                assert inspect(obj).dict == values,kind
+                assert not any(token in statement for statement in statements for token in ('platform_generation_jobs.output','plans_generation_bases.content','plans_revisions.title','plans_goal_revisions.title','entitlements_recommendations.content','evidence_revisions.content'))
+            finally:event.remove(engine,'before_cursor_execute',executed)
+            db.rollback()
+
+
+def test_goal_metadata_keeps_unrelated_pending_rows_and_mutations_unflushed(generated_env):
+    from sqlalchemy import event,inspect
+    from spesped.auth import Actor
+    from spesped.contexts.plans.projections import teaching_goal_basis,goal_binding_is_current,generation_bindings_are_current
+    from spesped.contexts.entitlements.models import ExpertAssessment
+    e=generated_env;p=proposal(e,generate(e))
+    applied=post(e.client,path(e)+'/suggestion-reviews',e.h,selection(e,p,selected_fields=[],selected_goal_keys=['reading']),200)
+    active=activate(e.client,e.ids,e.h,applied)
+    with e.factory() as db:
+        db.info['plans_runtime']=e.runtime
+        binding=teaching_goal_basis(db,Actor(e.ids['reviewer']),e.ids['school'],e.ids['a'],active['content']['goals'][0]['id'])
+        unrelated=ExpertAssessment(id=key(),school_id=e.ids['school'],learner_id=e.ids['b'],case_id=key());db.add(unrelated)
+        audit=AuditRecord();db.add(audit)
+        pending=set(db.new);flushes=[];values=dict(inspect(unrelated).dict)
+        event.listen(db,'before_flush',lambda *_:flushes.append(True))
+        assert goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding) is True
+        assert generation_bindings_are_current(db,e.ids['school'],e.ids['a'],active['content']['generation_lineage'],e.runtime) is True
+        assert not flushes and set(db.new) == pending and inspect(unrelated).dict == values
