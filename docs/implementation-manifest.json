@@ -781,7 +781,8 @@
         "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814",
         "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e",
         "2e3c85184f08f8ac294a0bc2e778eb32f57070ed",
-        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+        "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6"
       ],
       "evidence": [
         {
@@ -877,6 +878,11 @@
           "type": "implementation_assignment",
           "agent": "/root/j07_planning_ui",
           "result": "Separate durableproposalrecovery UI job assigned for bothPlanSuggestions andteachingSuggestions usingacceptedc18backend. Dedicatednewrecoverycomponents/tests only; ongoingteachingrepairfilesexcluded. Mustcoverreload/resume,unavailable/expiredstates,unknownoutcome reconciliation,pagination,late-scope/recall suppression,andactualAPIbrowserverification beforeindependentreview."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
+          "result": "Teaching R1–R4 repair pinned separately from pending recovery UI. Authorisolated77webtests/build passed; actualApp+frozenbackendc18 Chromium/PostgreSQL11normaland6adversechecks passed. Includes immediate read-dependency invalidation,allassignmentprosegating,originalobservationlinks,visiteddraftpreservationwithfreshreactivatedchoices,andtypedlocalvalidation. Originalindependentreviewer /root/review_composition assignedexactrecheck; allfourfindingsremainopen untilverified."
         }
       ],
       "findings": [
