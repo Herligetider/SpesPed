@@ -78,6 +78,23 @@ export class ApiClient {
     );
   }
 
+  /** Shared authenticated transport for modular school workspaces. */
+  async schoolGet<T>(schoolId: string, segments: readonly string[], query = new URLSearchParams()): Promise<T> {
+    const suffix = query.size ? `?${query}` : '';
+    return this.request<T>(this.schoolPath(schoolId, segments) + suffix);
+  }
+
+  async schoolCommand<T>(schoolId: string, segments: readonly string[], body: unknown, method: 'POST' | 'PATCH' | 'PUT' | 'DELETE' = 'POST'): Promise<T> {
+    return this.request<T>(this.schoolPath(schoolId, segments), {method, body: JSON.stringify(body)});
+  }
+
+  private schoolPath(schoolId: string, segments: readonly string[]): string {
+    if (!schoolId || !segments.length || [schoolId, ...segments].some(part => !part || part === '.' || part === '..')) {
+      throw new ApiError('Arbeidsflaten mangler en gyldig referanse.', 422, 'invalid_resource');
+    }
+    return `/schools/${encodeURIComponent(schoolId)}/${segments.map(encodeURIComponent).join('/')}`;
+  }
+
   async intake(schoolId: string, offset = 0): Promise<ListResponse<IntakeSource>> {
     return this.request(`/schools/${encodeURIComponent(schoolId)}/intake?offset=${offset}&limit=100`);
   }
