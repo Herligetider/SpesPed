@@ -1584,6 +1584,12 @@
           "type": "repair_candidate",
           "revision": "3dc0de68015632f2108cf7ce5b2ebf6f101c75bc",
           "result": "Pinned original-author2file J12-R1 repair with verifiedhashes: staged dependency guard now precedes transaction ownership/rollback/metadata. Focused6dualDB tests cover60rejected boundary calls preserving ORMsets, caller metadata, exact transaction and priorflushedwork withzeroSQL/flush/commit/rollback. Combined43passes1SQLite-onlyrace skip includes originalindependentrepro, workflow/replay/atomicity andfreshHTTPcomposition. Original independent reviewer reactivated at archive-isolated pin; finding remains unclosed pending recheck."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "3dc0de68015632f2108cf7ce5b2ebf6f101c75bc",
+          "path": "docs/reviews/J12-review.md",
+          "result": "J12-R1 closed; bounded native communication backend/application/protocol accepted. Independent exact repair archive20hashes/fourimports verified. Original caller-state probe,6ownershipcases/60rejectedcalls, atomic outbox/receipt failures, lost-reply reconciliation, actualPG delayed replay race andfreshappcomposition:21passed1SQLite-onlyrace skip. Unchanged prior50candidatepasses/3TLSadversepasses/10ownerregressions remain separately recorded. Caller transaction/data preserved before command ownership. UI/arbitraryattachments/PDF/namedproviders/deployment remain required."
         }
       ],
       "findings": [
@@ -1591,7 +1597,7 @@
           "id": "J12-R1",
           "priority": "P2",
           "description": "Rejected pending-dependency command rolls back and loses caller staged protective relationship changes",
-          "status": "awaiting_recheck"
+          "status": "verified_fixed"
         }
       ]
     },
@@ -1975,12 +1981,17 @@
         "J12",
         "J14"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Chosen dates, paused draft plan, explicit send, recipient-specific view",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j21_guardian_ui",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "Assigned accepted-contract guardian portal frontend to /root/j21_guardian_ui using Luna medium: actual paginated grants, session-bound explicit open, current authorized payload/attachments, separate human read acknowledgment, safe retries/expiry/current-rights denial, no dossier requests. Owns new web/src/features/guardian/**; root owns guardian-only shell routing and authenticated schoolBlob download integration. Root APItests12passes, shell/finalbrowser tests pending. Practitioner disclosure screens and other J21 collaboration remain required; independent review after freeze."
+        }
+      ],
       "findings": []
     },
     {
@@ -3787,6 +3798,16 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Accepted separately reviewed BC03 exact report-period coverage3be8177 and closed all four J11 findings at e7fe46a. Registered and verified native BC11 fresh-app portal/history composition (2SQLite/PostgreSQL passes); communication author is finishing real TLS/replay/model-recall verification before pin. Assigned typed document UI to Luna medium under fixed native contracts. No wholefeature or releasegate promoted; all40features/86criteria/28jobs retained."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Previous goal turn made concrete progress: accepted BC03 coverage and all J11 repairs, pinned native BC11 and its original-author caller-state repair, and started actual document UI/choice work. Current turn accepted independent J12-R1 recheck, assigned guardian portal UI, added root authenticated attachment/guardian shell integration and started full backend integration at frozen91558b2 with actualPG and archive-native imports. Full product remains incomplete; no releasegate or wholefeature promoted.",
+      "verification": {
+        "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
+        "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
+        "backend": "Running: root exec session74710, output var/integration-91558b2/tests.log. Not a passing result."
+      }
     }
   ]
 }
