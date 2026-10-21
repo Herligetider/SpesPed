@@ -593,7 +593,7 @@
         "J04",
         "J05"
       ],
-      "status": "awaiting_review",
+      "status": "implementing",
       "requiredEvidence": "Complete teaching cycle; no scheduled-as-delivered; assistant scope; stale brief",
       "implementationAgent": "/root/j06_teaching",
       "reviewAgent": "/root/review_j06",
@@ -630,6 +630,12 @@
           "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
           "path": "docs/reviews/generated-teaching-composition-review.md",
           "result": "Bounded application composition accepted: five pinned integration cases and four independent fresh-application probes passed. SQLite/PostgreSQL single-head, 115-table metadata and empty roundtrip match; splitting/rejoining parents preserves data. Known consumer findings and absent complete UI prevent overall workflow acceptance."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "da503e1b87c038a73d64dca433f38ef90c6e2961",
+          "path": "docs/reviews/J06-review.md",
+          "result": "Bounded backend accepted; J06-R1–R7 closed. 78 passed, two expected SQLite concurrency skips; four additional independent interval/recovery tests passed on SQLite and PostgreSQL. Nineteen teaching tables and merged metadata match; empty migration roundtrip passed. Full feature, browser workflow and real qualification adapter remain incomplete."
         }
       ],
       "findings": [
@@ -667,18 +673,18 @@
           "id": "J06-R6",
           "priority": "P2",
           "description": "Qualification proof valid only at occurrence start counts the entire longer actual support interval.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J06-R7",
           "priority": "P2",
           "description": "Permitted downgrade loses a legacy assistant reconciliation invalidation token and prevents later recovery.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
-        "Close and independently recheck qualification interval and migration recovery findings; then accept the bounded teaching backend. Full dependencies and UI remain separate.",
-        "Root gateway and application composition plus J07 UI must exercise the complete persistent teaching workflow."
+        "Complete J07 persistent teaching UI and independent browser review.",
+        "Implement real J19 qualification adapter and remaining resource, scheduling, speech and cross-context integrations; practitioner usability and complete feature acceptance remain separate."
       ]
     },
     {

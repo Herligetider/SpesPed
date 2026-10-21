@@ -1,6 +1,6 @@
 # J06 independent backend review
 
-**Latest disposition (repair pin `f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0`): original J06-R1–R5 closed; J06-R6/R7 open. Candidate remains unaccepted.** See the appended repair recheck. The original review below is retained as historical evidence.
+**Latest disposition (pin `da503e1b87c038a73d64dca433f38ef90c6e2961`): J06-R1–R7 closed; no open findings in this reviewed backend scope.** This accepts the bounded backend candidate only. Full J06/features, UI and the real qualification adapter remain incomplete. See the final recheck below; earlier reviews are retained as history.
 
 Reviewed 21 October 2026. **Not accepted: five actionable findings remain.**
 
@@ -334,3 +334,74 @@ that state. Empty-schema roundtrips are insufficient to prove safe rollback.
 
 **Disposition: original J06-R1–R5 closed; J06-R6 and J06-R7 require repair and
 independent recheck before this bounded backend candidate is accepted.**
+
+## Final R6/R7 recheck — da503e1b87c038a73d64dca433f38ef90c6e2961
+
+Independently rechecked on 21 October 2026 using an exact ignored archive at
+`var/review-j06-r67/`. Inspected the complete four-file repair: qualification port,
+teaching service, tests and downgrade guard. All execution used the existing
+backend venv and absolute
+`PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j06-r67/backend:/Users/lauritz/Programming/SpesPed/var/review-j06-r67/backend/tests`.
+PostgreSQL used only unique disposable schemas in the assigned synthetic
+`spesped_test` database; SQLite used isolated files. No production changes,
+commits or pushes were made by this reviewer.
+
+**R6 closed.** `QualificationRequest` now requires `ended_at > occurred_at`.
+The teaching service supplies the full actual event interval on both save and
+subsequent proof checks. This conservatively avoids inventing finer staff/pupil
+placement from minute totals. Reviewed coverage must include the whole interval;
+`effective_from == occurred_at` and `effective_until == ended_at` are accepted.
+Insufficient coverage, changed proof scope and stored legacy proofs without an
+end remain unassessed. Existing actual expenditure is retained, an owned staffing
+follow-up is created, and an explicit actual correction binds a newly reviewed
+complete proof. Historical records retain their original proof and assessment.
+
+**R7 closed.** The migration guard now checks for any non-null
+`invalidated_by_revision_id` before dropping or modifying schema. A populated
+legacy recovery case refuses downgrade with an explicit error. The input remains
+`needs_clarification`, its invalidating revision survives, and its original review
+retains the unknown timestamp. Re-review against the eligible current delivery
+succeeds afterward and appends a new immutable review instead of replacing the
+legacy one. Schema and migration version remain intact after refusal.
+
+Verification:
+
+- Full teaching suite plus the original 14 desired probes and six adjacent desired
+  probes: **78 passed, 2 expected SQLite concurrency skips**, 120.99 s. Both retained
+  independent probe files are byte-for-byte unchanged from the preceding review.
+  Command from the archive, with the absolute `PYTHONPATH` above and the assigned
+  `SPESPED_TEST_POSTGRES_URL`:
+  `.../backend/.venv/bin/python -m pytest backend/tests/test_teaching.py review_acceptance_probes.py review_repair_acceptance.py -q`.
+  Log: `var/review-j06-r67/baseline.log`.
+- Additional independent interval/proof tests: **2 passed**, 4.12 s, on SQLite and
+  PostgreSQL. They reject a one-microsecond end shortfall and one-microsecond late
+  start, accept exact boundaries, treat a different current proof as unassessed
+  even when its coverage is longer, preserve historical proof assessment after
+  correction, and require explicit correction for a legacy unknown end.
+  Files: `review_r67_boundaries.py`, `boundaries.log` in the final archive.
+- Strengthened independent legacy recovery test: **2 passed**, 2.55 s, on both
+  engines. It verifies the downgrade refusal leaves the invalidation column,
+  recovery token and legacy review intact; subsequent reconciliation succeeds and
+  both old unknown-timestamp and new timestamped review records remain.
+  Files: `review_r7_recovery.py`, `recovery.log` in the final archive.
+- Full-head schema comparison and empty migration roundtrip on SQLite and
+  PostgreSQL: **19 teaching tables, zero merged metadata differences**, safe empty
+  downgrade/reupgrade succeeds. Files: `review_migrations.py`, `migrations.log`.
+- The pinned suite additionally verifies learner-time and staff-time coverage over
+  a full 60-minute event despite only 30 recorded staff/pupil minutes, invalid
+  zero/reversed intervals, current shortened coverage, owned follow-up, legacy
+  unassessed correction, manual unassessed recovery, migration refusal schema/
+  version preservation, review history and PostgreSQL reconciliation races.
+
+The public qualification contract has a required end instant. Root owns its
+`docs/09-domain-implementation.en.md` coordination and future real adapter.
+J05 metadata `2e305db` and root composition `ae44969` are separate review subjects;
+this recheck does not independently accept them. Production qualification records
+and adapter (J19), UI/browser integration, practitioner usability, later context
+integrations and complete F12/F13/F15/F16/F39 delivery remain outside this bounded
+acceptance. Existing source-reuse permission and synthetic local-model quality
+limits remain explicit.
+
+**Final disposition: J06-R1–R7 closed. The reviewed backend candidate is accepted
+at `da503e1b87c038a73d64dca433f38ef90c6e2961`; this is not whole-J06, full-feature
+or production readiness acceptance.**

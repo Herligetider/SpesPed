@@ -194,7 +194,9 @@ returns `unavailable`; caller role labels and permissions cannot establish
 qualification. Actual work can still be recorded as unassessed with a cause and
 owned follow-up, separately from assessed support and entitlement comparisons.
 The production qualification source belongs to the remaining J19 work. This
-teaching repair contract at `da503e1` is awaiting independent recheck.
+teaching repair contract at `da503e1` is independently accepted in the bounded
+[J06 backend review](reviews/J06-review.md); the complete UI and real adapter
+remain unfinished.
 
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
