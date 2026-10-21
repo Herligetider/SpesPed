@@ -11,10 +11,14 @@ dependencies = [
   "uvicorn>=0.34,<1",
   "alembic>=1.14,<2",
   "pydantic-settings>=2.7,<3",
+  "pypdf>=6,<7",
+  "httpx>=0.28,<1",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "httpx>=0.28,<1"]
+dev = [
+    "pytest>=8,<10",
+]
 
 [project.scripts]
 spesped = "spesped.cli:main"

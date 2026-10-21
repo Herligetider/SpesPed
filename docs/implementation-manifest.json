@@ -322,9 +322,9 @@
         "J01",
         "J02"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Multi-pupil source separation, file rejection, provenance, derivative correction",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j04_evidence",
       "reviewAgent": null,
       "commits": [],
       "evidence": [],
@@ -415,9 +415,9 @@
         "J01",
         "J02"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Real local protocol tests, no production remote fallback, injection/source limits",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j08_ai_gateway",
       "reviewAgent": null,
       "commits": [],
       "evidence": [],
@@ -517,9 +517,9 @@
         "J01",
         "J02"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Unresolved applicability, correct triggers, actual action separate from document",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j13_governance",
       "reviewAgent": null,
       "commits": [],
       "evidence": [],
@@ -1063,7 +1063,7 @@
       "id": "F03",
       "title": "Felles innboks for elevinformasjon",
       "context": "BC02",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J04",
@@ -1093,7 +1093,7 @@
       "id": "F04",
       "title": "Uttrekk med kildekontroll",
       "context": "BC02",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J04",
@@ -1123,7 +1123,7 @@
       "id": "F05",
       "title": "Elevtidslinje og retting",
       "context": "BC02",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J04",
@@ -1153,7 +1153,7 @@
       "id": "F06",
       "title": "Kravregister og årshjul",
       "context": "BC03",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J13",
@@ -1875,7 +1875,7 @@
       "id": "F29",
       "title": "Ledelsesoversikt og internkontroll",
       "context": "BC03",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J13",
@@ -1995,7 +1995,7 @@
       "id": "F33",
       "title": "AI med utskiftbar modell og kvalitetskontroll",
       "context": "BC15",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J08",
@@ -2211,7 +2211,7 @@
       "id": "F40",
       "title": "Målbar avlastning",
       "context": "BC03",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J13",
