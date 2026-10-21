@@ -105,3 +105,43 @@ The current rule port (`ports.py:6–11`) models one reviewed profile and flat d
 An independent probe also confirmed the present failure behavior: a configured resolver raising safe `rule_context_unavailable` makes authorized dossier GET return 503, while the author's narrow submission GET and retrospective urgent-contact POST remain usable. A missing resolver instead returns an unavailable context inside a successful detail response. Root composition must represent recalled/missing/multiple/unresolved rules visibly without making otherwise authorized case access dependent on a successful rule lookup; this is a required integration/recovery decision, not evidence that the adapter has been implemented.
 
 No new legal research, school configuration approval, real service contact, production deployment, UI journey or whole-product release acceptance was performed. Findings require implementer repair and an independent pinned recheck before accepting the assigned backend scope.
+
+## Independent repair recheck — 21 October 2026
+
+**Repair revision:** `77ce990cfcec8a9007e609c9654e53cfb651e72c`.
+
+**Exact executed archive:** `30c656f624a32bb4512f4894388f46afcc2e521d`, extracted afresh into ignored `var/review-j16/recheck-pinned`. Git comparison confirmed no safeguarding source/test changes between the repair revision and this execution pin. The latter adds the separately reviewed governance projection candidate; its review is recorded in `docs/reviews/protected-rule-projection-review.md`.
+
+**Verdict: all five original findings are fixed; bounded review accepted for the assigned J16 backend scope only.** No additional reproducible finding remained in this recheck. The initial review and original observed-defect probes remain preserved above and under `var/review-j16/test_adversarial.py`. This verdict does not accept whole F24/F25/F26 features, UI delivery, or live rule-adapter/application composition.
+
+### Finding dispositions
+
+- **J16-R1 fixed** (`service.py:252–255`, `287–290`, `595–606`, `646–652`): replays reconstruct current authorized projections, and new receipts persist only aggregate ID/revision. Independent recheck explicitly replaced a stored new receipt with the original candidate's full historical cached projection, reassigned its protected task, and replayed it. Both engines returned the current restricted projection without the removed task, description or deadline. Snapshot/event/receipt counts and own-account count remained unchanged. Supplied tests additionally verified completion replays, changed-key conflict, later revocation/new exclusion, current route-revocation status and hiding measures from superseded plans.
+- **J16-R2 fixed** (`service.py:131–138`, `447–456`, `655–699`): the latest actual reconciliation determines effective contact status while original attestations remain intact. Independent original reproductions now require a failed notification summary, a separate personal-contact summary and `contact_failed` after the sole success is reconciled as failed; all passed on both engines. Supplied tests additionally exercised all execution outcomes, separate receipt uncertainty, unrelated contact, preserved independent successful contacts, older actual reconciliations entered later, environment notification reversal, invalid chronology, and late closed-case reconciliation retaining closure while setting `review_required`.
+- **J16-R3 fixed** (`service.py:603–606`, `702–716`; new contribution resolution route): another contributor assigned to obtain a missing pupil view now receives the narrow pending ID/reason/deadline/state, without source attribution or dossier access. The independent recheck resolved it through the actual new HTTP command, observed the appended own pupil statement and disappearance of the pending item, verified identical replay without a second statement, denied a fresh second resolution, and checked preserved original missing-view history. Supplied checks additionally covered reassignment, stale targets, current grant revocation/new exclusion, later supplied statements and pre-incident resolution rejection.
+- **J16-R4 fixed** (`schemas.py:10–11`, affected create/correction/contact/route fields): schema limits now match the existing tables. Independent real HTTP requests on both engines reject channel length 101 with 422 and no mutation; length 100 persists, including on PostgreSQL. Supplied checks verify route channel/recipient and environment source/physical place maxima and max+1 in create/correction commands, along with unchanged audit/event/receipt counts on rejection.
+- **J16-R5 fixed** (`service.py:471–480`): completion preceding the incident is rejected with unchanged version/task state. The independent recheck also completed the same task at a valid post-incident time preceding its database entry time, preserving retrospective entry on both engines. Supplied checks cover limited contributors, retained incident occurrence through correction and separate historical background actions.
+
+### Recheck commands, results and isolation
+
+All commands ran from `/Users/lauritz/Programming/SpesPed/var/review-j16/recheck-pinned` with the explicit absolute environment below. Import inspection returned only that archive for `spesped`, safeguarding service and governance projections; the shared editable installation was not imported.
+
+```sh
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j16/recheck-pinned/backend:/Users/lauritz/Programming/SpesPed/var/review-j16/recheck-pinned/backend/tests \
+SPESPED_TEST_POSTGRES_URL=postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test \
+/Users/lauritz/Programming/SpesPed/backend/.venv/bin/pytest \
+backend/tests/test_safeguarding.py backend/tests/test_protected_rule_context.py -q
+
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j16/recheck-pinned/backend:/Users/lauritz/Programming/SpesPed/var/review-j16/recheck-pinned/backend/tests \
+SPESPED_TEST_POSTGRES_URL=postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test \
+/Users/lauritz/Programming/SpesPed/backend/.venv/bin/pytest \
+/Users/lauritz/Programming/SpesPed/var/review-j16/test_fixed_regressions.py -q
+```
+
+- Combined candidate suites: **84 passed, 1 skipped**, 52.36 seconds: 74 passing safeguarding checks, 10 passing root projection checks, and the SQLite concurrency skip. PostgreSQL concurrency/CAS, audit/outbox rollback and the explicit `j16_safeguarding` ↔ `b1_integrate_contexts` migration roundtrip passed again.
+- Corrected original independent regressions: **28 passed**, 16.92 seconds, covering all five repairs plus the original positive authority/exclusion, scope/count, wrong-kind, closure, reassignment and urgent recovery probes. The new file changes the original observed-defect expectations to require the repaired outcome; passing old buggy behavior was not treated as repair evidence.
+- Only the existing Starlette TestClient/httpx deprecation warning appeared.
+- Unique temporary PostgreSQL schemas in synthetic `spesped_test` were created/dropped by fixtures. No demo database, real pupil data or external service was used.
+- Evidence: `var/review-j16/recheck-suite.log`, `fixed-regressions.log`, and `test_fixed_regressions.py`. The separately recorded independent rule-port checks have their own report/log.
+
+The original integration boundaries remain. In particular, the governance read helper is not registered into safeguarding, and the richer safeguarding adapter contract, resilient case-detail composition, root production registration and J23 UI are separate work. The September legal registry received no new legal certification. This recheck changed only review reports and ignored probe/log artifacts; no implementation edit, commit, push or subagent was used.

@@ -85,3 +85,58 @@ Logs are in `var/review-intake-structuring/baseline.log`, `adverse.log` and `mig
 J07 must supply the actual inbox/source review, clarification-owner and correction user flows. Protected-case and dictated-audio source consumer adapters, production local model/hardware quality, and any remaining source-helper ownership refactor remain separate implementation/review work. F05 still requires owned corrective followup for already shared derivative corrections, and real consumers must register/reconcile exact dependencies. This review does not claim those downstream requirements are complete.
 
 The reviewer edited only this tracked report; all probes/archive/logs remain in ignored `var/review-intake-structuring/`. No commit, push or subordinate agent was created.
+
+## Independent repair recheck — 21 October 2026
+
+**Repair:** `a3488aed170a502e6040dabf654daa897da5d98f`. **Exact merged review pin:** `713f794eb3c8dd34b54782538eb3fdbb699bbfbc`.
+
+**Recheck verdict: J04-SR1 closed; no additional actionable finding in the reviewed repair/manual-recovery boundary.** This supersedes the changes-required verdict for J04-SR1 above. The initial defect-positive reproduction, archive, logs and report remain intact. This does not accept intrinsic J16 implementation, the separately reviewed J05 source/comparison gap, complete F03–F05/F33 delivery or production operation.
+
+### Revision isolation and repair behavior
+
+A new `git archive` at `var/review-intake-structuring/recheck-pinned` supplied every tested implementation file, owned suite and Alembic configuration. Absolute pinned `PYTHONPATH` was required for every invocation; independent tests additionally include that archive's `backend/tests` for fixtures. Independent tests and the schema probe assert that `spesped`, assembly, evidence service and gateway service actually import from this archive, avoiding the editable installation's evolving checkout. Concurrent shared entitlement/safeguarding changes were neither used nor edited.
+
+The ordinary proposal route now applies the model proposal's current visibility gate before comparing or returning stored content, even when a manual successor exists at the same span. Both original-value replay and conflicting-value replay fail after model or policy recall without disclosing the old reviewed text/reason. Normal model list/review/confirmation paths remain gated. Original model proposal identities, provenance, reviews and any already confirmed evidence are retained.
+
+Explicit recovery uses a metadata-only candidate projection and binds the original model proposal ID, school, source/current revision and exact page/span/field. It reauthorizes current intake access and verifies the source manifest/extracted content plus preserved original bytes without requiring the recalled model release to be available. It creates an independent manual proposal with only caller-entered text, pending review, no generated-job provenance and no inherited reviewed value/reason. Separate human review and scoped confirmation are still required. Exact-span recovery works; no narrower-span workaround is needed.
+
+Recovery supersedes outstanding model extraction work in progress counts, while the independent manual field still counts. It does not resolve attribution/ambiguity tasks, reinterpret their sibling tasks or silently change already confirmed evidence. Failure, wrong source/revision/field/span, changed extracted pages and corrupt source bytes fail explicitly. An unavailable gateway runtime returns a source-verification error for recovery while ordinary independent manual intake remains usable.
+
+### Additional independent adverse evidence
+
+New reviewer probes are in `var/review-intake-structuring/test_recheck.py`; the old defect-positive `test_adverse_review.py` was deliberately preserved and is not a current passing acceptance suite.
+
+- Corrected original SR1 checks separately cover release and policy recall on both database engines. Candidate metadata contains exactly seven identity/span/field keys and no generated/reviewed text. Ordinary proposal POST still fails after the same-span manual successor exists, including when the submitted text matches that successor.
+- Recovery replay after a later manual human edit preserves that successor's ID, pending/reviewed state, value/reason and version. It does not change the source version, outbox count, task count or original model review; changed replay input conflicts.
+- PostgreSQL simultaneous identical recovery commands produce one manual row and one recovery outbox event. Simultaneous conflicting texts produce one accepted row and one 409; neither changes the original model row.
+- Missing gateway runtime denies old model response/recovery without model prose, while a separately authored ordinary manual source field succeeds.
+- Recovery from an already confirmed model proposal leaves the existing evidence and its exact source release intact; the successor is independently pending and does not create another evidence item automatically.
+- A populated manual/model collision blocks downgrade to `j04_structuring` on both databases before schema mutation. Both historical rows and original review content remain intact and readable through their appropriate gates.
+
+### Merged schema recheck
+
+`probe_recheck_migration.py` independently verifies the exact root `b3_integrate_protected_recovery` head and safeguarding model registration for schema composition only. On **both PostgreSQL and SQLite**, upgrade creates **95 tables including `alembic_version`**, Alembic metadata comparison reports no pending operations, complete head → base → head restores the exact table set, and a second metadata comparison remains clean. Independent inspection confirms both origin-specific partial unique indexes, original proposal span/outcome checks, the manual-recovery check, same-school recovery foreign key and nullable intake subject check survive. Isolated PostgreSQL schemas and temporary SQLite files are removed afterward. This composition result does not accept intrinsic safeguarding behavior.
+
+### Recheck commands and results
+
+The four owned suites ran from the new archive root with the same documented synthetic PostgreSQL DSN and actual scanner/OCR environment variables as the initial review. The command was identical to the initial combined run except `PYTHONPATH` points to `recheck-pinned/backend`; it included `test_evidence.py`, `test_ai_gateway.py`, `test_context_integration.py` and `test_intake_structuring.py`.
+
+Supplemental commands ran from `/Users/lauritz/Programming/SpesPed`:
+
+```sh
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-intake-structuring/recheck-pinned/backend:/Users/lauritz/Programming/SpesPed/var/review-intake-structuring/recheck-pinned/backend/tests \
+SPESPED_TEST_POSTGRES_URL='postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test' \
+backend/.venv/bin/pytest -q var/review-intake-structuring/test_recheck.py
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-intake-structuring/recheck-pinned/backend \
+SPESPED_TEST_POSTGRES_URL='postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test' \
+backend/.venv/bin/python var/review-intake-structuring/probe_recheck_migration.py
+```
+
+- Exact pinned four-suite regression: **195 passed, 8 skipped in 260.35 s** with actual clamd and Tesseract PNG/scanned-PDF processing enabled. All skips are expected SQLite counterparts of PostgreSQL concurrency tests.
+- Independent repaired-SR1/recovery probes: **12 passed, 2 skipped in 25.60 s**. The skips are SQLite counterparts of PostgreSQL recovery concurrency probes.
+- Independent merged schema probe: **passed on PostgreSQL and SQLite**, including 95-table single-head/metadata/roundtrip/check/index/FK assertions.
+- Existing Starlette/httpx TestClient deprecation remains the sole warning.
+
+Logs are `recheck-baseline.log`, `recheck-adverse.log` and `recheck-migration.log` under `var/review-intake-structuring/`.
+
+J07 user flows, production model/hardware quality, dictated-audio/protected source consumer adapters and F05 owned corrective followup for already shared derivatives remain separate required work. The reviewer changed only this tracked report and ignored review artifacts; no implementation edit, commit, push or subagent occurred.

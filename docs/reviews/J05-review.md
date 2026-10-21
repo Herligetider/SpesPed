@@ -168,3 +168,76 @@ These were executed as targeted selections while writing the probes:
 This recheck does not accept the complete manual slice until the remaining J05-R1 branch is repaired and independently retested. AI-generated IEP/goal suggestions and proposal review/apply, J06/J07 consumers/UI, final assembly and external connectors remain required work under their assigned scopes. Passing synthetic backend tests does not establish legal, school or production readiness.
 
 After all recheck probes completed, a read-only query confirmed `spesped_test` and **zero remaining `j05_%` schemas**. `git diff --check -- docs/reviews/J05-review.md` passed.
+
+## Second repair recheck — exact 1f0dec00b63289c9cc4c0d5c3c09c2976d285107
+
+Rechecked 21 October 2026, including comparison-lineage fix `1dbcd9035a3426e8aea3a4e7d1f9a37efdf3094e`. **Bounded verdict: accept the reviewed manual BC04/BC05 backend core on this exact merged pin. J05-R1, J05-R2 and J05-R3 are closed.** No remaining concrete defect was reproduced within this review's scope. This verdict supersedes the earlier open-finding statuses for the repaired pin only and does **not** mark full J05/F08 complete.
+
+### Isolation and reviewed repair
+
+Created a third, separate archive at `/Users/lauritz/Programming/SpesPed/var/review-j05/recheck2-pinned`. Printed the resolved paths of `spesped`, `plans_fixtures`, `entitlements.provenance` and `evidence.projections`; all are inside that archive. Tests used the archive's backend and tests directories explicitly in `PYTHONPATH`, overriding the virtual environment's editable shared-tree installation. The pin includes committed J04 manual recovery, the previously reviewed metadata helper, and merge `b4_integrate_comparison_basis`; evolving shared changes were not imported or edited.
+
+Reviewed all seven repair files: entitlements models/router/service, new `provenance.py`, plans fixtures/tests, and `j05_comparison_basis.py`; also inspected the root B4 merge and the merged model registry for migration verification. R2/R3 implementation was not changed by this repair; their prior independent tests were rerun successfully. Reviewer changes remain limited to this appended report and ignored probes/logs.
+
+### J05-R1 — resolved
+
+Automatic comparisons now freeze an exact `comparison_basis`: originating assessment and source, recommendation and source, decision and revision/source, and only the provision identities/sources originally matched by category and subject. The clarification/assessment source coordinates are protected by the new ORM immutability checks. `comparison_bindings` validates the recorded identities, original record relationships, school/pupil/case scope, confirmation evidence and source equality before returning metadata. Current actor-aware evidence checks still control prose disclosure; the metadata helper grants no additional authority.
+
+`clarification_view` uses that full basis for list, mutation and replay responses. A missing or invalid basis returns `review_required`, nulls description/source/resolution/manifest, and marks the lineage unknown. Manual noncomparison clarifications retain their existing behavior. The previously failing independent split-parent reproduction now passes on SQLite and PostgreSQL: reassigning the expert assessment's parent source suppresses the related clarification prose even though its separate recommendation and decision sources remain current.
+
+The committed new tests exercise parent reassignment, dispute and evidence-access revocation; fresh resolution and replay paths; unknown legacy lineage; preserved stored history; and multiple independent valid comparisons. The independent original probes, including profile history/replacement redaction, signing replay revocation, assistant minimal projection and source revision checks, all pass against this pin.
+
+An additional independent provision-source probe used four separate bindings for expert parent, recommendation, decision header and matching ITO provision, plus an unrelated assistance provision. Its manifest retained only the matching ITO provision. Correcting the unrelated assistance source did not hide the valid comparison; correcting the originally matched ITO provision did hide description/source/resolution/manifest on reads and replay. This verifies both required dependency tracking and the absence of a broad scan over unrelated case sources.
+
+### Legacy backfill and merged migrations — verified on SQLite and PostgreSQL
+
+The migration backfills only a clarification's sole retained `support_case.recommendation_difference` event, requiring the exact recommendation and decision revision references and the original same-school/pupil/case confirmed records. It does not choose a nearby assessment from matching prose or dates. It validates the retained source-binding shapes and captures the original matching provisions. Missing/ambiguous lineage stays NULL and remains protected by the common projection.
+
+Independent populated-legacy probes verified:
+
+- Two separate valid expert comparisons recover their own original manifests and retained resolutions; a separate valid sole-event clone also recovers the exact expected manifest.
+- Missing events, duplicate events, wrong-school events, wrong event types, changed decision-revision references, nonobject payloads, invalid recommendation UUIDs, nonexistent recommendations, mismatched recommendation sources and unconfirmed expert parents remain unknown and redacted.
+- Migration backfill changes provenance only: stored historical resolutions and outbox event counts are unchanged. The committed migration test also verifies unlinked legacy rows, fresh protected resolutions/retries, and subsequent wrong-pupil correction after backfill.
+
+Independent full-schema checks confirmed one head, `b4_integrate_comparison_basis`, with **zero Alembic metadata differences** against all live merged models. Both databases completed **head → base → head**. Base retained only the Alembic version table; the upgraded schema again matched the complete model metadata and exact head.
+
+### Exact commands and evidence
+
+Preparation from `/Users/lauritz/Programming/SpesPed`:
+
+```sh
+mkdir -p var/review-j05/recheck2-pinned
+git archive 1f0dec00b63289c9cc4c0d5c3c09c2976d285107 | tar -x -C var/review-j05/recheck2-pinned
+```
+
+Every test command used:
+
+```sh
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j05/recheck2-pinned/backend:/Users/lauritz/Programming/SpesPed/var/review-j05/recheck2-pinned/backend/tests
+SPESPED_TEST_POSTGRES_URL=postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test
+```
+
+From the archive, with those environment variables supplied:
+
+```sh
+/Users/lauritz/Programming/SpesPed/backend/.venv/bin/python -m pytest \
+  backend/tests/test_plans.py backend/tests/test_evidence_projection.py \
+  /Users/lauritz/Programming/SpesPed/var/review-j05/test_review_probes.py \
+  /Users/lauritz/Programming/SpesPed/var/review-j05/test_recheck_branches.py -q --tb=short
+```
+
+**Result:** **98 passed, 6 skipped** in 113.23 seconds; `var/review-j05/recheck2-baseline.log`. Both earlier independent desired-behavior probe files were unchanged. Skips are the SQLite parameters of actual PostgreSQL contention/error probes, whose PostgreSQL parameters passed. The previously failing split expert-parent source probe is included and now passes.
+
+Additional independent migration/provision probes, from the repository with the same explicit environment:
+
+```sh
+backend/.venv/bin/python -m pytest var/review-j05/test_recheck2_migration.py -q --tb=short
+```
+
+The file was run first with its full-schema and populated-backfill cases: **4 passed** in 7.39 seconds (`recheck2-migration.log`). After adding the separate exact-provision case, that selection was run with `-k original_provisions`: **2 passed** in 5.02 seconds (`recheck2-provisions.log`). Together these runs exercise all six cases in the supplemental file. The only warning is the existing FastAPI/Starlette test-client deprecation.
+
+Final cleanup verification queried `spesped_test` and found **zero remaining `j05_%` schemas**, including the independent full-schema migration probes. No demo database or external service was used. Production files, commits and shared checkout changes were untouched.
+
+### Acceptance boundary
+
+Acceptance covers the reviewed manual profile, entitlement/referral/decision and versioned IEP backend behavior and these repaired access/concurrency/migration invariants. Actual AI-generated IEP/goal suggestions and proposal review/apply, J06/J07 consumers/UI, final assembly and external connectors remain required work. The passing synthetic workflows do not establish school-specific legal correctness, practitioner acceptance or production readiness.

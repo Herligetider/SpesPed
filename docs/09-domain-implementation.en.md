@@ -112,7 +112,7 @@ revision. It cannot authorize source prose, review reasons, history or original
 documents; those still require the evidence service's actor-aware access checks.
 Contexts must not replace full source authorization with this metadata check.
 
-The candidate read port
+The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
 requires governance case authority, the owning context's live case resolver and
 each obligation's current detailed-access check. It returns only authorized
@@ -122,8 +122,10 @@ actions and document types are actionable only for current, resolved, applicable
 rules; the port never classifies a generic action as a notification. Multiple
 source profiles remain distinct. Empty/inaccessible sets are unavailable, and
 legal completeness is always unassessed. Reading creates or fulfills no task.
-This candidate awaits independent review and subsequent protected-workspace
-composition; it is not yet registered as the safeguarding rule-context adapter.
+The bounded read port was independently accepted at `30c656f`; see
+[the review](reviews/protected-rule-projection-review.md). Protected-workspace
+composition remains required; it is not yet registered as the safeguarding
+rule-context adapter.
 
 Foundation public Python contracts:
 

@@ -330,7 +330,7 @@
         "J01",
         "J02"
       ],
-      "status": "awaiting_review",
+      "status": "implementing",
       "requiredEvidence": "Multi-pupil source separation, file rejection, provenance, derivative correction",
       "implementationAgent": "/root/j04_evidence",
       "reviewAgent": "/root/review_intake_structuring",
@@ -386,6 +386,12 @@
           "type": "implementer_report",
           "revision": "a3488aed170a502e6040dabf654daa897da5d98f",
           "result": "Frozen repair suite195passed8SQLite concurrency skips/265.36s with actualClamAV/Tesseract and PostgreSQL, including12newHTTPrecoverycases. Original reviewer assigned exact merged713f794 archive and schema recheck; no acceptance yet."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J04-structuring-review.md",
+          "revision": "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
+          "result": "Bounded intake structuring/manual recovery accepted; SR1 independently closed. Pinned regression: 195 passed, 8 expected SQLite concurrency skips; independent probes: 12 passed, 2 SQLite skips. SQLite/PostgreSQL single-head 95-table metadata and migration roundtrips passed. UI and downstream correction responsibilities remain required."
         }
       ],
       "findings": [
@@ -411,15 +417,14 @@
           "id": "J04-SR1",
           "priority": "P1",
           "description": "Manual proposal existing-row return leaks recalled model proposal and review prose",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
-        "Independent review/recheck of pre-attribution structured AI proposals, owned clarification tasks and merged schema assembly.",
         "J05/teaching/downstream consumer integration and J07 UI.",
-        "F05 owned follow-up for already shared derivative corrections remains required in disclosure/document consumer integration."
-      ],
-      "activeImplementationAgent": "/root/j04_structuring"
+        "F05 owned follow-up for already shared derivative corrections remains required in disclosure/document consumer integration.",
+        "Protected-case and dictated-audio consumers plus production model/hardware quality remain required under their owning jobs."
+      ]
     },
     {
       "id": "J05",
@@ -434,13 +439,14 @@
         "J02",
         "J04"
       ],
-      "status": "changes_requested",
+      "status": "implementing",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
       "commits": [
         "ac4eea27bdbb38421fe48465269d950f4d37d634",
-        "7088d2bd5dd64a78dd44237606c10e83e914d101"
+        "7088d2bd5dd64a78dd44237606c10e83e914d101",
+        "1f0dec00b63289c9cc4c0d5c3c09c2976d285107"
       ],
       "evidence": [
         {
@@ -469,6 +475,12 @@
           "path": "docs/reviews/J05-review.md",
           "revision": "7088d2bd5dd64a78dd44237606c10e83e914d101",
           "result": "80passed4skips baseline, additional8passed2skips plus2reproduced remainingR1 failures. R2/R3 independently closed; root metadata helper and real PostgreSQL rollback/retry accepted. R1 split expert-parent source provenance still open; original implementer repairing."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J05-review.md",
+          "revision": "1f0dec00b63289c9cc4c0d5c3c09c2976d285107",
+          "result": "Manual BC04/BC05 backend core accepted after comparison-lineage repair 1dbcd9035a3426e8aea3a4e7d1f9a37efdf3094e; R1-R3 independently closed. 98 passed, 6 expected SQLite skips plus 6 independent SQLite/PostgreSQL provenance/backfill/schema passes. AI-generated IEP/goal proposals, consumers and application assembly remain required; full J05/F08 not complete."
         }
       ],
       "findings": [
@@ -476,7 +488,7 @@
           "id": "J05-R1",
           "priority": "P1",
           "description": "Source-bound auxiliary prose and replay responses bypass current-source filtering",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J05-R2",
@@ -492,7 +504,7 @@
         }
       ],
       "remainingWork": [
-        "Independent review and integration of the manual authored/imported IEP, support-profile and entitlement backend candidate.",
+        "Application assembly and J06/J07 integration of the independently accepted manual authored/imported IEP, support-profile and entitlement backend.",
         "F08 generated IEP/goal suggestions from confirmed assessment and decision basis, with source/revision checks and explicit professional selection/apply; implementer confirms this is not yet implemented.",
         "Audit and complete remaining F07/F08 clarification and consumer-impact workflows; full UI acceptance belongs to J07 and later UI jobs."
       ]
@@ -513,13 +525,17 @@
         "J04",
         "J05"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Complete teaching cycle; no scheduled-as-delivered; assistant scope; stale brief",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j06_teaching",
       "reviewAgent": null,
       "commits": [],
       "evidence": [],
-      "findings": []
+      "findings": [],
+      "remainingWork": [
+        "Implement and independently review the teaching backend, typed AI session planning, exact approvals, assistant scope, actual delivery and observations.",
+        "Root gateway and application composition plus J07 UI must exercise the complete persistent teaching workflow."
+      ]
     },
     {
       "id": "J07",
@@ -561,7 +577,7 @@
         "J01",
         "J02"
       ],
-      "status": "awaiting_review",
+      "status": "implementing",
       "requiredEvidence": "Real local protocol tests, no production remote fallback, injection/source limits",
       "implementationAgent": "/root/j08_ai_gateway",
       "reviewAgent": "/root/review_intake_structuring",
@@ -598,6 +614,12 @@
           "type": "scope_reopened",
           "revision": "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
           "result": "Intake subject/purpose and distinct evaluated output schema extend gateway contract; current changed scope independently reviewed with J04. Prior accepted gateway evidence retains its pinned scope only."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J04-structuring-review.md",
+          "revision": "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
+          "result": "Intake-specific gateway extension accepted in the pinned intake recovery review. Earlier accepted scopes remain pinned; the new J06 session_planning purpose is in progress and requires its own tests/review."
         }
       ],
       "findings": [
@@ -614,7 +636,11 @@
           "status": "verified_fixed"
         }
       ],
-      "activeImplementationAgent": "/root/j04_structuring"
+      "activeImplementationAgent": "/root",
+      "remainingWork": [
+        "Complete and independently review the typed session_planning capability and real teaching-basis resolver with J06.",
+        "Complete later document/IEP/dictation consumers and production local-model quality/operations gates; no full F33 acceptance."
+      ]
     },
     {
       "id": "J09",
@@ -818,12 +844,13 @@
         "J02",
         "J13"
       ],
-      "status": "changes_requested",
+      "status": "implementing",
       "requiredEvidence": "Case isolation, alternative routes, no headteacher gate on personal/urgent duty",
       "implementationAgent": "/root/j16_safeguarding",
       "reviewAgent": "/root/review_j16",
       "commits": [
-        "e4c295d66b47cd34f5ab2a0f20314af4021994fb"
+        "e4c295d66b47cd34f5ab2a0f20314af4021994fb",
+        "30c656f624a32bb4512f4894388f46afcc2e521d"
       ],
       "evidence": [
         {
@@ -836,6 +863,18 @@
           "path": "docs/reviews/J16-review.md",
           "revision": "e4c295d66b47cd34f5ab2a0f20314af4021994fb",
           "result": "41passed1skip baseline;27passed1skip independent probes reproduce5findings. Original implementer repairing. Root rule-context contract/composition and UI remain explicit required follow-on."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J16-review.md",
+          "revision": "30c656f624a32bb4512f4894388f46afcc2e521d",
+          "result": "Bounded protected-workflow backend accepted after repair 77ce990cfcec8a9007e609c9654e53cfb651e72c; all five findings independently closed. Combined suites: 84 passed, 1 expected SQLite concurrency skip; independent repaired regressions: 28 passed. Application/rule-adapter composition and J23 UI remain required."
+        },
+        {
+          "type": "independent_integration_port_review",
+          "path": "docs/reviews/protected-rule-projection-review.md",
+          "revision": "30c656f624a32bb4512f4894388f46afcc2e521d",
+          "result": "Root governance case_requirements read port independently accepted: 10 supplied and 16 independent SQLite/PostgreSQL checks. Exact authorized recorded obligations only; no completeness claim or task mutation. Safeguarding adapter remains unimplemented."
         }
       ],
       "findings": [
@@ -843,36 +882,36 @@
           "id": "J16-R1",
           "priority": "P1",
           "description": "Cached contributor replay exposes followup after reassignment removed current access",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J16-R2",
           "priority": "P2",
           "description": "Contact reconciliation and notification summary retain or conflate failed/unknown execution",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J16-R3",
           "priority": "P2",
           "description": "Assigned missing pupil-perspective followup is invisible to limited owner",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J16-R4",
           "priority": "P2",
           "description": "Accepted API string lengths exceed PostgreSQL storage limits",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J16-R5",
           "priority": "P2",
           "description": "Incident followup completion accepts impossible pre-incident occurrence",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
-        "Independent adverse review and repairs of protected case workflows, access projections, actual actions and source snapshots.",
-        "Root router/model registration and real governance case, source and reviewed-rule adapters, with independent integration review.",
+        "Root router/model registration and real governance case, source and richer reviewed-rule adapters, with independent integration review.",
+        "Authorized case detail and manual urgent work must remain usable when rule context is unavailable, unresolved or withdrawn.",
         "J23 UI, reviewed school configuration and full feature acceptance remain required."
       ]
     },
@@ -1330,9 +1369,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/plans"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J05-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J05-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F02.AC01",
@@ -1367,10 +1415,15 @@
         {
           "scope": "Partial backend only; full feature and UI remain unverified.",
           "review": "docs/reviews/J04-review.md"
+        },
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J04-structuring-review.md"
         }
       ],
       "independentReviews": [
-        "docs/reviews/J04-review.md"
+        "docs/reviews/J04-review.md",
+        "docs/reviews/J04-structuring-review.md"
       ],
       "acceptanceCriteria": [
         {
@@ -1406,10 +1459,15 @@
         {
           "scope": "Partial backend only; full feature and UI remain unverified.",
           "review": "docs/reviews/J04-review.md"
+        },
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J04-structuring-review.md"
         }
       ],
       "independentReviews": [
-        "docs/reviews/J04-review.md"
+        "docs/reviews/J04-review.md",
+        "docs/reviews/J04-structuring-review.md"
       ],
       "acceptanceCriteria": [
         {
@@ -1445,10 +1503,15 @@
         {
           "scope": "Partial backend only; full feature and UI remain unverified.",
           "review": "docs/reviews/J04-review.md"
+        },
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J04-structuring-review.md"
         }
       ],
       "independentReviews": [
-        "docs/reviews/J04-review.md"
+        "docs/reviews/J04-review.md",
+        "docs/reviews/J04-structuring-review.md"
       ],
       "acceptanceCriteria": [
         {
@@ -1516,9 +1579,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/entitlements"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J05-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J05-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F07.AC01",
@@ -1546,9 +1618,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/plans"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J05-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J05-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F08.AC01",
@@ -1658,7 +1739,7 @@
       "id": "F12",
       "title": "Planlegg neste undervisningsøkt",
       "context": "BC07",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J06",
@@ -1688,7 +1769,7 @@
       "id": "F13",
       "title": "Assistentkort og veiledning",
       "context": "BC07",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J06",
@@ -1748,7 +1829,7 @@
       "id": "F15",
       "title": "Gjennomførte timer og avvik",
       "context": "BC07",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J06",
@@ -1778,7 +1859,7 @@
       "id": "F16",
       "title": "Rask øktlogg og diktering",
       "context": "BC07",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J06",
@@ -2057,9 +2138,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/safeguarding"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J16-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J16-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F24.AC01",
@@ -2087,9 +2177,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/safeguarding"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J16-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J16-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F25.AC01",
@@ -2117,9 +2216,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/safeguarding"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Bounded backend acceptance only; application integration, UI and full feature acceptance remain incomplete. See the final pinned recheck in this report.",
+          "review": "docs/reviews/J16-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J16-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F26.AC01",
@@ -2524,7 +2632,7 @@
       "id": "F39",
       "title": "Tilbakemelding og kontroll av forslag",
       "context": "BC07",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J06",
@@ -2661,6 +2769,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Pinned J05 manual core ac4eea2 and extended J04 structuring849dd63, merged schema4599b34. Distinct reviewers reproduced three J05 findings and one J04 recall leak; fixes assigned to original implementers. Root added tested metadata projection portb67bb74 for independently reviewed J05 adoption. J16 protected-case backend and tests in progress. Full feature and release gates remain incomplete."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Recorded independent closure of J04-SR1, J05-R1-R3 and J16-R1-R5, accepted bounded governance read port and b3/b4 schema checks. J06 teaching and its typed gateway extension are in progress. Detailed all-40 feature catalog and chosen-period parent email remain the review specification; no full feature or release gate is marked complete."
     }
   ]
 }
