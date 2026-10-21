@@ -215,7 +215,7 @@ def experiences(school_id:UUID,learner_id:UUID,resource_revision_id:UUID|None=No
     rows=[]
     for row in db.scalars(select(m.ResourceExperience).where(m.ResourceExperience.school_id==str(school_id),m.ResourceExperience.learner_id==str(learner_id)).order_by(m.ResourceExperience.created_at,m.ResourceExperience.id)):
         if resource_revision_id and row.resource_revision_id!=str(resource_revision_id):continue
-        rows.append({**svc.row_view(row),'constitutes_approval':False})
+        rows.append(svc.experience_view(db,actor,row))
     return paginate(rows,offset,limit)
 
 
@@ -289,3 +289,8 @@ def team_members(school_id:UUID,team_id:UUID,offset:int=Query(0,ge=0),limit:int=
 def material(school_id:UUID,material_id:UUID,actor:Actor=Depends(get_actor),db:Session=Depends(curriculum_db)):
     svc.authority(db,actor,str(school_id),'materials.read')
     return {'kind':'material',**svc.row_view(svc.get(db,m.MaterialCatalogItem,str(school_id),material_id)),'availability':'unknown'}
+
+
+@router.post('/theme-goal-bindings/{binding_id}/corrections',status_code=201)
+def correct_binding(school_id:UUID,binding_id:UUID,command:s.GoalBindingCorrection,actor:Actor=Depends(get_actor),db:Session=Depends(curriculum_db)):
+    return svc.correct_goal_binding(db,actor,str(school_id),binding_id,command)

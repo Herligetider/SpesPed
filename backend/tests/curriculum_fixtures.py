@@ -96,3 +96,30 @@ def publish(client,ids,h,row):
     response=client.post(path(ids)+f'/class-plans/{row["id"]}/publish',headers=h,json=expected(row,revision_id=row['content']['id'],content_digest=row['content']['content_digest'],periods_checked=True,references_checked=True,reason='Synthetic periods and exact goals checked'))
     assert response.status_code==200,response.text
     return response.json()
+
+
+def bound_theme(client,ids,h):
+    goal,_=ordinary_goal(client,ids,h)
+    reviewed,_=scheme(client,ids,h);content=plan_content(reviewed)
+    plan=publish(client,ids,h,class_plan(client,ids,h,content));ref,_=source(client,ids,h)
+    payload=retry(plan_revision_id=plan['content']['id'],theme_id=content['themes'][0]['id'],learner_id=ids['a'],goal_revision_id=goal,participation='adapt',rationale='Synthetic shared theme with distinct goal',adaptation='Read large-print adapted labels',materials=['Synthetic adapted cards'],sources=[ref])
+    response=client.post(path(ids)+'/theme-goal-bindings',headers=h,json=payload)
+    assert response.status_code==201,response.text
+    return response.json(),payload,plan
+
+
+def correction(row,refs,**changes):
+    return expected(row,participation='not_relevant',rationale='Synthetic theme currently unsuitable',adaptation=None,materials=[],sources=refs,reason='Synthetic correction after human relevance review',**changes)
+
+
+def resource_experience(client,ids,h,**resource_changes):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    goal,_=ordinary_goal(client,ids,h);res=resource(client,ids,h,**resource_changes)
+    content=actual(ids,{'a':goal})
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=content));assert response.status_code==201,response.text
+    delivery=response.json()
+    observed=datetime.fromisoformat(delivery['occurred_at']).astimezone(ZoneInfo('Europe/Oslo')).date().isoformat()
+    payload=retry(resource_revision_id=res['revision_id'],learner_id=ids['a'],session_delivery_revision_id=delivery['revision_id'],observed_on=observed,experience='Synthetic actual resource use with positive independent attempts')
+    response=client.post(path(ids)+'/resource-experiences',headers=h,json=payload);assert response.status_code==201,response.text
+    return response.json(),payload,delivery,content,res

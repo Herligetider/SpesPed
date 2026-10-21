@@ -366,3 +366,188 @@ def test_consumer_read_ports_preserve_pending_changes_and_fail_closed(curriculum
         assert original.title=='Synthetic unflushed correction' and original in db.dirty
         db.rollback()
         assert resolve_resource(db,Actor(ids['reviewer']),ids['school'],original.id)['title']==row['title']
+
+
+def test_binding_correction_one_current_choice_retains_history_and_retries(curriculum_env):
+    from curriculum_fixtures import bound_theme,correction
+    client,factory,app,ids=curriculum_env;h=login(client)
+    first,creation,plan=bound_theme(client,ids,h)
+    assert first['is_current'] and first['supersedes_id'] is None
+    # A new key for a conflicting fresh create is not a correction command.
+    duplicate={**creation,'request_key':key(),'participation':'not_relevant','adaptation':None,'materials':[]}
+    assert client.post(path(ids)+'/theme-goal-bindings',headers=h,json=duplicate).status_code==409
+    payload=correction(first,creation['sources'])
+    target=path(ids)+f'/theme-goal-bindings/{first["id"]}/corrections'
+    response=client.post(target,headers=h,json=payload);assert response.status_code==201,response.text
+    changed=response.json()
+    assert changed['participation']=='not_relevant' and changed['is_current']
+    assert changed['supersedes_id']==first['id'] and changed['correction_reason']==payload['reason']
+    assert client.post(target,headers=h,json=payload).json()==changed
+    assert client.post(target,headers=h,json={**payload,'request_key':key()}).status_code==409
+    assert client.post(target,headers=h,json={**payload,'reason':'Conflicting key reuse'}).status_code==409
+    context=client.get(path(ids)+f'/class-context/{plan["content"]["id"]}?on_date=2026-10-21&learner_id={ids["a"]}')
+    assert context.status_code==200,context.text
+    assert [b['participation'] for b in context.json()['bindings']]==['not_relevant']
+    history=client.get(path(ids)+f'/theme-goal-bindings?learner_id={ids["a"]}').json()['items']
+    assert len(history)==2
+    old=next(row for row in history if row['id']==first['id'])
+    assert old['state']=='superseded' and not old['is_current'] and old['superseded_by_id']==changed['id']
+    assert old['adaptation']==creation['adaptation'] and old['bound_by']==ids['reviewer']
+    # A replay acknowledges the original command while exposing its current historical state.
+    replay=client.post(path(ids)+'/theme-goal-bindings',headers=h,json=creation)
+    assert replay.status_code==201 and replay.json()['state']=='superseded' and not replay.json()['is_current']
+    with factory() as db:
+        assert db.scalar(select(func.count()).select_from(m.ThemeGoalBinding).where(m.ThemeGoalBinding.state=='active'))==1
+        assert db.scalar(select(func.count()).select_from(m.CurriculumEvent).where(m.CurriculumEvent.event_type=='curriculum.theme.goal_binding_corrected'))==1
+
+
+def test_binding_database_uniqueness_distinct_goals_and_learner_scope(curriculum_env):
+    from curriculum_fixtures import bound_theme,correction
+    from plans_fixtures import plan_payload,activate
+    from sqlalchemy.exc import IntegrityError
+    client,factory,app,ids=curriculum_env;h=login(client)
+    payload=plan_payload();payload['goals'].append({**payload['goals'][0],'title':'Synthetic distinct second goal','expected_action':'Recognise a continent label'})
+    response=client.post(base(ids)+f'/learners/{ids["a"]}/education-plans',headers=h,json=payload)
+    assert response.status_code==201,response.text
+    active=activate(client,ids,h,response.json());goal_ids=[g['id'] for g in active['content']['goals']]
+    reviewed,_=scheme(client,ids,h);content=plan_content(reviewed);plan=publish(client,ids,h,class_plan(client,ids,h,content));ref,_=source(client,ids,h)
+    bindings=[]
+    for goal_id in goal_ids:
+        payload=retry(plan_revision_id=plan['content']['id'],theme_id=content['themes'][0]['id'],learner_id=ids['a'],goal_revision_id=goal_id,participation='participate',rationale='Synthetic separate pupil goal',sources=[ref])
+        response=client.post(path(ids)+'/theme-goal-bindings',headers=h,json=payload);assert response.status_code==201,response.text
+        bindings.append(response.json())
+    assert len(client.get(path(ids)+f'/class-context/{plan["content"]["id"]}?on_date=2026-10-21&learner_id={ids["a"]}').json()['bindings'])==2
+    with factory() as db:
+        original=db.get(m.ThemeGoalBinding,bindings[0]['id'])
+        values={column.name:getattr(original,column.name) for column in original.__table__.columns if column.name not in {'id','created_at','updated_at','version'}}
+        db.add(m.ThemeGoalBinding(**values))
+        with pytest.raises(IntegrityError):db.commit()
+    # A manager without this pupil's assignment cannot probe a stale version or correct it.
+    with factory.begin() as db:
+        for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.school_id==ids['school'],StaffAssignment.user_id==ids['teacher'],StaffAssignment.learner_id==ids['a'])):assignment.state='revoked'
+    h=login(client,'teacher')
+    command_payload=correction(bindings[0],[ref]);command_payload['expected_version']=999
+    assert client.post(path(ids)+f'/theme-goal-bindings/{bindings[0]["id"]}/corrections',headers=h,json=command_payload).status_code==403
+    assert client.post(path(ids)+f'/theme-goal-bindings/{uuid4()}/corrections',headers=h,json=command_payload).status_code==403
+
+
+def test_postgres_concurrent_corrections_one_current_choice(curriculum_env):
+    from concurrent.futures import ThreadPoolExecutor
+    from curriculum_fixtures import bound_theme,correction
+    from spesped.contexts.curriculum import service as svc,schemas as s
+    from spesped.auth import Actor
+    from spesped.errors import DomainError
+    client,factory,app,ids=curriculum_env
+    if factory.kw['bind'].dialect.name!='postgresql':pytest.skip('Real PostgreSQL competing correction locking')
+    h=login(client);first,creation,_=bound_theme(client,ids,h)
+    commands=[s.GoalBindingCorrection(**correction(first,creation['sources'])) for _ in range(2)]
+    def invoke(command):
+        with factory() as db:
+            from spesped.contexts.curriculum.adapters import EvidenceSourceReadPort
+            db.info['curriculum_source_port']=EvidenceSourceReadPort(app.state.evidence_storage)
+            try:return svc.correct_goal_binding(db,Actor(ids['reviewer']),ids['school'],first['id'],command)
+            except DomainError as exc:return exc.code
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures=[pool.submit(invoke,cmd) for cmd in commands];results=[future.result(timeout=15) for future in futures]
+    assert len([r for r in results if isinstance(r,dict)])==1 and 'version_conflict' in results
+    with factory() as db:
+        assert db.scalar(select(func.count()).select_from(m.ThemeGoalBinding))==2
+        assert db.scalar(select(func.count()).select_from(m.ThemeGoalBinding).where(m.ThemeGoalBinding.state=='active'))==1
+        assert db.get(m.ThemeGoalBinding,first['id']).version==2
+
+
+def test_experience_currentness_after_actual_correction_and_idempotent_replay(curriculum_env):
+    from curriculum_fixtures import resource_experience
+    from spesped.auth import Actor
+    from spesped.contexts.curriculum import service as svc
+    from spesped.contexts.curriculum.adapters import EvidenceSourceReadPort
+    client,factory,app,ids=curriculum_env;h=login(client)
+    saved,payload,delivery,actual_content,res=resource_experience(client,ids,h)
+    assert saved['state']=='current' and saved['actual_status']=='current' and not saved['review_required']
+    with factory() as cached:
+        cached.info['curriculum_source_port']=EvidenceSourceReadPort(app.state.evidence_storage)
+        row=cached.get(m.ResourceExperience,saved['id'])
+        assert svc.experience_view(cached,Actor(ids['reviewer']),row)['state']=='current'
+        from spesped.contexts.teaching.models import SessionDelivery
+        retained_actual=cached.get(SessionDelivery,delivery['id'])
+        assert retained_actual.current_revision==1
+        actual_content['participants'][0].update(status='absent',minutes=0)
+        actual_content.update(status='partial',cause='learner_absence',follow_up_owner_id=ids['reviewer'],follow_up='Synthetic review after corrected absence')
+        response=client.post(base(ids)+f'/teaching/deliveries/{delivery["id"]}/corrections',headers=h,json=expected(delivery,content=actual_content,reason='Synthetic correction of participation'))
+        assert response.status_code==200,response.text
+        assert retained_actual.current_revision==1
+        value=svc.experience_view(cached,Actor(ids['reviewer']),row)
+        assert retained_actual.current_revision==2
+        assert value['state']=='review_required' and value['actual_status']=='historical'
+        assert value['session_delivery_revision_id']==delivery['revision_id'] and value['experience']==saved['experience']
+        assert value['review_required'] and value['constitutes_approval'] is False
+    listed=client.get(path(ids)+f'/resource-experiences?learner_id={ids["a"]}').json()['items'][0]
+    assert listed['actual_status']=='historical' and listed['source_status']=='review_required'
+    assert client.post(path(ids)+'/resource-experiences',headers=h,json={**payload,'request_key':key()}).status_code==409
+    replay=client.post(path(ids)+'/resource-experiences',headers=h,json=payload)
+    assert replay.status_code==201 and replay.json()['actual_status']=='historical'
+    with factory() as db:
+        retained=db.get(m.ResourceExperience,saved['id'])
+        assert retained.experience==saved['experience'] and retained.session_delivery_revision_id==delivery['revision_id']
+
+
+def test_experience_current_source_and_revoked_cached_rights_redact_prose(curriculum_env):
+    from curriculum_fixtures import resource_experience
+    from spesped.auth import Actor
+    from spesped.contexts.curriculum import service as svc
+    from spesped.contexts.curriculum.adapters import EvidenceSourceReadPort
+    from spesped.errors import DomainError
+    client,factory,app,ids=curriculum_env;h=login(client);ref,_=source(client,ids,h)
+    saved,payload,delivery,actual_content,res=resource_experience(client,ids,h,sources=[ref])
+    with factory() as cached:
+        cached.info['curriculum_source_port']=EvidenceSourceReadPort(app.state.evidence_storage)
+        row=cached.get(m.ResourceExperience,saved['id'])
+        assert svc.experience_view(cached,Actor(ids['reviewer']),row)['content_available']
+        retained_grant=cached.scalar(select(AuthorityGrant).where(AuthorityGrant.school_id==ids['school'],AuthorityGrant.user_id==ids['reviewer'],AuthorityGrant.action=='curriculum.source.read'))
+        retained_assignment=cached.scalar(select(StaffAssignment).where(StaffAssignment.school_id==ids['school'],StaffAssignment.user_id==ids['reviewer'],StaffAssignment.learner_id==ids['a']))
+        with factory.begin() as db:
+            grant=db.scalar(select(AuthorityGrant).where(AuthorityGrant.school_id==ids['school'],AuthorityGrant.user_id==ids['reviewer'],AuthorityGrant.action=='curriculum.source.read'));grant.state='revoked'
+        assert retained_grant.state=='active'
+        value=svc.experience_view(cached,Actor(ids['reviewer']),row)
+        assert value['resource_status']=='unavailable' and value['experience'] is None and value['review_required']
+        assert value['session_delivery_revision_id']==delivery['revision_id'] and value['actual_status']=='current'
+        listed=client.get(path(ids)+f'/resource-experiences?learner_id={ids["a"]}').json()['items'][0]
+        assert listed['experience'] is None and not listed['content_available']
+        replay=client.post(path(ids)+'/resource-experiences',headers=h,json=payload)
+        assert replay.status_code==201 and replay.json()['experience'] is None
+        with factory.begin() as db:
+            for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.school_id==ids['school'],StaffAssignment.user_id==ids['reviewer'],StaffAssignment.learner_id==ids['a'])):assignment.state='revoked'
+        assert retained_assignment.state=='active'
+        with pytest.raises(DomainError) as denied:svc.experience_view(cached,Actor(ids['reviewer']),row)
+        assert denied.value.status_code==403
+    assert client.get(path(ids)+f'/resource-experiences?learner_id={ids["a"]}').status_code==403
+    assert client.post(path(ids)+'/resource-experiences',headers=h,json=payload).status_code==403
+
+
+def test_experience_original_replacement_and_resource_withdrawal_mark_history(curriculum_env):
+    from curriculum_fixtures import resource_experience
+    from spesped.contexts.evidence.models import SourceItem
+    client,factory,app,ids=curriculum_env;h=login(client);ref,original=source(client,ids,h)
+    saved,payload,delivery,actual_content,res=resource_experience(client,ids,h,sources=[ref])
+    with factory() as db:
+        item=db.get(SourceItem,original['id'])
+        metadata=retry(external_scope=item.external_scope,external_id=item.external_id,sender='Synthetic original owner',document_type='curriculum',received_at=utcnow().isoformat())
+    response=client.post(base(ids)+f'/intake/{original["id"]}/revisions',content=b'Synthetic corrected resource source',headers={**h,'X-Evidence-Filename':'corrected.txt','X-Evidence-Metadata':json.dumps(metadata),'X-Expected-Version':str(original['version'])})
+    assert response.status_code==201,response.text
+    listed=client.get(path(ids)+f'/resource-experiences?learner_id={ids["a"]}&resource_revision_id={res["revision_id"]}').json()['items'][0]
+    assert listed['id']==saved['id'] and listed['resource_revision_id']==res['revision_id']
+    assert listed['state']=='review_required' and listed['actual_status']=='current' and listed['resource_status']=='unavailable'
+    assert listed['experience'] is None and not listed['content_available']
+    # Withdrawal independently removes current resource support while retaining the account.
+    second_res=resource(client,ids,h)
+    response=client.post(path(ids)+'/resource-experiences',headers=h,json={**payload,'request_key':key(),'resource_revision_id':second_res['revision_id']})
+    assert response.status_code==201,response.text
+    second=response.json()
+    response=client.post(path(ids)+f'/resources/{second_res["id"]}/withdraw',headers=h,json=expected(second_res,reason='Synthetic withdrawal of the presentation'))
+    assert response.status_code==200,response.text
+    listed=client.get(path(ids)+f'/resource-experiences?learner_id={ids["a"]}&resource_revision_id={second_res["revision_id"]}').json()['items'][0]
+    assert listed['id']==second['id'] and listed['resource_status']=='unavailable' and listed['review_required']
+    assert listed['experience'] is None and listed['actual_status']=='current'
+    with factory() as db:
+        assert db.get(m.ResourceExperience,saved['id']).experience==saved['experience']
+        assert db.get(m.ResourceExperience,second['id']).experience==second['experience']

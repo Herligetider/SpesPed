@@ -59,7 +59,10 @@ def mutation(action):
                 if prior:
                     if prior.operation != fn.__name__ or prior.request_digest != fingerprint: raise DomainError('idempotency_conflict','This request key already identifies a different command.',409)
                     authorize_result(db,actor,school_id,prior.result)
-                    db.commit();return prior.result
+                    result=prior.result
+                    if result['kind']=='binding':result={'kind':'binding',**binding_view(db,actor,get(db,m.ThemeGoalBinding,school_id,result['id']))}
+                    elif result['kind']=='experience':result=experience_view(db,actor,get(db,m.ResourceExperience,school_id,result['id']))
+                    db.commit();return json_view(result)
                 prior_request_key=db.info.get('curriculum_request_key')
                 db.info['curriculum_request_key']=command.request_key
                 try:result=json_view(fn(db,actor,school_id,*args))
@@ -296,8 +299,31 @@ def bind_goal(db,actor,school_id,command):
     current_class_context(db,actor,school_id,revision.id,date.fromisoformat(theme['valid_from']),str(command.learner_id))
     goal=current_goal(db,actor,school_id,str(command.learner_id),command.goal_revision_id)
     sources(db,actor,school_id,command.sources)
+    existing=db.scalar(select(m.ThemeGoalBinding.id).where(m.ThemeGoalBinding.school_id==school_id,m.ThemeGoalBinding.plan_revision_id==str(command.plan_revision_id),m.ThemeGoalBinding.theme_id==str(command.theme_id),m.ThemeGoalBinding.learner_id==str(command.learner_id),m.ThemeGoalBinding.goal_revision_id==str(command.goal_revision_id),m.ThemeGoalBinding.state=='active'))
+    if existing:raise DomainError('binding_exists','Correct the current exact theme/goal choice using its expected version.',409)
     values=command.model_dump(mode='json',exclude={'request_key'})
     row=m.ThemeGoalBinding(school_id=school_id,bound_by=actor.user_id,goal_digest=digest(goal),state='active',**values);db.add(row);emit(db,actor,row,'curriculum.theme.goal_bound')
+    return {'kind':'binding',**binding_view(db,actor,row)}
+
+
+@mutation('curriculum.manage')
+def correct_goal_binding(db,actor,school_id,identifier,command):
+    previous=get(db,m.ThemeGoalBinding,school_id,identifier,lock=True)
+    require_learner_access(db,actor,school_id,previous.learner_id,'plans.write')
+    if previous.version!=command.expected_version:raise DomainError('version_conflict','Reload the current exact theme/goal choice before correcting it.',409)
+    if previous.state!='active':raise DomainError('binding_superseded','Correct the current exact theme/goal choice.',409)
+    # Current dependencies must still be authorized; correction never inherits a
+    # former actor's source rights or changes the learner/goal/theme coordinates.
+    binding_view(db,actor,previous)
+    sources(db,actor,school_id,command.sources)
+    values=command.model_dump(mode='json',exclude={'request_key','expected_version','reason'})
+    previous.state='superseded';previous.version+=1
+    db.flush()  # Release the exact active-choice index before inserting its successor.
+    row=m.ThemeGoalBinding(school_id=school_id,plan_revision_id=previous.plan_revision_id,
+        theme_id=previous.theme_id,learner_id=previous.learner_id,goal_revision_id=previous.goal_revision_id,
+        bound_by=actor.user_id,goal_digest=previous.goal_digest,supersedes_id=previous.id,
+        correction_reason=command.reason,state='active',**values)
+    db.add(row);emit(db,actor,row,'curriculum.theme.goal_binding_corrected',supersedes_id=previous.id)
     return {'kind':'binding',**binding_view(db,actor,row)}
 
 
@@ -312,7 +338,8 @@ def binding_view(db,actor,row):
     goal=current_goal(db,actor,row.school_id,row.learner_id,row.goal_revision_id)
     if digest(goal)!=row.goal_digest:raise DomainError('goal_changed','The exact bound pupil goal needs review.',409)
     sources(db,actor,row.school_id,row.sources)
-    return row_view(row)
+    successor=db.scalar(select(m.ThemeGoalBinding.id).where(m.ThemeGoalBinding.school_id==row.school_id,m.ThemeGoalBinding.supersedes_id==row.id))
+    return {**row_view(row),'is_current':row.state=='active','superseded_by_id':successor}
 
 
 def impact_access(db,actor,row):
@@ -480,7 +507,42 @@ def record_experience(db,actor,school_id,command):
     actual_experience(db,actor,school_id,str(command.learner_id),command.session_delivery_revision_id,command.observed_on)
     values=command.model_dump(mode='json',exclude={'request_key'});values['observed_on']=command.observed_on
     row=m.ResourceExperience(school_id=school_id,recorded_by=actor.user_id,**values);db.add(row);emit(db,actor,row,'curriculum.resource.experience_recorded')
-    return {'kind':'experience',**row_view(row),'constitutes_approval':False}
+    return experience_view(db,actor,row)
+
+
+@read_contract
+def experience_view(db,actor,row):
+    """A retained practitioner account is distinct from its current support.
+
+    Actual corrections retain attributed prose with a visible review marker.
+    Lost resource/original permission returns minimal historical coordinates only;
+    sharing cannot recover original prose through an experience record.
+    """
+    authority(db,actor,row.school_id,'resources.read')
+    require_learner_access(db,actor,row.school_id,row.learner_id,'teaching.read')
+    if any(type(value).__module__=='spesped.contexts.teaching.models' for value in set(db.dirty)|set(db.deleted)|set(db.new)):
+        raise DomainError('dependency_pending','Flush or roll back pending actual changes before reading experience support.',409)
+    resource_status='current';actual_status='current'
+    try:resolve_resource(db,actor,row.school_id,row.resource_revision_id,'read',row.learner_id)
+    except DomainError as exc:
+        if exc.code=='dependency_pending':raise
+        if exc.status_code not in {403,409,503}:raise
+        resource_status='unavailable'
+    try:actual_experience(db,actor,row.school_id,row.learner_id,row.session_delivery_revision_id,row.observed_on)
+    except DomainError as exc:
+        if exc.status_code==409:actual_status='historical'
+        elif exc.status_code in {403,503}:actual_status='unavailable'
+        else:raise
+    supported=resource_status=='current' and actual_status=='current'
+    content_available=resource_status=='current' and actual_status!='unavailable'
+    # No other pupil's actual, current participation, original or resource content
+    # is copied into this projection. Its exact historic identifiers remain visible.
+    value=row_view(row)
+    if not content_available:value['experience']=None
+    return {'kind':'experience',**value,'constitutes_approval':False,
+        'state':'current' if supported else 'review_required','review_required':not supported,
+        'actual_status':actual_status,'resource_status':resource_status,
+        'source_status':'current' if supported else 'review_required','content_available':content_available}
 
 
 def staff_valid(db,school_id,user_id):

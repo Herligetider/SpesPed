@@ -147,11 +147,7 @@ class PublishPlan(ExactReview):
     references_checked: Literal[True]
 
 
-class GoalBindingCreate(Command):
-    plan_revision_id: UUID
-    theme_id: UUID
-    learner_id: UUID
-    goal_revision_id: UUID
+class GoalBindingChoice(Value):
     participation: Literal['participate', 'adapt', 'not_relevant']
     rationale: Text
     adaptation: Text | None = None
@@ -161,6 +157,17 @@ class GoalBindingCreate(Command):
     def adapted(self):
         if self.participation == 'adapt' and not self.adaptation: raise ValueError('An adaptation must be described')
         return self
+
+
+class GoalBindingCreate(Command, GoalBindingChoice):
+    plan_revision_id: UUID
+    theme_id: UUID
+    learner_id: UUID
+    goal_revision_id: UUID
+
+
+class GoalBindingCorrection(Expected, GoalBindingChoice):
+    reason: Text
 
 
 class ImpactDecision(Expected):

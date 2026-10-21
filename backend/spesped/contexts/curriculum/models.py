@@ -1,6 +1,6 @@
 """BC06 owned, tenant-scoped aggregates and append-only authored revisions."""
 from datetime import date, datetime
-from sqlalchemy import String, Integer, JSON, ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, Text, event, inspect
+from sqlalchemy import String, Integer, JSON, ForeignKey, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, Text, Index, text, event, inspect
 from sqlalchemy.orm import Mapped, mapped_column
 from spesped.db import Base, UTCDateTime, utcnow
 from spesped.contexts.identity.models import Aggregate, new_id
@@ -92,7 +92,9 @@ class ThemeGoalBinding(Aggregate, Tenant, Base):
     sources: Mapped[list] = mapped_column(JSON)
     bound_by: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
     goal_digest: Mapped[str] = mapped_column(String(64))
-    __table_args__=(UniqueConstraint('school_id','id'),ForeignKeyConstraint(['school_id','plan_revision_id'],['curriculum_class_plan_revisions.school_id','curriculum_class_plan_revisions.id']),ForeignKeyConstraint(['school_id','learner_id'],['identity_learners.school_id','identity_learners.id']))
+    supersedes_id: Mapped[str | None] = mapped_column(String(36),nullable=True)
+    correction_reason: Mapped[str | None] = mapped_column(Text,nullable=True)
+    __table_args__=(UniqueConstraint('school_id','id'),ForeignKeyConstraint(['school_id','plan_revision_id'],['curriculum_class_plan_revisions.school_id','curriculum_class_plan_revisions.id']),ForeignKeyConstraint(['school_id','learner_id'],['identity_learners.school_id','identity_learners.id']),ForeignKeyConstraint(['school_id','supersedes_id'],['curriculum_theme_goal_bindings.school_id','curriculum_theme_goal_bindings.id']),CheckConstraint("state IN ('active','superseded')"),Index('uq_curriculum_current_theme_goal_choice','school_id','plan_revision_id','theme_id','learner_id','goal_revision_id',unique=True,sqlite_where=text("state = 'active'"),postgresql_where=text("state = 'active'")))
 
 
 class SessionImpact(Aggregate, Tenant, Base):

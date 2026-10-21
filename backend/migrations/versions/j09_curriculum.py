@@ -311,21 +311,26 @@ def upgrade():
     sa.Column('sources', sa.JSON(), nullable=False),
     sa.Column('bound_by', sa.String(length=36), nullable=False),
     sa.Column('goal_digest', sa.String(length=64), nullable=False),
+    sa.Column('supersedes_id', sa.String(length=36), nullable=True),
+    sa.Column('correction_reason', sa.Text(), nullable=True),
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('version', sa.Integer(), nullable=False),
     sa.Column('created_at', spesped.db.UTCDateTime(timezone=True), nullable=False),
     sa.Column('updated_at', spesped.db.UTCDateTime(timezone=True), nullable=False),
     sa.Column('state', sa.String(length=30), nullable=False),
     sa.Column('school_id', sa.String(length=36), nullable=False),
+    sa.CheckConstraint("state IN ('active','superseded')"),
     sa.ForeignKeyConstraint(['bound_by'], ['identity_users.id'], ),
     sa.ForeignKeyConstraint(['school_id', 'learner_id'], ['identity_learners.school_id', 'identity_learners.id'], ),
     sa.ForeignKeyConstraint(['school_id', 'plan_revision_id'], ['curriculum_class_plan_revisions.school_id', 'curriculum_class_plan_revisions.id'], ),
+    sa.ForeignKeyConstraint(['school_id', 'supersedes_id'], ['curriculum_theme_goal_bindings.school_id', 'curriculum_theme_goal_bindings.id'], ),
     sa.ForeignKeyConstraint(['school_id'], ['identity_schools.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('school_id', 'id')
     )
-    op.create_index(op.f('ix_curriculum_theme_goal_bindings_school_id'), 'curriculum_theme_goal_bindings', ['school_id'], unique=False)
     op.create_index(op.f('ix_curriculum_theme_goal_bindings_learner_id'), 'curriculum_theme_goal_bindings', ['learner_id'], unique=False)
+    op.create_index(op.f('ix_curriculum_theme_goal_bindings_school_id'), 'curriculum_theme_goal_bindings', ['school_id'], unique=False)
+    op.create_index('uq_curriculum_current_theme_goal_choice', 'curriculum_theme_goal_bindings', ['school_id', 'plan_revision_id', 'theme_id', 'learner_id', 'goal_revision_id'], unique=True, sqlite_where=sa.text("state = 'active'"), postgresql_where=sa.text("state = 'active'"))
     op.create_table('curriculum_resource_experiences',
     sa.Column('resource_revision_id', sa.String(length=36), nullable=False),
     sa.Column('learner_id', sa.String(length=36), nullable=False),
