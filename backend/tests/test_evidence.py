@@ -464,8 +464,12 @@ def test_original_integrity_note_whitespace_and_no_synthetic_production_port(env
     assert rejected.status_code == 503 and rejected.json()["error"]["code"] == "processing_configuration"
 
 
-def test_goal_references_fail_closed_until_scoped_validator_is_available(env):
+def test_goal_references_fail_closed_until_scoped_validator_is_available(env, monkeypatch):
     client, factory, app, ids = env
+    # The assembled app now installs the native BC05 validator. This boundary
+    # test deliberately removes it to exercise unavailable-provider handling.
+    assert callable(app.state.evidence_goal_validator)
+    monkeypatch.setattr(app.state, "evidence_goal_validator", None)
     headers = login(client)
     source, _ = note(client, ids, headers, "Synthetic goal observation")
     item = confirm_first(client, ids, headers, source)

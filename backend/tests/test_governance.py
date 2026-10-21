@@ -302,8 +302,13 @@ def test_workload_voluntary_comparable_all_time_cost_no_fake_savings(env):
     h=login(c,'teacher');assert c.get(path+'/results').status_code==403
 
 
-def test_protected_case_grant_is_exact_and_revoked_scope_denies_existing_owner(env):
+def test_protected_case_grant_is_exact_and_revoked_scope_denies_existing_owner(env, monkeypatch):
     _,v,h=rule_setup(env);p=profile_setup(env,v,h);c,f,ids,_,_=env;b=base(ids);case=str(uuid4())
+    # This bounded fixture stops before BC12 migrations. Explicitly remove the
+    # assembled native case resolver for its missing-adapter branch; the later
+    # synthetic resolver verifies governance scope, not native case integration.
+    assert callable(c.app.state.governance_case_scope_resolver)
+    monkeypatch.setattr(c.app.state, 'governance_case_scope_resolver', None)
     body=trigger_body(p,learner_id=ids['learner'],case_id=case)
     # A learner team assignment and school governance authority are insufficient.
     post(c,b+'/triggers',body,h,403)
