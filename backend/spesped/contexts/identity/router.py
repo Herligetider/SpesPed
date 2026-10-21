@@ -71,7 +71,12 @@ def login(data: Login, request: Request, response: Response, db: Session = Depen
             throttle.blocked_until = now + timedelta(minutes=settings.login_lock_minutes)
         db.commit()
         raise DomainError("invalid_credentials", "The email or password is incorrect.", 401)
-    db.delete(throttle)
+    # Keep the key stable: a concurrent request may have completed its no-op
+    # upsert and still be waiting to SELECT this row FOR UPDATE. Deleting it
+    # here would make that request lose its claim; reset under our lock instead.
+    throttle.failures = 0
+    throttle.window_started_at = now
+    throttle.blocked_until = None
     if password_hasher.check_needs_rehash(user.password_hash):
         user.password_hash = password_hasher.hash(data.password)
     # Re-authentication rotates and invalidates the current browser session.

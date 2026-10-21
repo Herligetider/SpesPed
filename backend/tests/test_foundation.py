@@ -498,3 +498,85 @@ def test_concurrent_first_postgres_login_failures_are_claimed_before_password_ch
         followup = separate.post("/api/v1/auth/login", json={"email": "teacher@example.invalid", "password": PASSWORD}, headers={"Origin": ORIGIN})
         assert followup.status_code == 429
     assert verified == 3
+
+
+@pytest.mark.parametrize("competing_password", ["synthetic-wrong-password", PASSWORD])
+def test_postgres_success_resets_stable_throttle_during_competing_login(env, competing_password):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event, Lock
+    from sqlalchemy import event, func
+    import hashlib
+    from spesped.contexts.identity.models import LoginThrottle
+
+    client, factory, settings, ids = env
+    engine = factory.kw["bind"]
+    if engine.dialect.name != "postgresql":
+        pytest.skip("Successful-login claim interleaving is verified on PostgreSQL")
+    initial = client.post("/api/v1/auth/login", json={"email": "teacher@example.invalid", "password": "synthetic-wrong-password"}, headers={"Origin": ORIGIN})
+    assert initial.status_code == 401
+    key = hashlib.sha256(b"teacher@example.invalid").hexdigest()
+    with factory() as db:
+        original = db.get(LoginThrottle, key)
+        assert original.failures == 1
+        original_window = original.window_started_at
+
+    claimed, resume = Event(), Event()
+    lock = Lock()
+    intercepted = False
+
+    def after_insert(connection, cursor, statement, parameters, context, executemany):
+        nonlocal intercepted
+        if statement.startswith("INSERT INTO identity_login_throttles"):
+            with lock:
+                pause = not intercepted
+                intercepted = True
+            if pause:
+                claimed.set()
+                assert resume.wait(timeout=10), "The successful login did not complete"
+
+    app = create_app(settings, factory)
+
+    def attempt(password):
+        with TestClient(app, raise_server_exceptions=False) as separate:
+            return separate.post("/api/v1/auth/login", json={"email": "teacher@example.invalid", "password": password}, headers={"Origin": ORIGIN})
+
+    event.listen(engine, "after_cursor_execute", after_insert)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Pause A exactly after its existing-key upsert and before its lock.
+            # B must commit a successful login while A is in that precise gap.
+            competing = executor.submit(attempt, competing_password)
+            assert claimed.wait(timeout=5), "The competing login did not claim its key"
+            successful = executor.submit(attempt, PASSWORD)
+            try:
+                success_response = successful.result(timeout=5)
+                assert success_response.status_code == 200
+                with factory() as db:
+                    reset = db.get(LoginThrottle, key)
+                    assert reset is not None
+                    assert reset.failures == 0 and reset.blocked_until is None
+                    assert reset.window_started_at >= original_window
+            finally:
+                resume.set()
+            competing_response = competing.result(timeout=5)
+    finally:
+        resume.set()
+        event.remove(engine, "after_cursor_execute", after_insert)
+
+    correct_competitor = competing_password == PASSWORD
+    assert competing_response.status_code == (200 if correct_competitor else 401)
+    with factory() as db:
+        row = db.get(LoginThrottle, key)
+        assert row is not None and row.failures == (0 if correct_competitor else 1)
+        assert row.blocked_until is None
+        assert db.scalar(select(func.count()).select_from(LoginSession).where(LoginSession.user_id == ids["teacher"])) == (2 if correct_competitor else 1)
+    # Each successful response carries a distinct real session that remains usable.
+    tokens = [success_response.cookies[settings.cookie_name]]
+    if correct_competitor:
+        tokens.append(competing_response.cookies[settings.cookie_name])
+        assert len(set(tokens)) == 2
+    with TestClient(app) as separate:
+        for token in tokens:
+            separate.cookies.clear()
+            separate.cookies.set(settings.cookie_name, token, path="/api")
+            assert separate.get("/api/v1/auth/me").status_code == 200
