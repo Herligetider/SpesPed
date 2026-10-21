@@ -470,7 +470,8 @@
         "30fe56394d916956ccdb0802726f41c944c04dd2",
         "2ccc30e499d87efba020068528c70f7e5a382a9a",
         "2e305db6db62b306ca13a1d1d1265f1b84204257",
-        "54f40085911bb56f3fa2b3b38253db7e43d72c00"
+        "54f40085911bb56f3fa2b3b38253db7e43d72c00",
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
       ],
       "evidence": [
         {
@@ -549,6 +550,11 @@
           "revision": "3df0a501d66ddc263dc180833eade5f90e5094ee",
           "path": "docs/reviews/teaching-profile-selection-review.md",
           "result": "Exact selected-profile teaching basis repair accepted. 127 pinned plan/profile/teaching tests passed with five expected SQLite skips; 14 independent SQLite/PostgreSQL probes passed. Selected statements beyond page100 and normalized timestamps work; replacements, source/permission recalls and warm identity-map changes fail closed. Full UI and feature acceptance remain separate."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
         }
       ],
       "findings": [
@@ -625,7 +631,8 @@
       "commits": [
         "e80380cdf7da10431c18685969351c9b0cf07e48",
         "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0",
-        "da503e1b87c038a73d64dca433f38ef90c6e2961"
+        "da503e1b87c038a73d64dca433f38ef90c6e2961",
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
       ],
       "evidence": [
         {
@@ -673,6 +680,11 @@
           "revision": "b553a5a306c1149adb075157ebc1e95f00d1bb37",
           "path": "docs/reviews/teaching-author-label-review.md",
           "result": "Additive observation/assistant-input author-name projections accepted: eight focused regressions and six independent SQLite/PostgreSQL cases passed. Name queries follow scope gates; each revision retains actual author attribution, draft privacy and source-review redaction. No full UI acceptance."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
         }
       ],
       "findings": [
@@ -755,7 +767,9 @@
         "29bcbc0bf5d03afe0ea250bd8acfc6f119171328",
         "278613efb0fdbef7e93b88d86b542c204a75d671",
         "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814",
-        "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e"
+        "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e",
+        "2e3c85184f08f8ac294a0bc2e778eb32f57070ed",
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
       ],
       "evidence": [
         {
@@ -813,6 +827,27 @@
           "type": "implementation_candidate",
           "revision": "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e",
           "result": "Teaching UI plus root application integration pinned locally. Root67webtests andproductionbuild passed. Author realChromium/FastAPI/PostgreSQL normal/adverse/manual-recovery evidence retained; independent review assigned/queued to /root/review_composition. Includes schoolassistantentry independentoflearnerlist, scopedclient/school/pupil lifetimes andvisiteddraft preservation. Known planning recall/date findings prevent overall UI acceptance; pending-model-job durablelist/resume and other language/usability/qualification integration remain required."
+        },
+        {
+          "type": "independent_review",
+          "revision": "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814",
+          "path": "docs/reviews/J07-planning-review.md",
+          "result": "Changes required: J07-PL-R1 repeated-hour microsecond native form failure and J07-PL-R2 recalled retained current prose reproduced in independent Chromium/PostgreSQL probes. 24 unit/transport tests and normal/pagination/scope/conflict workflows passed. No UI acceptance."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "2e3c85184f08f8ac294a0bc2e778eb32f57070ed",
+          "result": "Planning author fixed both findings; 70 shared web tests, build and real Chromium/PostgreSQL repair probes passed. Exact independent recheck in progress; findings remain open pending final report."
+        },
+        {
+          "type": "independent_review_findings",
+          "revision": "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e",
+          "result": "Independent actual-browser teaching review confirmed J07-TE-R1 recalled assistant guidance/reconciliation cache leakage, J07-TE-R2 observation correction invents a session link and J07-TE-R3 internal tab change discards a session draft. Original author assigned repairs; no teaching or integrated UI acceptance."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
         }
       ],
       "findings": [
@@ -893,13 +928,31 @@
           "priority": "P1",
           "description": "History comparison renders retained generated current-plan prose after model recall when current refresh fails but revision-history refresh succeeds.",
           "status": "open"
+        },
+        {
+          "id": "J07-TE-R1",
+          "priority": "P1",
+          "description": "Assistant assignment conflict refresh hides a recalled brief but retains cached guidance and reconciliation prose.",
+          "status": "open"
+        },
+        {
+          "id": "J07-TE-R2",
+          "priority": "P2",
+          "description": "Correcting an originally unlinked observation while a session is selected silently links it to that session revision.",
+          "status": "open"
+        },
+        {
+          "id": "J07-TE-R3",
+          "priority": "P2",
+          "description": "Switching internal teaching tabs unmounts the editor and discards an unsaved session draft.",
+          "status": "open"
         }
       ],
       "remainingWork": [
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Close and independently recheck J07-PL-R1/R2, independently review teaching/App integration, and implement durable pending-generation retrieval/resume plus remaining complete-workflow gaps."
+        "Close and independently recheck J07-PL-R1/R2 and J07-TE-R1/R2/R3, finish independent teaching/App integration acceptance, and implement durable pending-generation retrieval/resume UI plus remaining complete-workflow gaps."
       ]
     },
     {
@@ -925,7 +978,8 @@
         "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d",
         "ac555498c0f8741d77d567075913b2e75a173779",
         "5a76a69923c55ecd2410e1d8599686960ad5e204",
-        "8d82b74908bedecdacac330e71fa430a041c3700"
+        "8d82b74908bedecdacac330e71fa430a041c3700",
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
       ],
       "evidence": [
         {
@@ -995,6 +1049,11 @@
           "revision": "3c4d823626a69c3b0a5b5996b5760217808c4b30",
           "path": "docs/reviews/practitioner-choice-ports-review.md",
           "result": "Bounded practitioner read ports accepted: 12 pinned tests, 30 focused regressions, 16 independent adverse cases passed across SQLite/PostgreSQL. Current learner/purpose model choices without admin access, scoped active staff names, curated assignment labels and persisted exact delivery follow-up ownership pass. No whole feature/UI acceptance."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
         }
       ],
       "findings": [
