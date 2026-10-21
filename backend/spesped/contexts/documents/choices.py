@@ -70,12 +70,17 @@ class GoalChoice(Value):
     kind:Literal['ordinary_teaching','individual_education']
     effective_period:EffectivePeriod
     applicable_at:datetime
+class PupilParticipationChoice(Value):
+    category:str
+    status:str
+    minutes:int
 class ActualChoice(Value):
     delivery_revision_id:str
     revision:int
     label:str
     occurred_at:datetime
     state:str
+    participation:list[PupilParticipationChoice]
     classification:Literal['actual_delivery_not_learning_progress']
 class FutureChoice(Value):
     session_revision_id:str
@@ -137,6 +142,28 @@ def calendar_bounds(db,school_id,starts_on,ends_on):
     try: return a.period(db,school_id,starts_on,ends_on)
     except (OverflowError,ValueError):
         raise DomainError('document_period','Choose calendar dates that resolve to real bounded school-timezone instants.',422) from None
+
+def inventory_bounds(category,source_mode,start,end,lower,upper):
+    """Narrow inventory selection without changing the report's actual period."""
+    if category in {'actuals','goals'} or (category == 'sources' and source_mode == 'interval'):
+        if (lower is not None and not start <= lower < end) or (upper is not None and not start < upper <= end):
+            raise DomainError('choice_period','Interval facts and historical goals must be narrowed within the report period.',422)
+        return lower or start,upper or end
+    if category == 'sources' and source_mode == 'background':
+        if (lower is not None and lower >= start) or (upper is not None and upper > start):
+            raise DomainError('choice_period','Background source narrowing must precede the report period.',422)
+        return lower,upper or start
+    if category == 'future_plans':
+        if (lower is not None and lower < end) or (upper is not None and upper <= end):
+            raise DomainError('choice_period','Future plan narrowing must follow the inclusive report period.',422)
+        horizon = end+timedelta(days=366) if end.year < 9998 else datetime.max.replace(tzinfo=end.tzinfo)
+        selected_start,selected_end = lower or end,upper or horizon
+        if selected_start >= selected_end:
+            raise DomainError('choice_period','Choose an end after the narrowed future plan start.',422)
+        return selected_start,selected_end
+    if lower is not None or upper is not None:
+        raise DomainError('choice_period','Source narrowing dates apply only to sources, goals, actuals and future plans.',422)
+    return None,None
 
 def page(items, offset, limit):
     if offset < 0 or not 1 <= limit <= 100:
@@ -203,6 +230,7 @@ def choices(db, actor, school_id, learner_id, category, kind, starts_on, ends_on
         raise DomainError('choice_query','Use source narrowing dates for this category.',422)
     lower = calendar_bounds(db,school_id,source_starts_on,source_starts_on)[0] if source_starts_on else None
     upper = calendar_bounds(db,school_id,source_ends_on,source_ends_on)[1] if source_ends_on else None
+    lower,upper = inventory_bounds(category,source_mode,start,end,lower,upper)
     if category == 'guardians': items = identity.guardians(db,actor,school_id,learner_id,query)
     elif category in {'owners','contributors'}: items = identity.staff(db,actor,school_id,learner_id,'owner' if category == 'owners' else 'contributor',query)
     elif category == 'templates': items = templates(db,actor,school_id,kind,starts_on,ends_on,query)
@@ -211,17 +239,14 @@ def choices(db, actor, school_id, learner_id, category, kind, starts_on, ends_on
         items = obligations(db,actor,school_id,learner_id,kind,starts_on,ends_on,requirement_version_id,query)
     elif category == 'goals':
         from spesped.contexts.plans.document_choices import goals
-        items = goals(db,actor,school_id,learner_id,start,end)
+        items = goals(db,actor,school_id,learner_id,lower,upper)
     elif category in {'actuals','future_plans'}:
         from spesped.contexts.teaching.document_choices import actuals, future_plans
-        default_horizon = end+timedelta(days=366) if end.year < 9998 else datetime.max.replace(tzinfo=end.tzinfo)
-        items = actuals(db,actor,school_id,learner_id,start,end) if category == 'actuals' else future_plans(db,actor,school_id,learner_id,end,upper or default_horizon)
+        items = actuals(db,actor,school_id,learner_id,lower,upper) if category == 'actuals' else future_plans(db,actor,school_id,learner_id,lower,upper)
     elif category == 'sources':
         from spesped.contexts.teaching.document_choices import observations
         from spesped.contexts.assessment.document_choices import sources
         if source_mode not in {'interval','background'}: raise DomainError('source_mode','Choose interval or background.',422)
-        lower = max(start,lower) if lower and source_mode == 'interval' else (start if source_mode == 'interval' else lower)
-        upper = min(end,upper) if upper and source_mode == 'interval' else (end if source_mode == 'interval' else min(start,upper) if upper else start)
         items = []
         if lower is None or lower < upper:
             for port in (evidence_sources,observations,sources):

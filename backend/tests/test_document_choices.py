@@ -232,3 +232,77 @@ def test_inventory_cap_is_explicit_and_date_narrowing_remains_usable(documents_e
     assert response.status_code==422 and response.json()['error']['code']=='choice_limit'
     result=pick(client,ids,'sources',source_starts_on='2026-10-14',source_ends_on='2026-10-14')
     assert result['total']==1
+
+def test_actual_choice_describes_pupil_minutes_and_preserves_overlapping_categories(documents_env):
+    from teaching_fixtures import actual
+    client,factory,app,ids=documents_env;h=login(client)
+    ga,_=ordinary_goal(client,ids,h);gb,_=ordinary_goal(client,ids,h,learner='b')
+    content=actual(ids,{'a':ga,'b':gb});content['participants'][0]['minutes']=10
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=content));assert response.status_code==201,response.text
+    item=pick(client,ids,'actuals')['items'][0]
+    assert item['participation']==[{'category':'ordinary_teaching','status':'participated','minutes':10}]
+    assert '(10 minutes)' in item['label'] and '(30 minutes)' not in item['label']
+    content['participants'].append({**content['participants'][0],'category':'personal_assistance'})
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=content));assert response.status_code==201,response.text
+    item=next(v for v in pick(client,ids,'actuals')['items'] if v['delivery_revision_id']==response.json()['revision_id'])
+    assert item['participation']==[{'category':'ordinary_teaching','status':'participated','minutes':10},
+        {'category':'personal_assistance','status':'participated','minutes':10}]
+    assert '(20 minutes)' not in item['label'] and '(30 minutes)' not in item['label']
+    assert 'overlap not summed' in item['label'] and ids['b'] not in json.dumps(item)
+
+@pytest.mark.parametrize('category',['actuals','future_plans'])
+def test_narrowed_work_inventories_filter_before_cap_and_keep_report_period(documents_env,monkeypatch,category):
+    from teaching_fixtures import actual,session
+    from spesped.contexts.identity import document_choices as identity
+    client,factory,app,ids=documents_env;h=login(client);goal,_=ordinary_goal(client,ids,h)
+    selected=[]
+    dates=('2026-10-12T12:00:00+02:00','2026-10-14T12:00:00+02:00') if category=='actuals' else ('2026-10-23T12:00:00+02:00','2026-10-25T12:00:00+01:00')
+    for when in dates:
+        if category=='actuals':
+            response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=actual(ids,{'a':goal},occurred_at=when)));assert response.status_code==201,response.text
+            selected.append(response.json()['revision_id'])
+        else:
+            response=client.post(base(ids)+'/teaching/bases',headers=h,json=retry(planned_at=when,duration_minutes=30,
+                learners=[{'learner_id':ids['a'],'goal_revision_ids':[goal]}],theme='Synthetic narrowed future choice',arena='Synthetic room',materials=[]));assert response.status_code==201,response.text
+            selected.append(session(client,ids,h,response.json())['revision_id'])
+    monkeypatch.setattr(identity,'MAX_CANDIDATES',1)
+    route=path(ids)+f'/learners/{ids["a"]}/choices/{category}'
+    params={'kind':'guardian_email','starts_on':'2026-10-01','ends_on':'2026-10-21'}
+    broad=client.get(route,params=params);assert broad.status_code==422 and broad.json()['error']['code']=='choice_limit'
+    result=pick(client,ids,category,source_starts_on=dates[1][:10],source_ends_on=dates[1][:10])
+    field='delivery_revision_id' if category=='actuals' else 'session_revision_id'
+    assert result['total']==1 and result['items'][0][field]==selected[1]
+    assert result['period']['starts_on']=='2026-10-01' and result['period']['ends_on']=='2026-10-21'
+
+def test_historical_goal_narrowing_precedes_cap_and_keeps_declared_effective_dates(documents_env,monkeypatch):
+    from plans_fixtures import activate
+    from spesped.contexts.plans import service as plans
+    from spesped.contexts.plans.generation import command_content
+    from spesped.contexts.plans.models import PlanRevision
+    from spesped.contexts.identity import document_choices as identity
+    client,factory,app,ids=documents_env;h=login(client);first_goal,first=ordinary_goal(client,ids,h)
+    change=datetime.fromisoformat('2026-10-21T22:00:00+00:00');monkeypatch.setattr(plans,'utcnow',lambda:change)
+    with factory() as db:content=command_content(db,db.get(PlanRevision,first['content']['id']))
+    content['effective_from']=change.isoformat();content['goals'][0]['effective_from']=change.isoformat()
+    response=client.post(base(ids)+f'/education-plans/{first["id"]}/revisions',headers=h,json=expected(first,**content));assert response.status_code==201,response.text
+    second=activate(client,ids,h,response.json());goal=second['content']['goals'][0]['id']
+    assert {v['goal_revision_id'] for v in pick(client,ids,'goals',ends_on='2026-10-25')['items']}=={first_goal,goal}
+    monkeypatch.setattr(identity,'MAX_CANDIDATES',1)
+    params={'kind':'guardian_email','starts_on':'2026-10-01','ends_on':'2026-10-25'}
+    response=client.get(path(ids)+f'/learners/{ids["a"]}/choices/goals',params=params);assert response.status_code==422
+    narrowed=pick(client,ids,'goals',ends_on='2026-10-25',source_starts_on='2026-10-23',source_ends_on='2026-10-23')
+    assert narrowed['total']==1 and narrowed['items'][0]['goal_revision_id']==goal
+    assert datetime.fromisoformat(narrowed['items'][0]['applicable_at'])==datetime.fromisoformat('2026-10-23T00:00:00+02:00')
+    assert datetime.fromisoformat(narrowed['items'][0]['effective_period']['starts_at'])==change
+    assert narrowed['period']['ends_on']=='2026-10-25'
+
+def test_narrowing_is_rejected_outside_category_window_instead_of_ignored(documents_env):
+    client,factory,app,ids=documents_env;login(client)
+    checks=[('actuals',{'source_starts_on':'2026-09-30'}),('goals',{'source_ends_on':'2026-10-22'}),
+        ('future_plans',{'source_starts_on':'2026-10-21'}),('future_plans',{'source_ends_on':'2026-10-21'}),
+        ('sources',{'source_starts_on':'2026-09-30'}),('sources',{'source_mode':'background','source_ends_on':'2026-10-01'}),
+        ('owners',{'source_starts_on':'2026-10-10'})]
+    for category,changes in checks:
+        response=client.get(path(ids)+f'/learners/{ids["a"]}/choices/{category}',params={
+            'kind':'guardian_email','starts_on':'2026-10-01','ends_on':'2026-10-21',**changes})
+        assert response.status_code==422 and response.json()['error']['code']=='choice_period',response.text

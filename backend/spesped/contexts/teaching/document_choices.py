@@ -18,12 +18,18 @@ def actuals(db, actor, school_id, learner_id, start, end):
         items = []
         for (revision,) in rows:
             value = learner_delivery_basis(fresh, actor, school_id, learner_id, revision.id)
+            participation = [dict(category=p['category'],status=p['status'],minutes=p['minutes'])
+                for p in sorted(value['participation'],key=lambda p:p['category'])]
+            # Category entries can cover the same pupil-time. Preserve their
+            # individual meaning rather than adding overlapping support time.
+            detail = '; '.join(f"{p['category']}: {p['status']} ({p['minutes']} minutes)" for p in participation)
+            prefix = 'Recorded pupil participation by category (overlap not summed)' if len(participation)>1 else 'Recorded pupil participation'
             items.append(dict(delivery_revision_id=revision.id, revision=revision.revision,
-                label=f"Recorded pupil delivery: {value['state']} ({revision.duration_minutes} minutes)", occurred_at=revision.occurred_at, state=value['state'],
+                label=f'{prefix}: {detail}', participation=participation, occurred_at=revision.occurred_at, state=value['state'],
                 classification='actual_delivery_not_learning_progress'))
         return items
 
-def future_plans(db, actor, school_id, learner_id, end, horizon):
+def future_plans(db, actor, school_id, learner_id, start, end):
     with reader(db) as fresh:
         service.access(fresh, actor, school_id, learner_id)
         # JSON membership is filtered in SQL before the bounded inventory. A
@@ -34,7 +40,7 @@ def future_plans(db, actor, school_id, learner_id, end, horizon):
             m.TeachingSession, m.TeachingSession.id == m.SessionRevision.session_id).join(
             m.TeachingBasis, m.TeachingBasis.id == m.SessionRevision.basis_id).where(
             m.SessionRevision.school_id == school_id, m.SessionRevision.revision == m.TeachingSession.current_revision,
-            m.TeachingBasis.planned_at >= end, m.TeachingBasis.planned_at < horizon, func.json_array_length(m.TeachingBasis.learners) == 1,
+            m.TeachingBasis.planned_at >= start, m.TeachingBasis.planned_at < end, func.json_array_length(m.TeachingBasis.learners) == 1,
             member == learner_id).order_by(m.TeachingBasis.planned_at, m.SessionRevision.id))
         items = []
         for revision, root, basis in rows:
