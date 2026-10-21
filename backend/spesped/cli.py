@@ -14,6 +14,7 @@ from spesped.audit import record_audit
 from spesped.auth import Actor, hash_password, school_today
 from spesped.config import get_settings
 from spesped.db import make_session_factory
+from spesped.demo_access import upgrade_demo_access
 from spesped.contexts.identity.models import AuthorityGrant, Enrollment, Learner, School, SchoolMembership, StaffAssignment, UserAccount
 
 BOOTSTRAP_ACTIONS = ("membership.manage", "assignment.manage", "authority.manage", "authority.delegate", "guardian.manage", "learner.create", "learner.read", "learner.update")
@@ -87,11 +88,24 @@ def main():
     fixture = commands.add_parser("demo", help="Explicitly opt into synthetic fixtures in an empty development database")
     fixture.add_argument("--confirm-synthetic", action="store_true", required=True)
     fixture.add_argument("--password-env", required=True)
+    access = commands.add_parser("demo-access", help="Opt into bounded practitioner access on the existing built-in development demo")
+    access.add_argument("--confirm-synthetic", action="store_true", required=True)
     args = parser.parse_args()
     settings = get_settings()
     if args.command == "migrate":
         migrate()
         print("Migrations applied.")
+        return
+    if args.command == "demo-access":
+        if settings.environment != "development":
+            parser.error("Demo access is available only in the development environment")
+        factory = make_session_factory(settings.database_url)
+        try:
+            with factory.begin() as db:
+                result = upgrade_demo_access(db, environment=settings.environment, confirm_synthetic=args.confirm_synthetic)
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(f"Synthetic practitioner access ready: {result['added_grants']} grants added for the original demo leader and pupils A/B.")
         return
     if args.command == "demo" and settings.environment == "production":
         parser.error("Synthetic fixtures are disabled in production")
