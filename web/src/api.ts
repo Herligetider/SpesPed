@@ -88,6 +88,11 @@ export class ApiClient {
     return this.request<T>(this.schoolPath(schoolId, segments), {method, body: JSON.stringify(body)});
   }
 
+  /** Authenticated school attachment retrieval, with the same session lifecycle. */
+  async schoolBlob(schoolId: string, segments: readonly string[]): Promise<Blob> {
+    return this.requestBlob(this.schoolPath(schoolId, segments));
+  }
+
   private schoolPath(schoolId: string, segments: readonly string[]): string {
     if (!schoolId || !segments.length || [schoolId, ...segments].some(part => !part || part === '.' || part === '..')) {
       throw new ApiError('Arbeidsflaten mangler en gyldig referanse.', 422, 'invalid_resource');

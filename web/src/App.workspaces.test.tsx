@@ -10,6 +10,8 @@ vi.mock('./features/planning/PlanningWorkspace', () => ({default: ({learnerName}
   <label>Plan for {learnerName}<input aria-label="Ulagret planutkast" defaultValue="" /></label>}));
 vi.mock('./features/teaching/TeachingWorkspace', () => ({default: ({mode, schoolId, learnerName}: {mode: string; schoolId: string; learnerName?: string}) =>
   <p>{mode === 'assistant' ? `Oppdrag ved ${schoolId}` : `Undervisning for ${learnerName}`}</p>}));
+vi.mock('./features/guardian/GuardianPortal', () => ({default: ({schoolId}: {schoolId: string}) =>
+  <p>Foresattbrev ved {schoolId}</p>}));
 
 const pupil = {id: 'p1', display_name: 'Test Elev', grade: 4, group_name: 'A', version: 1};
 function makeClient(role = 'teacher', schoolId = 's1') {
@@ -21,6 +23,15 @@ function makeClient(role = 'teacher', schoolId = 's1') {
 }
 
 describe('workspace composition', () => {
+  it('opens the guardian portal without staff navigation or pupil list requests', async () => {
+    const client = makeClient('guardian');
+    render(<App client={client} />);
+    expect(await screen.findByText('Foresattbrev ved s1')).toBeVisible();
+    expect(screen.queryByRole('button', {name: 'Dokumentinnboks'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: 'Mine assistentoppdrag'})).not.toBeInTheDocument();
+    expect(client.learners).not.toHaveBeenCalled();
+    expect(client.learner).not.toHaveBeenCalled();
+  });
   it('opens the school assistant inbox without fetching a pupil dossier or list', async () => {
     const client = makeClient('assistant');
     render(<App client={client} />);

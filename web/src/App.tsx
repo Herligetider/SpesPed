@@ -5,6 +5,7 @@ import { LocalValidationError } from './userErrors';
 import IntakeWorkspace from './IntakeWorkspace';
 import PlanningWorkspace from './features/planning/PlanningWorkspace';
 import TeachingWorkspace from './features/teaching/TeachingWorkspace';
+import GuardianPortal from './features/guardian/GuardianPortal';
 import { localizeApiError, translate } from './i18n';
 import type { Language, MessageKey } from './i18n';
 import type { Learner, LearnerProfile, Session } from './types';
@@ -12,6 +13,8 @@ import type { Learner, LearnerProfile, Session } from './types';
 type LoadState<T> = { status: 'loading' } | { status: 'error'; error: unknown } | { status: 'ready'; value: T };
 type LearnerPage = { items: Learner[]; total: number; offset: number; limit: number };
 const pageSize = 50;
+type WorkspaceName = 'learners' | 'intake' | 'assistant' | 'guardian';
+const initialWorkspace = (role?: string): WorkspaceName => role === 'guardian' ? 'guardian' : role === 'assistant' ? 'assistant' : 'learners';
 const clientKeys = new WeakMap<ApiClient, number>();
 let nextClientKey = 0;
 
@@ -32,7 +35,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
   const [profile, setProfile] = useState<LoadState<LearnerProfile> | null>(null);
   const [selectedLearner, setSelectedLearner] = useState<Learner | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [workspace, setWorkspace] = useState<'learners' | 'intake' | 'assistant'>('learners');
+  const [workspace, setWorkspace] = useState<WorkspaceName>('learners');
   const authGeneration = useRef(0);
   const profileGeneration = useRef(0);
   const languageRef = useRef(language);
@@ -70,7 +73,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
       profileGeneration.current += 1;
       setSession(current);
       setSelectedSchoolId(current.schools.length === 1 ? current.schools[0].id : '');
-      setWorkspace(current.schools.length === 1 && current.schools[0].role === 'assistant' ? 'assistant' : 'learners');
+      setWorkspace(initialWorkspace(current.schools.length === 1 ? current.schools[0].role : undefined));
       setLearnerOffset(0);
     }).catch((error) => {
       if (active && generation === authGeneration.current && !(error instanceof ApiError && error.status === 401)) setNotice(displayError(error));
@@ -85,7 +88,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
   }, [client]);
 
   useEffect(() => {
-    if (!session || !school || school.role === 'assistant') {
+    if (!session || !school || school.role === 'assistant' || school.role === 'guardian') {
       setLearners({ status: 'ready', value: { items: [], total: 0, offset: 0, limit: pageSize } });
       return;
     }
@@ -120,7 +123,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
       if (generation !== authGeneration.current) return;
       setSession(current);
       setSelectedSchoolId(current.schools.length === 1 ? current.schools[0].id : '');
-      setWorkspace(current.schools.length === 1 && current.schools[0].role === 'assistant' ? 'assistant' : 'learners');
+      setWorkspace(initialWorkspace(current.schools.length === 1 ? current.schools[0].role : undefined));
       setLearnerOffset(0);
     } catch (error) {
       if (generation === authGeneration.current) setNotice(displayError(error));
@@ -165,7 +168,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
   function changeSchool(value: string) {
     profileGeneration.current += 1;
     setSelectedSchoolId(value);
-    setWorkspace(session?.schools.find(item => item.id === value)?.role === 'assistant' ? 'assistant' : 'learners');
+    setWorkspace(initialWorkspace(session?.schools.find(item => item.id === value)?.role));
     setLearnerOffset(0);
     setSelectedLearner(null);
     setProfile(null);
@@ -192,6 +195,9 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
           {session.schools.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
         <nav aria-label={t('workspace')} className="main-nav">
+          {school?.role === 'guardian' ? <button className="nav-item active" aria-current="page" type="button" onClick={() => {setWorkspace('guardian');leaveProfile();}}>
+            <span className="nav-icon" aria-hidden="true">✉</span>{language === 'nn' ? 'Brev frå skulen' : 'Brev fra skolen'}
+          </button> : <>
           <button className={`nav-item ${school && workspace === 'learners' ? 'active' : ''}`} aria-current={workspace === 'learners' ? 'page' : undefined} type="button" onClick={() => {setWorkspace('learners');leaveProfile();}}>
             <span className="nav-icon" aria-hidden="true">▦</span>{t('learners')}
           </button>
@@ -201,6 +207,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
           <button className={`nav-item ${school && workspace === 'assistant' ? 'active' : ''}`} aria-current={workspace === 'assistant' ? 'page' : undefined} type="button" onClick={() => {setWorkspace('assistant');leaveProfile();}}>
             <span className="nav-icon" aria-hidden="true">☷</span>Mine assistentoppdrag
           </button>
+          </>}
         </nav>
         <div className="sidebar-bottom">
           <div className="signed-in"><span className="avatar" aria-hidden="true">{session.user.display_name.slice(0, 1).toLocaleUpperCase(language)}</span><span className="signed-in-copy"><strong>{session.user.display_name}</strong><span>{session.user.email}</span></span></div>
@@ -212,10 +219,12 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
         </div>
       </aside>
       <main id="main-content" className="main-panel">
-        <header className="topbar"><div><div className="eyebrow">{school?.name ?? t('appName')}</div><h1>{selectedLearner ? t('profile') : workspace === 'intake' ? 'Dokumentinnboks' : workspace === 'assistant' ? 'Mine assistentoppdrag' : t('learners')}</h1></div><div className="topbar-user" aria-label={session.user.display_name}>{session.user.display_name}</div></header>
+        <header className="topbar"><div><div className="eyebrow">{school?.name ?? t('appName')}</div><h1>{school?.role === 'guardian' ? (language === 'nn' ? 'Brev frå skulen' : 'Brev fra skolen') : selectedLearner ? t('profile') : workspace === 'intake' ? 'Dokumentinnboks' : workspace === 'assistant' ? 'Mine assistentoppdrag' : t('learners')}</h1></div><div className="topbar-user" aria-label={session.user.display_name}>{session.user.display_name}</div></header>
         <div className="content-wrap">
           {notice && <div className="notice" role="status">{notice}</div>}
-          {!session.schools.length ? <EmptyState title={t('schools')} message={t('noSchools')} /> : !school ? <EmptyState title={t('chooseSchool')} message={t('selectSchool')} /> : workspace === 'intake' ? (
+          {!session.schools.length ? <EmptyState title={t('schools')} message={t('noSchools')} /> : !school ? <EmptyState title={t('chooseSchool')} message={t('selectSchool')} /> : school.role === 'guardian' ? (
+            <GuardianPortal key={`${session.user.id}:${school.id}`} client={client} schoolId={school.id} currentUser={session.user} language={language} timezone={school.timezone} formatError={displayError} />
+          ) : workspace === 'intake' ? (
             <IntakeWorkspace client={client} schoolId={school.id} formatError={displayError} />
           ) : workspace === 'assistant' ? (
             <TeachingWorkspace key={`${session.user.id}:${school.id}:assistant`} client={client} schoolId={school.id} mode="assistant" currentUser={session.user} language={language} formatError={displayError} />

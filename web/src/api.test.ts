@@ -139,4 +139,20 @@ describe('ApiClient', () => {
     expect(localizeApiError('nb', 'school_specific_error', 'Skolen ber deg kontakte systemansvarlig.')).toBe('Skolen ber deg kontakte systemansvarlig.');
     expect(localizeApiError('nn', 'HTTP_503', '')).toBe('Noko gjekk gale. Prøv igjen, eller kontakt systemansvarleg.');
   });
+
+  it('retrieves scoped attachment bytes and expires the session on denied authentication', async () => {
+    const bytes = new Blob(['Synthetic attachment'], {type: 'text/plain'});
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce({ok: true, status: 200, blob: async () => bytes} as Response)
+      .mockResolvedValueOnce(response(401, {error: {code: 'authentication_required'}}));
+    const client = new ApiClient(fetcher);
+    const expired = vi.fn();
+    client.setSessionExpiredHandler(expired);
+    const path = ['communication', 'portal', 'grants', 'grant-1', 'attachments', 'file-1'];
+    expect(await client.schoolBlob('school-1', path)).toBe(bytes);
+    expect(fetcher.mock.calls[0][0]).toBe('/api/v1/schools/school-1/communication/portal/grants/grant-1/attachments/file-1');
+    expect(fetcher.mock.calls[0][1]?.credentials).toBe('include');
+    await expect(client.schoolBlob('school-1', path)).rejects.toMatchObject({status: 401});
+    expect(expired).toHaveBeenCalledOnce();
+  });
 });
