@@ -83,7 +83,8 @@ Thus technical management permission cannot grant itself pupil rights. To change
 actions or relationships, revoke the old record and create a new dated record.
 Accounts are provisioned through local commands at this stage; account lifecycle,
 identity-provider integration and richer school/profile administration remain
-future work. No case-content endpoints or protected-case reader permissions exist.
+future work. These foundation permissions alone do not confer protected-case
+access; the assembled safeguarding context enforces its own exact case grants.
 
 Successful business changes, audit metadata and identity outbox events commit
 atomically. Read/denied-request metadata contains identifiers and outcomes only.
@@ -116,10 +117,11 @@ bindings resolve through plans; governance case references and evidence resolve
 through the protected case's current authorized snapshot. The protected workspace
 keeps recorded rule obligations and their source states separate from actual
 contacts/actions. Missing optional rule context remains visibly unavailable and
-does not block otherwise authorized case work. This composition still requires
-independent integration review and the remaining user interfaces.
-`b1_integrate_contexts` joins their separate migrations into one head. Apply all
-migrations before starting the application. Context review results and remaining
+does not block otherwise authorized case work. This bounded composition passed
+independent review at `30fe563`; the remaining user interfaces are separate work.
+`b1_integrate_contexts` joins the initial context migrations; later migrations
+extend that history. Apply all migrations before starting the application.
+Context review results and remaining
 findings are tracked in `docs/reviews/`; registration does not establish complete
 features or production readiness.
 
@@ -139,8 +141,11 @@ returned through the ordinary excerpt or AI teaching path. Uploaded files use a
 bounded raw request body, `X-Evidence-Filename`, and JSON `X-Evidence-Metadata`;
 pupil prose is not placed in the request URL. Typed fields are reviewed before
 confirmation, and corrections retain source versions and revoke old excerpt links.
-Goal references also require a scoped goal validator from the planning context;
-until that adapter is present, a non-null goal reference fails explicitly.
+Browser uploads percent-encode the UTF-8 filename with
+`X-Evidence-Filename-Encoding: percent` and ASCII-escape the metadata JSON.
+The explicit encoding is decoded once; legacy unencoded filenames remain literal.
+Goal references use the assembled planning validator and require current scoped
+access to the exact eligible goal revision.
 
 AI providers are operator-configured JSON, for example this local-only setting:
 
@@ -218,8 +223,9 @@ Governance imports the bundled legal register only as unreviewed candidates.
 Configured, reviewed school rules create obligations; document uploads do not
 prove that an action was performed. The assembled evidence adapter freezes exact
 current learner evidence bindings and checks them again at fulfillment. Protected
-case identity and case evidence remain unavailable until their owning context
-provides a resolver. No local legal interpretation is automatically activated.
+case identity and case evidence resolve through the assembled safeguarding
+adapter and its separate case authority. No local legal interpretation is
+automatically activated.
 
 The integration suite `backend/tests/test_context_integration.py` exercises actual
 HTTP intake → field review → confirmed excerpt → reviewed local-protocol AI job →
