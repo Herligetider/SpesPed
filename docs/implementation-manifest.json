@@ -1140,9 +1140,28 @@
           "type": "implementation_candidate",
           "revision": "d065091e8915594a3177876193f675c18ca0aa23",
           "result": "BC06 backend and actualApp registration pinned:15tables,reviewed public/Montessori schemes,mixedageclassplans,private/scoped resource library andvariants,native datedteams,datedlicense/source checks,actualexperience,inventory andexplicitmissingadapters. Author33tests passed1intentionalSQLite concurrency skip;PG race ran.Root2actualApp composition tests passedSQLite/PG usingnativeoriginals and unavailabledependency/reservationdefaults.Independent review assigned /root/review_j09. No F09/F10 completion claim."
+        },
+        {
+          "type": "independent_review",
+          "revision": "d065091e8915594a3177876193f675c18ca0aa23",
+          "path": "docs/reviews/J09-review.md",
+          "result": "Changes required: J09-R1 contradictory active theme/pupil/goal decisions and J09-R2 stale actual support unmarked in resource experience projection. Baseline35passed1intentionalSQLite-onlyconcurrency skip; independent12dualDBprobes passedincludingdefectreproductions. Originalauthorassignedboundedrepairs. Fullconsumer/UIintegrationsremainrequired."
         }
       ],
-      "findings": [],
+      "findings": [
+        {
+          "id": "J09-R1",
+          "priority": "P2",
+          "description": "Changing an exact theme/pupil/goal decision appends contradictory active bindings without a correction or supersession workflow.",
+          "status": "open"
+        },
+        {
+          "id": "J09-R2",
+          "priority": "P2",
+          "description": "Resource experience listing does not mark supporting actual participation stale after a correction to absence/zero minutes.",
+          "status": "open"
+        }
+      ],
       "remainingWork": [
         "Independently review and repair the pinned backend and actualApp composition.",
         "Implement a real BC07 future-session dependency index and validate/apply keep/change decisions without changing recorded actuals.",
