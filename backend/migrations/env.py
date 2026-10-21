@@ -12,6 +12,7 @@ from spesped.contexts.plans import models as plan_models  # noqa: F401
 from spesped.contexts.safeguarding import models as safeguarding_models  # noqa: F401
 from spesped.contexts.teaching import models as teaching_models  # noqa: F401
 from spesped.contexts.curriculum import models as curriculum_models  # noqa: F401
+from spesped.contexts.assessment import models as assessment_models  # noqa: F401
 
 config = context.config
 target_metadata = Base.metadata
