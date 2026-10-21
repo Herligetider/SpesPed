@@ -370,8 +370,9 @@ candidate is not full F09/F10 acceptance.
 
 ## Read-only assessment inputs
 
-Candidate `a0bcab2` adds two owning-context projections; independent review is
-pending. They are building blocks for J10, not completed assessment workflows.
+Revision `a0bcab2` adds two owning-context projections accepted in a
+[separate independent review](reviews/owned-learning-projections-review.md).
+They are building blocks for J10, not completed assessment workflows.
 
 `curriculum.projections.reviewed_assessment_scheme(db, actor, school_id,
 scheme_revision_id, starts_on=..., ends_on=...)` accepts inclusive local dates.

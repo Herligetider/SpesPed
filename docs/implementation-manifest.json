@@ -703,6 +703,12 @@
           "type": "implementation_candidate",
           "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
           "result": "Root added pure owning-context reviewed assessment-scheme and learner actual-delivery projections for J10. Fourteen dual-DB tests passed; two strengthened no-flush/commit/rollback/DML ITO-read checks passed. Checks include public/Montessori schemes, complete periods, digest/supersession, retained permission caches, pending edits, pupil-only group projection, actual correction and current unassessed staffing without follow-up writes. Independent review queued; no complete feature promoted."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+          "path": "docs/reviews/owned-learning-projections-review.md",
+          "result": "Bounded native source projections accepted: 14 committed and 4 independent SQLite/PostgreSQL cases passed. Exact reviewed scheme and original authority, complete inclusive period, content digest, pending/cached edits, pupil-only actual participation and correction checks passed. Reads perform no flush, commit, rollback or DML; qualification recall remains unassessed without creating follow-ups. No professional authority or complete assessment workflow inferred."
         }
       ],
       "findings": [
@@ -788,7 +794,9 @@
         "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e",
         "2e3c85184f08f8ac294a0bc2e778eb32f57070ed",
         "c18a0e05c7dd3519df6365e7a0bab740841f351a",
-        "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6"
+        "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
+        "004e19f935450f3260c4c1036530a4cfec8e6742",
+        "79158a84a59fa047f10a58e6e55fd53088b18ea0"
       ],
       "evidence": [
         {
@@ -895,6 +903,16 @@
           "revision": "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
           "path": "docs/reviews/J07-teaching-review.md",
           "result": "R1, R2 and R4 independently verified fixed. Frozen 77 web tests, production build, normal 11-step Chromium/PostgreSQL workflow and independent adverse probes completed. R3 remains P2: concurrent revision refresh loses local preparation and retained basis lacks refreshed observation choices. Original author assigned bounded R3 repair; teaching acceptance remains withheld."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "004e19f935450f3260c4c1036530a4cfec8e6742",
+          "result": "Teaching R3 follow-up preserves edit-buffer identity and original command base across concurrent saved revisions, adds explicit comparison/rebase/discard, refreshes retained basis choices and revalidates historical draft authority. Author 88 frozen web tests and build passed; 11 normal and 8 adverse actual-App Chromium/PostgreSQL checks recorded. Independent original reviewer /root/review_composition is checking exact candidate; R3 remains open until final report."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "79158a84a59fa047f10a58e6e55fd53088b18ea0",
+          "result": "Durable IEP/teaching proposal recovery UI pinned with explicit saved-proposal selection, pagination, immutable retries, outcome reconciliation and fresh-metadata running-lease expiry. Author 114 web tests, production build and 10 actual-App Chromium/PostgreSQL workflows passed against accepted c18 backend; includes lost replies, recall, shared-basis per-session outcome and manual-edit conflict paths. Independent review assigned to /root/review_j05; no UI or feature acceptance inferred."
         }
       ],
       "findings": [
@@ -1206,6 +1224,12 @@
           "type": "implementation_candidate",
           "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
           "result": "Root added pure owning-context reviewed assessment-scheme and learner actual-delivery projections for J10. Fourteen dual-DB tests passed; two strengthened no-flush/commit/rollback/DML ITO-read checks passed. Checks include public/Montessori schemes, complete periods, digest/supersession, retained permission caches, pending edits, pupil-only group projection, actual correction and current unassessed staffing without follow-up writes. Independent review queued; no complete feature promoted."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+          "path": "docs/reviews/owned-learning-projections-review.md",
+          "result": "Bounded native source projections accepted: 14 committed and 4 independent SQLite/PostgreSQL cases passed. Exact reviewed scheme and original authority, complete inclusive period, content digest, pending/cached edits, pupil-only actual participation and correction checks passed. Reads perform no flush, commit, rollback or DML; qualification recall remains unassessed without creating follow-ups. No professional authority or complete assessment workflow inferred."
         }
       ],
       "findings": [
@@ -1259,6 +1283,12 @@
           "type": "implementation_candidate",
           "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
           "result": "Root added pure owning-context reviewed assessment-scheme and learner actual-delivery projections for J10. Fourteen dual-DB tests passed; two strengthened no-flush/commit/rollback/DML ITO-read checks passed. Checks include public/Montessori schemes, complete periods, digest/supersession, retained permission caches, pending edits, pupil-only group projection, actual correction and current unassessed staffing without follow-up writes. Independent review queued; no complete feature promoted."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+          "path": "docs/reviews/owned-learning-projections-review.md",
+          "result": "Bounded native source projections accepted: 14 committed and 4 independent SQLite/PostgreSQL cases passed. Exact reviewed scheme and original authority, complete inclusive period, content digest, pending/cached edits, pupil-only actual participation and correction checks passed. Reads perform no flush, commit, rollback or DML; qualification recall remains unassessed without creating follow-ups. No professional authority or complete assessment workflow inferred."
         }
       ],
       "findings": [],
@@ -3377,6 +3407,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Recorded independent closure of J04-SR1, J05-R1-R3 and J16-R1-R5, accepted bounded governance read port and b3/b4 schema checks. J06 teaching and its typed gateway extension are in progress. Detailed all-40 feature catalog and chosen-period parent email remain the review specification; no full feature or release gate is marked complete."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Revalidated catalog 0.3: all 40 detailed features, 86 acceptance examples, 90 requirements and 71 sources retained; parent emails use chosen intervals with optional recurring drafts. Accepted native assessment-source projections after separate independent review. Teaching concurrent-edit repair and persisted-proposal recovery UI pinned for independent review. Full frozen backend baseline and separately accepted missing-adapter test repairs recorded. Native BC09 implementation continues; no whole feature or release gate marked complete."
     }
   ]
 }
