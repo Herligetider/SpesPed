@@ -22,6 +22,7 @@ Arbeidsversjon 0.3, oppdatert 21. oktober 2026. Alle 40 funksjoner beskriver nå
 
 ## Implementasjon
 
+- [Kjør utviklingsversjonen på egen Mac](docs/11-local-development.no.md): hent koden, opprett en lokal testdatabase og start begge serverne.
 - [Domain implementation contracts](docs/09-domain-implementation.en.md): modulansvar, datatyper, tilgang og API-kontrakter.
 - [Master implementation plan](docs/10-master-plan.en.md): 28 jobber som dekker alle funksjoner, med uavhengig gjennomgang.
 - [Implementasjonsregister](docs/implementation-manifest.json): status og faktisk verifikasjonsgrunnlag per funksjon og akseptansekriterium.

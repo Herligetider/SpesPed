@@ -1464,7 +1464,7 @@
       "status": "implementing",
       "requiredEvidence": "Correct periods/goals, late evidence, cadence deduplication, no auto-send",
       "implementationAgent": "/root/j11_documents",
-      "reviewAgent": "/root/review_document_choices",
+      "reviewAgent": "/root/review_plan_offset",
       "commits": [
         "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
         "e614152784c6962bbcf7076ec875d2b53d8007fd",
@@ -1472,7 +1472,8 @@
         "35845e984e9311b679695a7a7fdf2c270b1ad691",
         "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
         "955e472598c6cb2a6aa404d944896bf7603026f4",
-        "b39ecb08e16209d7d99ebbb7747bac90a01750ac"
+        "b39ecb08e16209d7d99ebbb7747bac90a01750ac",
+        "487fe316e6c9235e203bd10968e0dafb055fe517"
       ],
       "evidence": [
         {
@@ -1552,6 +1553,12 @@
         {
           "type": "work_assignment",
           "result": "Assigned original backend owner a narrow metadata-only recovery read for source/model-unavailable documents. Current revision_view withholds content/snapshot and omits lineage; UI cannot safely infer exact generated-field coordinates. Contract must expose only current revision identity, safe section keys and generated field keys under current document-write scope, without withheld prose/excerpts. Native transaction preservation and current authority tests required on SQLite and PostgreSQL; separate independent review follows."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "487fe316e6c9235e203bd10968e0dafb055fe517",
+          "path": "docs/reviews/document-recovery-final-review.md",
+          "result": "Accepted bounded recovery metadata and UI repair after independent frozen-hash verification: 60 native backend cases (30 SQLite and 30 PostgreSQL), 31 UI/App cases and four additional adverse UI probes passed. Exact current writer scope and structural-only metadata preserve withheld prose and caller transactions. Late inventories preserve dirty edits/gaps, rebuild is revision-scoped, stale typed references are cleared, honest empty bases are allowed, and independent human replacement explicitly severs only changed generated fields. Root additionally verified all 172 web tests, typecheck/build and the native PostgreSQL browser draft/revision/exact-approval/reopen/recall journey. No whole feature or production gate promoted."
         }
       ],
       "findings": [
@@ -2005,10 +2012,11 @@
       "status": "implementing",
       "requiredEvidence": "Browser journeys, revisions and source review; public/Montessori fixtures",
       "implementationAgent": "/root/j20_document_recovery",
-      "reviewAgent": "/root/review_document_ui",
+      "reviewAgent": "/root/review_plan_offset",
       "commits": [
         "d15671bf89ce4f2e5d88388da5df7f9d4636a300",
-        "d00c118665e6d9acaf1a94c2d173328b1bb3ca31"
+        "d00c118665e6d9acaf1a94c2d173328b1bb3ca31",
+        "487fe316e6c9235e203bd10968e0dafb055fe517"
       ],
       "evidence": [
         {
@@ -2034,6 +2042,12 @@
         {
           "type": "work_assignment",
           "result": "Escalated complex recovery repairs from Luna to /root/j20_document_recovery (Sol high), per the model policy. Exclusive ownership transferred for the four document feature files; original author stopped. Requires safe editor lifetime, exact current source/typed-reference selection, honest gap-only drafts and explicit severance for independent human rewrites. Root retains browser integration; the same distinct reviewer will recheck."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "487fe316e6c9235e203bd10968e0dafb055fe517",
+          "path": "docs/reviews/document-recovery-final-review.md",
+          "result": "Accepted bounded recovery metadata and UI repair after independent frozen-hash verification: 60 native backend cases (30 SQLite and 30 PostgreSQL), 31 UI/App cases and four additional adverse UI probes passed. Exact current writer scope and structural-only metadata preserve withheld prose and caller transactions. Late inventories preserve dirty edits/gaps, rebuild is revision-scoped, stale typed references are cleared, honest empty bases are allowed, and independent human replacement explicitly severs only changed generated fields. Root additionally verified all 172 web tests, typecheck/build and the native PostgreSQL browser draft/revision/exact-approval/reopen/recall journey. No whole feature or production gate promoted."
         }
       ],
       "findings": [
@@ -2047,7 +2061,7 @@
           "id": "J20-DUI-R2",
           "priority": "P1",
           "description": "Shared creation/editor state can erase selected content and alter untouched configuration",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R3",
@@ -2065,7 +2079,7 @@
           "id": "J20-DUI-R5",
           "priority": "P2",
           "description": "No explicit handling/preservation of evidence gaps",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R6",
@@ -2077,13 +2091,13 @@
           "id": "J20-DUI-R7",
           "priority": "P2",
           "description": "Changed source basis has no existing-document rebuild path",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R8",
           "priority": "P1",
           "description": "Rebuild mode persists across document selection and displays source-stale prose",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         }
       ]
     },
@@ -3962,6 +3976,15 @@
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
         "backend": "Completed: 1,138 passed, 26 skipped, 90 subtests passed, 21,122 warnings, exit code 0 in 2,230.75 seconds. Actual PostgreSQL URL configured. Root session 74710 terminated; archive source/import proof and tests.log retained. This frozen baseline excludes later UI, choice, timestamp and recovery changes.",
         "path": "docs/reviews/backend-integration-91558b2.md"
+      }
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "User authorized pushing all current project work and merging the development branch into main. Accepted the separately reviewed document recovery deltas at 487fe316e6c9235e203bd10968e0dafb055fe517. Root verified 172 web tests, typecheck/build, native PostgreSQL browser creation/manual revision with gap explanations/exact approval without dispatch/reopen/recall, and fresh local SQLite setup/migration/synthetic seed/login. Owned temporary browser server exited cleanly and exact schema removal was verified. Added the local Mac setup guide: repository and preview were on Lauritz’s Mac mini, not the MacBook Air. Private settings, databases and ignored test artifacts remain outside Git. This is a development integration checkpoint; all 40 features and production gates retain their existing completion requirements.",
+      "verification": {
+        "revision": "487fe316e6c9235e203bd10968e0dafb055fe517",
+        "path": "docs/reviews/main-integration-checkpoint.md"
       }
     }
   ]
