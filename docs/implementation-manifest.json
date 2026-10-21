@@ -754,7 +754,8 @@
         "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8",
         "29bcbc0bf5d03afe0ea250bd8acfc6f119171328",
         "278613efb0fdbef7e93b88d86b542c204a75d671",
-        "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814"
+        "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814",
+        "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e"
       ],
       "evidence": [
         {
@@ -807,6 +808,11 @@
           "type": "implementation_candidate",
           "revision": "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814",
           "result": "Planning UI candidate frozen; independent reviewer /root/review_j05 assigned. Author13planningtests,67sharedwebtests andbuildpass. ActualApp Chromium/PostgreSQL profile/assessment/decision/IEPgeneration/lifecycle/retry/import/history/recall and390px checks completed. Preserves exact original fractional timestamps and explicitDSTfold choice. RootApp integration and teaching module still uncommitted/in progress; no UI acceptance yet."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "5a71ed187afb9b0067f08dc3c85b94c3eb53e49e",
+          "result": "Teaching UI plus root application integration pinned locally. Root67webtests andproductionbuild passed. Author realChromium/FastAPI/PostgreSQL normal/adverse/manual-recovery evidence retained; independent review assigned/queued to /root/review_composition. Includes schoolassistantentry independentoflearnerlist, scopedclient/school/pupil lifetimes andvisiteddraft preservation. Known planning recall/date findings prevent overall UI acceptance; pending-model-job durablelist/resume and other language/usability/qualification integration remain required."
         }
       ],
       "findings": [
@@ -875,12 +881,25 @@
           "priority": "P2",
           "description": "A response clears a newer review edit or import draft entered while saving.",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J07-PL-R1",
+          "priority": "P2",
+          "description": "Existing repeated local time with original microsecond precision does not match millisecond-only select options, blocking unchanged plan/goal submission.",
+          "status": "open"
+        },
+        {
+          "id": "J07-PL-R2",
+          "priority": "P1",
+          "description": "History comparison renders retained generated current-plan prose after model recall when current refresh fails but revision-history refresh succeeds.",
+          "status": "open"
         }
       ],
       "remainingWork": [
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
-        "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness."
+        "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
+        "Close and independently recheck J07-PL-R1/R2, independently review teaching/App integration, and implement durable pending-generation retrieval/resume plus remaining complete-workflow gaps."
       ]
     },
     {
