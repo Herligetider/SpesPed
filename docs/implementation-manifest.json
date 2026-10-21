@@ -543,6 +543,12 @@
           "revision": "54f40085911bb56f3fa2b3b38253db7e43d72c00",
           "path": "docs/reviews/J05-generation-review.md",
           "result": "Bounded generated IEP consumer accepted; GEN-R1–R4 closed. Exact archive: 24 focused tests and six additional independent checks passed across SQLite/PostgreSQL, including same-count membership substitution, valid-digest legacy descriptor omission without prose fallback, explicit optional None versus unknown/expired/former owners. Full feature and UI acceptance remain separate."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "3df0a501d66ddc263dc180833eade5f90e5094ee",
+          "path": "docs/reviews/teaching-profile-selection-review.md",
+          "result": "Exact selected-profile teaching basis repair accepted. 127 pinned plan/profile/teaching tests passed with five expected SQLite skips; 14 independent SQLite/PostgreSQL probes passed. Selected statements beyond page100 and normalized timestamps work; replacements, source/permission recalls and warm identity-map changes fail closed. Full UI and feature acceptance remain separate."
         }
       ],
       "findings": [
@@ -655,6 +661,12 @@
           "revision": "da503e1b87c038a73d64dca433f38ef90c6e2961",
           "path": "docs/reviews/J06-review.md",
           "result": "Bounded backend accepted; J06-R1–R7 closed. 78 passed, two expected SQLite concurrency skips; four additional independent interval/recovery tests passed on SQLite and PostgreSQL. Nineteen teaching tables and merged metadata match; empty migration roundtrip passed. Full feature, browser workflow and real qualification adapter remain incomplete."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "3df0a501d66ddc263dc180833eade5f90e5094ee",
+          "path": "docs/reviews/teaching-profile-selection-review.md",
+          "result": "Exact selected-profile teaching basis repair accepted. 127 pinned plan/profile/teaching tests passed with five expected SQLite skips; 14 independent SQLite/PostgreSQL probes passed. Selected statements beyond page100 and normalized timestamps work; replacements, source/permission recalls and warm identity-map changes fail closed. Full UI and feature acceptance remain separate."
         }
       ],
       "findings": [
@@ -771,6 +783,12 @@
           "revision": "3c4d823626a69c3b0a5b5996b5760217808c4b30",
           "path": "docs/reviews/practitioner-choice-ports-review.md",
           "result": "Bounded practitioner read ports accepted: 12 pinned tests, 30 focused regressions, 16 independent adverse cases passed across SQLite/PostgreSQL. Current learner/purpose model choices without admin access, scoped active staff names, curated assignment labels and persisted exact delivery follow-up ownership pass. No whole feature/UI acceptance."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "3df0a501d66ddc263dc180833eade5f90e5094ee",
+          "path": "docs/reviews/teaching-profile-selection-review.md",
+          "result": "Exact selected-profile teaching basis repair accepted. 127 pinned plan/profile/teaching tests passed with five expected SQLite skips; 14 independent SQLite/PostgreSQL probes passed. Selected statements beyond page100 and normalized timestamps work; replacements, source/permission recalls and warm identity-map changes fail closed. Full UI and feature acceptance remain separate."
         }
       ],
       "findings": [
