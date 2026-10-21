@@ -1447,7 +1447,8 @@
         "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
         "e614152784c6962bbcf7076ec875d2b53d8007fd",
         "ca3279b4e85c013c0998cedd9333a0ba98409192",
-        "35845e984e9311b679695a7a7fdf2c270b1ad691"
+        "35845e984e9311b679695a7a7fdf2c270b1ad691",
+        "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220"
       ],
       "evidence": [
         {
@@ -1492,6 +1493,11 @@
           "revision": "35845e984e9311b679695a7a7fdf2c270b1ad691",
           "path": "docs/reviews/J11-review.md",
           "result": "Changes required. Exact archived candidate suite reproduced 49 passes and one SQLite-only concurrency skip. Independent SQLite/PostgreSQL probes reproduced consumer authorization, concrete reporting-period and in-flight schedule reconciliation issues; prior J19 retained-history test is intercepted by the newer unconditional empty-table migration guard. DST and distinct-key PostgreSQL review-race checks passed. Original author owns repairs; concrete reviewed report coverage belongs to BC03. No bounded J11 or full-feature acceptance."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
+          "result": "Pinned original-author R1–R4 repairs after verifying frozen14file hashes (8changed). Consumer-scoped provenance checks no longer require generation/write rights; contributor late-source IDs are filtered; annual reports use exact native BC03 reviewed coverage; scheduled completion rechecks current binding; empty-only downgrade preserves all retained BC10 history. Author69passed1SQLite-only race skip, followed by12finalauthorizationpasses after curated-output hardening. Original independent reviewer /root/review_j11_documents reactivated for exact archived recheck; coverage dependency3be8177 has its own independent review. No finding closed until recheck."
         }
       ],
       "findings": [
@@ -1499,25 +1505,25 @@
           "id": "J11-R1",
           "priority": "P2",
           "description": "Generated document consumers incorrectly require AI generation and write permissions",
-          "status": "repair_in_progress"
+          "status": "awaiting_recheck"
         },
         {
           "id": "J11-R2",
           "priority": "P1",
           "description": "Annual report can finalize against an obligation for a different reporting period",
-          "status": "repair_in_progress"
+          "status": "awaiting_recheck"
         },
         {
           "id": "J11-R3",
           "priority": "P2",
           "description": "Scheduled generation does not reconcile current availability after a scope change during the provider call",
-          "status": "repair_in_progress"
+          "status": "awaiting_recheck"
         },
         {
           "id": "J11-R4",
           "priority": "P2",
           "description": "Unconditional empty-BC10 downgrade intercepts prior J19 retained-history regression",
-          "status": "repair_in_progress"
+          "status": "awaiting_recheck"
         }
       ]
     },
