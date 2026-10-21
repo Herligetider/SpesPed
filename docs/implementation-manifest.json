@@ -1498,6 +1498,12 @@
           "type": "repair_candidate",
           "revision": "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
           "result": "Pinned original-author R1–R4 repairs after verifying frozen14file hashes (8changed). Consumer-scoped provenance checks no longer require generation/write rights; contributor late-source IDs are filtered; annual reports use exact native BC03 reviewed coverage; scheduled completion rechecks current binding; empty-only downgrade preserves all retained BC10 history. Author69passed1SQLite-only race skip, followed by12finalauthorizationpasses after curated-output hardening. Original independent reviewer /root/review_j11_documents reactivated for exact archived recheck; coverage dependency3be8177 has its own independent review. No finding closed until recheck."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
+          "path": "docs/reviews/J11-review.md",
+          "result": "R1–R4 closed, bounded native document backend accepted. Final candidate71passes1SQLite-onlyskip, originalindependent17passes1SQLite-onlyskip, newcurrent-source/coverage/inflight probes12passes on SQLite+actualPostgreSQL. Both real PG concurrency counterparts passed; archive23unionfiles and author14hashes/imports verified. Explicit paused-plan manual proposal inspection remains available while scheduled request blocks; true historical generation preserved. BC03dependency3be8177 separately accepted. Full F18/F20/F39 UI, authorized disclosure, worker deployment and production quality remain required."
         }
       ],
       "findings": [
@@ -1505,25 +1511,25 @@
           "id": "J11-R1",
           "priority": "P2",
           "description": "Generated document consumers incorrectly require AI generation and write permissions",
-          "status": "awaiting_recheck"
+          "status": "verified_fixed"
         },
         {
           "id": "J11-R2",
           "priority": "P1",
           "description": "Annual report can finalize against an obligation for a different reporting period",
-          "status": "awaiting_recheck"
+          "status": "verified_fixed"
         },
         {
           "id": "J11-R3",
           "priority": "P2",
           "description": "Scheduled generation does not reconcile current availability after a scope change during the provider call",
-          "status": "awaiting_recheck"
+          "status": "verified_fixed"
         },
         {
           "id": "J11-R4",
           "priority": "P2",
           "description": "Unconditional empty-BC10 downgrade intercepts prior J19 retained-history regression",
-          "status": "awaiting_recheck"
+          "status": "verified_fixed"
         }
       ]
     },
@@ -1904,12 +1910,17 @@
         "J10",
         "J11"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Browser journeys, revisions and source review; public/Montessori fixtures",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j20_document_ui",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "Assigned fixed-contract BC10 practitioner UI to /root/j20_document_ui using gpt-6-luna medium per plan: exact period/report draft creation, readable source/template/obligation selectors, structured editing/gap/source review, scoped contributions and exact content approval, typed AI review/recovery and optional draftplan controls. Owns only new web/src/features/documents/**. Root owns navigation/backend choiceports and real browser/API integration; missing contracts must be reported, never replaced by UUID/JSON forms or success placeholders. Separate independent review required; other J20 curriculum/assessment screens remain required."
+        }
+      ],
       "findings": []
     },
     {
@@ -3733,6 +3744,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Recorded independent J11 changes-required review and dispatched original-author repairs plus BC03-owned exact report-period dependency. Root registered native BC11 application composition and added fresh-app communication/restart verification. Current detailed catalog and chosen-interval guardian draft request remain fulfilled and pushed through f186daf. Four previously verified bounded jobs remain recorded; new extensions are not accepted and no full feature is complete."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Accepted separately reviewed BC03 exact report-period coverage3be8177 and closed all four J11 findings at e7fe46a. Registered and verified native BC11 fresh-app portal/history composition (2SQLite/PostgreSQL passes); communication author is finishing real TLS/replay/model-recall verification before pin. Assigned typed document UI to Luna medium under fixed native contracts. No wholefeature or releasegate promoted; all40features/86criteria/28jobs retained."
     }
   ]
 }
