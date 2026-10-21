@@ -182,11 +182,15 @@ class SummaryPeriod:
             raise ValueError("Invalid summary date range")
         if calendar_date_boundary(self.start, self.timezone) >= calendar_date_boundary(
                 self.end + timedelta(days=1), self.timezone):
-            raise ValueError("Summary period contains no real instants")
+            raise EmptySummaryPeriodError("Summary period contains no real instants")
 
     def to_utc(self) -> EffectivePeriod:
         return EffectivePeriod(calendar_date_boundary(self.start, self.timezone),
                                calendar_date_boundary(self.end + timedelta(days=1), self.timezone))
+
+
+class EmptySummaryPeriodError(ValueError):
+    """Valid local date labels describe an interval with no real instants."""
 
 
 @dataclass(frozen=True)

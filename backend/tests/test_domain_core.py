@@ -118,6 +118,60 @@ class DomainCase(unittest.TestCase):
         second = recurrence.next_run(first)
         self.assertEqual(second.astimezone(ZoneInfo(zone)).date(), date(2011, 12, 31))
 
+    def test_next_request_skips_real_run_with_nonexistent_summary_day(self):
+        zone = ZoneInfo("Pacific/Apia")
+        recurrence = self.recurrence(cadence=DraftCadence.DAYS, anchor=date(2011, 12, 29), timezone=zone.key,
+                                     period_selection=DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS, 1)).activate()
+        first = recurrence.next_request(datetime(2011, 12, 28, tzinfo=UTC))
+        self.assertEqual(first.requested_for.astimezone(zone).date(), date(2011, 12, 29))
+        empty_run = recurrence.next_run(first.requested_for)
+        self.assertEqual(empty_run.astimezone(zone).date(), date(2011, 12, 31))
+        request = recurrence.next_request(first.requested_for)
+        self.assertEqual(request.requested_for.astimezone(zone).date(), date(2012, 1, 1))
+        self.assertEqual((request.period.start, request.period.end), (date(2011, 12, 31), date(2011, 12, 31)))
+        self.assertEqual(request.period.to_utc().end, request.requested_for)
+        retry = recurrence.next_request(first.requested_for + timedelta(minutes=1))
+        self.assertEqual(request.idempotency.key, retry.idempotency.key)
+        self.assertEqual(request.idempotency.key, recurrence.next_request(empty_run).idempotency.key)
+        following = recurrence.next_request(request.requested_for)
+        self.assertEqual(following.requested_for.astimezone(zone).date(), date(2012, 1, 2))
+        self.assertNotEqual(request.idempotency.key, following.idempotency.key)
+        self.assertFalse(request.authorizes_dispatch)
+
+    def test_empty_summary_skip_stops_at_schedule_end(self):
+        recurrence = self.recurrence(cadence=DraftCadence.DAYS, anchor=date(2011, 12, 29), timezone="Pacific/Apia",
+                                     period_selection=DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS, 1)).activate()
+        first = recurrence.next_request(datetime(2011, 12, 28, tzinfo=UTC))
+        for end_date in (date(2011, 12, 30), date(2011, 12, 31)):
+            with self.subTest(end_date=end_date):
+                bounded = replace(recurrence, end_date=end_date)
+                self.assertIsNone(bounded.next_request(first.requested_for))
+                self.assertIsNone(bounded.next_request(first.requested_for + timedelta(minutes=1)))
+        last = replace(recurrence, end_date=date(2012, 1, 1)).next_request(first.requested_for)
+        self.assertEqual(last.requested_for.astimezone(ZoneInfo(recurrence.timezone)).date(), date(2012, 1, 1))
+        self.assertIsNone(replace(recurrence, end_date=date(2012, 1, 1)).next_request(last.requested_for))
+
+    def test_empty_summary_skip_preserves_month_skip_and_other_period_errors(self):
+        zone = ZoneInfo("Pacific/Apia")
+        recurrence = self.recurrence(anchor=date(2011, 10, 31), timezone=zone.key,
+                                     period_selection=DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS, 1),
+                                     month_end_policy=MonthEndPolicy.SKIP).activate()
+        first = recurrence.next_request(datetime(2011, 10, 30, tzinfo=UTC))
+        # November has no anchored day 31. December 31 exists but its selected
+        # previous day does not. Neither becomes a draft or shifts the anchor.
+        request = recurrence.next_request(first.requested_for)
+        self.assertEqual(request.requested_for.astimezone(zone).date(), date(2012, 1, 31))
+        self.assertEqual(request.period.start, date(2012, 1, 30))
+        self.assertEqual(request.idempotency.key,
+                         recurrence.next_request(first.requested_for + timedelta(hours=1)).idempotency.key)
+        self.assertIsNone(replace(recurrence, end_date=date(2011, 12, 31)).next_request(first.requested_for))
+        self.assertEqual(replace(recurrence, end_date=date(2012, 1, 31)).next_request(first.requested_for), request)
+        # Only physically empty summaries are skipped; date-range errors remain visible.
+        invalid = self.recurrence(cadence=DraftCadence.DAYS, anchor=date(1, 1, 2), timezone="UTC",
+                                  period_selection=DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS, 3)).activate()
+        with self.assertRaisesRegex(ValueError, "supported date range"):
+            invalid.next_request(datetime(1, 1, 1, tzinfo=UTC))
+
     def test_time_validation_and_open_ended_period(self):
         naive = datetime(2026, 1, 1)
         for constructor in (OccurrenceTime, RecordedTime, EffectivePeriod):

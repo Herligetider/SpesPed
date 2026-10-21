@@ -12,7 +12,7 @@ from datetime import date, datetime, timedelta
 from enum import Enum
 
 from .approval import canonical_content_digest
-from .primitives import (RevisionId, ScheduleId, SchoolId, SubjectScope, SummaryPeriod,
+from .primitives import (EmptySummaryPeriodError, RevisionId, ScheduleId, SchoolId, SubjectScope, SummaryPeriod,
                          calendar_date_boundary, identifier, instant, integer, local_date,
                          nonempty, school_zone)
 
@@ -240,11 +240,21 @@ class DraftRecurrence:
             index += 1
 
     def next_request(self, after: datetime) -> DraftRequest | None:
+        """First run after `after` with a nonempty resolved summary period.
+
+        A real run date can summarize entirely skipped dates. Such a run produces
+        no draft; continue using normal cadence/end bounds, without changing the
+        selected period rule. Other period validation failures remain errors.
+        """
         run = self.next_run(after)
-        if run is None:
-            return None
-        period = self.period_selection.resolve(run.astimezone(school_zone(self.timezone)).date(), self.timezone)
-        return DraftRequest(self.schedule_id, self.revision_id, self.scope, period, run)
+        while run is not None:
+            try:
+                period = self.period_selection.resolve(run.astimezone(school_zone(self.timezone)).date(), self.timezone)
+            except EmptySummaryPeriodError:
+                run = self.next_run(run)
+                continue
+            return DraftRequest(self.schedule_id, self.revision_id, self.scope, period, run)
+        return None
 
     def request_manual(self, period: SummaryPeriod, requested_at: datetime) -> DraftRequest:
         """A manual-cadence scheduled run; use ManualDraftRequest for one-off ordering."""
