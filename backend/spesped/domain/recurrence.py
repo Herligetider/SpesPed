@@ -1,17 +1,20 @@
 """Opt-in draft requests. Scheduling never creates a release authorization.
 
-Runs occur at school-local midnight. Days use calendar arithmetic, months stay
-anchored to the original day, and `after` is exclusive. Period selection is an
-independent rule, not inferred from cadence.
+Runs use the first real instant of a school-local date (earlier midnight on
+overlap, transition instant on midnight gaps; entirely skipped dates have no run).
+Days use calendar arithmetic, months stay anchored to the original day, and
+`after` is exclusive. Period selection is independent of cadence. Ordinary one-off
+requests use ManualDraftRequest and never need a schedule or schedule activation.
 """
 from calendar import monthrange
 from dataclasses import dataclass, replace
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
 
 from .approval import canonical_content_digest
 from .primitives import (RevisionId, ScheduleId, SchoolId, SubjectScope, SummaryPeriod,
-                         identifier, instant, integer, local_date, nonempty, school_zone)
+                         calendar_date_boundary, identifier, instant, integer, local_date,
+                         nonempty, school_zone)
 
 
 class DraftCadence(Enum):
@@ -77,7 +80,50 @@ class IdempotencyIdentity:
 
 
 @dataclass(frozen=True)
+class ManualDraftRequest:
+    """One explicit manual command, independent of any recurring schedule.
+
+    Reuse logical_request_key on retries; choose a fresh key for a later intended
+    request even for the same dates. Durable handlers enforce idempotency and must
+    reject reuse with a different request_digest. Timestamps do not define retries.
+    """
+    scope: SubjectScope
+    period: SummaryPeriod
+    requested_at: datetime
+    logical_request_key: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.scope, SubjectScope) or not isinstance(self.period, SummaryPeriod):
+            raise ValueError("Draft subject and summary period are required")
+        object.__setattr__(self, "requested_at", instant(self.requested_at))
+        nonempty(self.logical_request_key, "logical_request_key")
+
+    @property
+    def idempotency(self) -> IdempotencyIdentity:
+        logical_key = canonical_content_digest({
+            "learner": str(self.scope.learner_id),
+            "case": str(self.scope.case_id) if self.scope.case_id else None,
+            "logical_request_key": self.logical_request_key,
+        })
+        return IdempotencyIdentity(self.scope.school_id, "request_manual_email_draft", logical_key)
+
+    @property
+    def request_digest(self) -> str:
+        """Semantic payload fingerprint for detecting conflicting key reuse."""
+        return canonical_content_digest({
+            "format": "spesped.manual_draft.v1", "identity": self.idempotency.key,
+            "start": self.period.start.isoformat(), "end": self.period.end.isoformat(),
+            "timezone": self.period.timezone,
+        })
+
+    @property
+    def authorizes_dispatch(self) -> bool:
+        return False
+
+
+@dataclass(frozen=True)
 class DraftRequest:
+    """Schedule-bound request; ordinary one-off ordering uses ManualDraftRequest."""
     schedule_id: ScheduleId
     schedule_revision: RevisionId
     scope: SubjectScope
@@ -188,8 +234,8 @@ class DraftRecurrence:
             if candidate is not None:
                 if self.end_date is not None and candidate > self.end_date:
                     return None
-                run = instant(datetime.combine(candidate, time.min, zone))
-                if run > after:
+                run = calendar_date_boundary(candidate, self.timezone)
+                if run.astimezone(zone).date() == candidate and run > after:
                     return run
             index += 1
 
@@ -201,6 +247,7 @@ class DraftRecurrence:
         return DraftRequest(self.schedule_id, self.revision_id, self.scope, period, run)
 
     def request_manual(self, period: SummaryPeriod, requested_at: datetime) -> DraftRequest:
+        """A manual-cadence scheduled run; use ManualDraftRequest for one-off ordering."""
         if not self.active or self.cadence is not DraftCadence.MANUAL:
             raise ValueError("Manual drafts require an explicitly active manual schedule")
         if not isinstance(period, SummaryPeriod) or period.timezone != self.timezone:

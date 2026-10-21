@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 
-from .primitives import EffectivePeriod, InstrumentId, integer, identifier, nonempty
+from .primitives import (DecisionId, DecisionProvisionId, EffectivePeriod, InstrumentId,
+                         RevisionId, SubjectScope, integer, identifier, nonempty)
 
 
 def decimal_value(value: Decimal, name: str) -> None:
@@ -36,6 +37,26 @@ class SupportCategory(Enum):
 
 
 @dataclass(frozen=True)
+class DecisionProvisionReference:
+    """Exact authoritative subject, decision revision and provision identity.
+
+    Applications resolve this reference against the authoritative decision. A
+    human clause label alone cannot identify an entitlement or its version.
+    """
+    scope: SubjectScope
+    decision_id: DecisionId
+    decision_revision: RevisionId
+    provision_id: DecisionProvisionId
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.scope, SubjectScope):
+            raise ValueError("A decision subject scope is required")
+        identifier(self.decision_id, DecisionId)
+        identifier(self.decision_revision, RevisionId)
+        identifier(self.provision_id, DecisionProvisionId)
+
+
+@dataclass(frozen=True)
 class EntitlementQuantity:
     amount: Decimal
     unit: QuantityUnit
@@ -43,6 +64,7 @@ class EntitlementQuantity:
     category: SupportCategory
     decision_clause: str
     counting_basis: CountingBasis
+    decision_provision: DecisionProvisionReference
 
     def __post_init__(self) -> None:
         decimal_value(self.amount, "amount")
@@ -55,6 +77,8 @@ class EntitlementQuantity:
         if not isinstance(self.reference_period, EffectivePeriod):
             raise ValueError("A reference period is required")
         nonempty(self.decision_clause, "decision_clause")
+        if not isinstance(self.decision_provision, DecisionProvisionReference):
+            raise ValueError("An exact decision/provision reference is required")
 
     def total_minutes(self) -> Decimal:
         return self.amount * (60 if self.unit is QuantityUnit.HOURS else 1)
@@ -62,12 +86,13 @@ class EntitlementQuantity:
     def add(self, other: "EntitlementQuantity") -> "EntitlementQuantity":
         if not isinstance(other, EntitlementQuantity):
             raise ValueError("An entitlement quantity is required")
-        if (self.reference_period, self.category, self.decision_clause, self.counting_basis) != (
-                other.reference_period, other.category, other.decision_clause, other.counting_basis):
+        if (self.reference_period, self.category, self.decision_clause, self.counting_basis,
+                self.decision_provision) != (other.reference_period, other.category, other.decision_clause,
+                                            other.counting_basis, other.decision_provision):
             raise ValueError("Quantities with different decision or counting scope cannot be combined")
         return EntitlementQuantity(self.total_minutes() + other.total_minutes(), QuantityUnit.MINUTES,
                                    self.reference_period, self.category, self.decision_clause,
-                                   self.counting_basis)
+                                   self.counting_basis, self.decision_provision)
 
 
 @dataclass(frozen=True)

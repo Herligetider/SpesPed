@@ -41,6 +41,42 @@ def school_zone(value: str) -> ZoneInfo:
         raise ValueError("An IANA timezone is required") from error
 
 
+def calendar_date_boundary(day: date, timezone_name: str) -> datetime:
+    """First real UTC instant at or after a local calendar date's start.
+
+    An ambiguous midnight chooses its earlier occurrence. If clocks skip midnight,
+    choose the transition instant, when the date first exists. An entirely skipped
+    date resolves to the following existing date. This calendar policy deliberately
+    differs from `instant`, which rejects nonexistent explicit wall times.
+    """
+    local_date(day)
+    zone = school_zone(timezone_name)
+    wall = datetime.combine(day, time.min)
+    try:
+        candidates = tuple(wall.replace(tzinfo=zone, fold=fold).astimezone(timezone.utc)
+                           for fold in (0, 1))
+        valid = tuple(candidate for candidate in candidates
+                      if candidate.astimezone(zone).replace(tzinfo=None) == wall)
+        if valid:
+            return min(valid)
+        # The two offsets of a nonexistent midnight bracket the forward clock
+        # transition. Find its first microsecond rather than shifting midnight
+        # by an assumed one-hour DST adjustment.
+        lower, upper = sorted(candidates)
+        if not (lower.astimezone(zone).replace(tzinfo=None) < wall
+                <= upper.astimezone(zone).replace(tzinfo=None)):
+            raise ValueError("Cannot resolve the calendar boundary")
+        while upper - lower > timedelta(microseconds=1):
+            middle = lower + (upper - lower) // 2
+            if middle.astimezone(zone).replace(tzinfo=None) >= wall:
+                upper = middle
+            else:
+                lower = middle
+        return upper
+    except (OverflowError, ValueError) as error:
+        raise ValueError("Calendar boundary exceeds the supported date/time range") from error
+
+
 @dataclass(frozen=True)
 class OpaqueId:
     value: UUID
@@ -85,6 +121,10 @@ class AttachmentId(OpaqueId): pass
 class InstrumentId(OpaqueId): pass
 @dataclass(frozen=True)
 class ScheduleId(OpaqueId): pass
+@dataclass(frozen=True)
+class DecisionId(OpaqueId): pass
+@dataclass(frozen=True)
+class DecisionProvisionId(OpaqueId): pass
 
 
 def identifier(value: OpaqueId, kind: type[OpaqueId]) -> None:
@@ -125,7 +165,11 @@ class EffectivePeriod:
 
 @dataclass(frozen=True)
 class SummaryPeriod:
-    """Inclusive user-selected local dates in the school's timezone."""
+    """Inclusive local dates, resolved using first-real-instant boundaries.
+
+    A range consisting entirely of a skipped calendar date has no instants and is
+    rejected at construction, rather than becoming a failing accepted period.
+    """
     start: date
     end: date
     timezone: str
@@ -136,11 +180,13 @@ class SummaryPeriod:
         school_zone(self.timezone)
         if self.start > self.end or self.end == date.max:
             raise ValueError("Invalid summary date range")
+        if calendar_date_boundary(self.start, self.timezone) >= calendar_date_boundary(
+                self.end + timedelta(days=1), self.timezone):
+            raise ValueError("Summary period contains no real instants")
 
     def to_utc(self) -> EffectivePeriod:
-        zone = school_zone(self.timezone)
-        return EffectivePeriod(datetime.combine(self.start, time.min, zone),
-                               datetime.combine(self.end + timedelta(days=1), time.min, zone))
+        return EffectivePeriod(calendar_date_boundary(self.start, self.timezone),
+                               calendar_date_boundary(self.end + timedelta(days=1), self.timezone))
 
 
 @dataclass(frozen=True)

@@ -8,13 +8,14 @@ from zoneinfo import ZoneInfo
 
 from spesped.domain import (
     ApprovalBinding, ApplicabilityResult, ApplicabilityStatus, AssessmentScore, AttachmentDigest,
-    AttachmentId, Certainty, CountingBasis, DisclosureChannel, DraftCadence, DraftPeriodSelection,
+    AttachmentId, CaseId, Certainty, CountingBasis, DecisionId, DecisionProvisionId,
+    DecisionProvisionReference, DisclosureChannel, DraftCadence, DraftPeriodSelection,
     DraftRecurrence, DurationMinutes, EffectivePeriod, EntitlementQuantity, EvidenceAttribution,
     EvidenceCutoff, EvidenceItemId, EvidenceRecord, GoalEvidenceResult, GoalEvidenceStatus,
-    IdempotencyIdentity, InstrumentId, LearnerId, MonthEndPolicy, OccurrenceTime, PeriodRule,
+    IdempotencyIdentity, InstrumentId, LearnerId, ManualDraftRequest, MonthEndPolicy, OccurrenceTime, PeriodRule,
     PersonId, QuantityUnit, RecipientScope, RecordedTime, RevisionId, ScheduleId, SchoolId,
     ScoreScale, SourceItemId, SourceReference, SourceType, SubjectScope, SummaryPeriod,
-    SupportCategory, UserId, canonical_content_digest, evaluate_goal_evidence,
+    SupportCategory, UserId, calendar_date_boundary, canonical_content_digest, evaluate_goal_evidence,
 )
 
 UTC = timezone.utc
@@ -75,6 +76,47 @@ class DomainCase(unittest.TestCase):
         self.assertEqual(period.end - period.start, timedelta(hours=25))
         for fold in (0, 1):
             self.assertTrue(period.contains(datetime(2026, 10, 25, 2, 30, tzinfo=OSLO, fold=fold)))
+
+    def test_santiago_midnight_gap_resolves_to_first_real_instant(self):
+        zone = ZoneInfo("America/Santiago")
+        previous = SummaryPeriod(date(2026, 9, 5), date(2026, 9, 5), zone.key).to_utc()
+        period = SummaryPeriod(date(2026, 9, 6), date(2026, 9, 6), zone.key).to_utc()
+        following = SummaryPeriod(date(2026, 9, 7), date(2026, 9, 7), zone.key).to_utc()
+        self.assertEqual(period.start, datetime(2026, 9, 6, 4, tzinfo=UTC))
+        self.assertEqual(period.start.astimezone(zone).hour, 1)
+        self.assertEqual(period.end, datetime(2026, 9, 7, 3, tzinfo=UTC))
+        self.assertEqual(period.end - period.start, timedelta(hours=23))
+        self.assertEqual(previous.end, period.start)
+        self.assertEqual(period.end, following.start)
+        self.assertTrue(period.contains(period.start))
+        self.assertFalse(period.contains(period.end))
+        for constructor in (OccurrenceTime, RecordedTime, EffectivePeriod):
+            with self.subTest(constructor=constructor), self.assertRaises(ValueError):
+                constructor(datetime(2026, 9, 6, 0, 30, tzinfo=zone))
+
+    def test_midnight_overlap_chooses_earliest_instant(self):
+        zone = ZoneInfo("America/Havana")
+        day = date(2026, 11, 1)
+        first = datetime(2026, 11, 1, tzinfo=zone, fold=0)
+        second = datetime(2026, 11, 1, tzinfo=zone, fold=1)
+        self.assertNotEqual(first.utcoffset(), second.utcoffset())
+        boundary = calendar_date_boundary(day, zone.key)
+        self.assertEqual(boundary, first.astimezone(UTC))
+        period = SummaryPeriod(day, day, zone.key).to_utc()
+        self.assertTrue(period.contains(second))
+        self.assertEqual(period.end - period.start, timedelta(hours=25))
+
+    def test_entirely_skipped_date_is_not_an_accepted_empty_period(self):
+        zone = "Pacific/Apia"
+        with self.assertRaises(ValueError):
+            SummaryPeriod(date(2011, 12, 30), date(2011, 12, 30), zone)
+        combined = SummaryPeriod(date(2011, 12, 29), date(2011, 12, 31), zone).to_utc()
+        self.assertEqual(combined.end - combined.start, timedelta(hours=48))
+        recurrence = self.recurrence(cadence=DraftCadence.DAYS, anchor=date(2011, 12, 29), timezone=zone,
+                                     period_selection=DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS, 7)).activate()
+        first = recurrence.next_run(datetime(2011, 12, 28, tzinfo=UTC))
+        second = recurrence.next_run(first)
+        self.assertEqual(second.astimezone(ZoneInfo(zone)).date(), date(2011, 12, 31))
 
     def test_time_validation_and_open_ended_period(self):
         naive = datetime(2026, 1, 1)
@@ -165,7 +207,9 @@ class DomainCase(unittest.TestCase):
     def test_entitlements_preserve_category_basis_and_reference(self):
         quantity = EntitlementQuantity(Decimal("1.5"), QuantityUnit.HOURS,
                                        EffectivePeriod(at(1), at(20)), SupportCategory.PERSONAL_ASSISTANCE,
-                                       "decision-1/clause-2", CountingBasis.LEARNER_TIME)
+                                       "decision-1/clause-2", CountingBasis.LEARNER_TIME,
+                                       DecisionProvisionReference(self.scope, DecisionId.new(), RevisionId.new(),
+                                                                  DecisionProvisionId.new()))
         self.assertEqual(quantity.total_minutes(), Decimal("90"))
         self.assertEqual(quantity.add(replace(quantity, amount=Decimal("30"), unit=QuantityUnit.MINUTES)).amount,
                          Decimal("120"))
@@ -178,6 +222,32 @@ class DomainCase(unittest.TestCase):
                         dict(unit="lesson"), dict(category="support"), dict(counting_basis="staff")):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 replace(quantity, **changes)
+
+    def test_entitlement_addition_rejects_same_label_from_other_subject_or_decision(self):
+        reference = DecisionProvisionReference(self.scope, DecisionId.new(), RevisionId.new(), DecisionProvisionId.new())
+        quantity = EntitlementQuantity(Decimal(60), QuantityUnit.HOURS, EffectivePeriod(at(1), at(20)),
+                                       SupportCategory.PERSONAL_ASSISTANCE, "Clause 1",
+                                       CountingBasis.LEARNER_TIME, reference)
+        other = replace(quantity, amount=Decimal(30))
+        total = quantity.add(other)
+        self.assertEqual(total.amount, Decimal(5400))
+        self.assertEqual(total.unit, QuantityUnit.MINUTES)
+        self.assertEqual(total.decision_provision, reference)
+        for changes in (
+            dict(scope=replace(self.scope, school_id=SchoolId.new())),
+            dict(scope=replace(self.scope, learner_id=LearnerId.new())),
+            dict(scope=replace(self.scope, case_id=CaseId.new())),
+            dict(decision_id=DecisionId.new()), dict(decision_revision=RevisionId.new()),
+            dict(provision_id=DecisionProvisionId.new()),
+        ):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                quantity.add(replace(other, decision_provision=replace(reference, **changes)))
+        for changes in (dict(scope=None), dict(decision_id=RevisionId.new()),
+                        dict(decision_revision=1), dict(provision_id=True)):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                replace(reference, **changes)
+        with self.assertRaises(ValueError):
+            replace(quantity, decision_provision=None)
 
     def test_scores_are_instrument_scale_specific(self):
         score = AssessmentScore(InstrumentId.new(), 1, ScoreScale("raw", Decimal(0), Decimal(20)), Decimal(10))
@@ -291,6 +361,24 @@ class DomainCase(unittest.TestCase):
             self.assertEqual(second.requested_for - first.requested_for, timedelta(hours=expected_hours))
             self.assertEqual((second.period.end - second.period.start).days, 6)
 
+    def test_santiago_midnight_recurrence_has_one_run_per_date(self):
+        recurrence = self.recurrence(cadence=DraftCadence.DAYS, anchor=date(2026, 9, 5), timezone="America/Santiago",
+                                     period_selection=DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS, 1)).activate()
+        first = recurrence.next_request(datetime(2026, 9, 4, tzinfo=UTC))
+        gap = recurrence.next_request(first.requested_for)
+        following = recurrence.next_request(gap.requested_for)
+        self.assertEqual(gap.requested_for, datetime(2026, 9, 6, 4, tzinfo=UTC))
+        self.assertEqual(following.requested_for, datetime(2026, 9, 7, 3, tzinfo=UTC))
+        self.assertEqual(following.period.start, date(2026, 9, 6))
+        self.assertEqual(following.period.to_utc().start, gap.requested_for)
+        self.assertEqual(following.period.to_utc().end, following.requested_for)
+        retry = recurrence.next_request(first.requested_for + timedelta(hours=1))
+        self.assertEqual(retry.idempotency.key, gap.idempotency.key)
+        self.assertNotEqual(gap.idempotency.key, following.idempotency.key)
+        # A completed boundary cannot be emitted again, including within its gap day.
+        self.assertEqual(recurrence.next_run(gap.requested_for + timedelta(minutes=1)), following.requested_for)
+        self.assertFalse(gap.authorizes_dispatch)
+
     def test_period_selection_is_independent_of_cadence(self):
         selection = DraftPeriodSelection(PeriodRule.PREVIOUS_CALENDAR_MONTH)
         period = selection.resolve(date(2026, 10, 20), "Europe/Oslo")
@@ -318,6 +406,37 @@ class DomainCase(unittest.TestCase):
         self.assertNotEqual(first.idempotency.key, changed_school.idempotency.key)
         with self.assertRaises(ValueError):
             activated.request_manual(replace(self.period, timezone="UTC"), at(22))
+
+    def test_one_off_draft_needs_no_schedule_and_preserves_command_identity(self):
+        first = ManualDraftRequest(self.scope, self.period, at(21), "manual-command-1")
+        retry = replace(first, requested_at=at(22))
+        self.assertEqual(first.idempotency.key, retry.idempotency.key)
+        self.assertEqual(first.request_digest, retry.request_digest)
+        self.assertFalse(hasattr(first, "schedule_id"))
+        self.assertFalse(hasattr(first, "schedule_revision"))
+        self.assertFalse(first.authorizes_dispatch)
+        # A later deliberate order for the same dates is a separate command.
+        deliberate = replace(retry, logical_request_key="manual-command-2")
+        self.assertNotEqual(first.idempotency.key, deliberate.idempotency.key)
+        # Reusing one command key with a changed payload is detectable as a conflict.
+        changed_period = replace(first, period=replace(self.period, end=date(2026, 10, 19)))
+        self.assertEqual(first.idempotency.key, changed_period.idempotency.key)
+        self.assertNotEqual(first.request_digest, changed_period.request_digest)
+        scheduled = self.recurrence().activate().next_request(datetime(2026, 1, 1, tzinfo=UTC))
+        self.assertNotEqual(first.idempotency.action, scheduled.idempotency.action)
+        for scope in (replace(self.scope, school_id=SchoolId.new()),
+                      replace(self.scope, learner_id=LearnerId.new()),
+                      replace(self.scope, case_id=CaseId.new())):
+            self.assertNotEqual(first.idempotency.key, replace(first, scope=scope).idempotency.key)
+
+    def test_one_off_draft_rejects_invalid_identity_scope_period_and_instant(self):
+        request = ManualDraftRequest(self.scope, self.period, at(21), "manual-command")
+        for changes in (dict(logical_request_key=" "), dict(logical_request_key=True),
+                        dict(scope=self.scope.school_id), dict(period=None),
+                        dict(requested_at=datetime(2026, 10, 21)),
+                        dict(requested_at=datetime(2026, 9, 6, 0, 30, tzinfo=ZoneInfo("America/Santiago")))):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                replace(request, **changes)
 
     def test_schedule_and_idempotency_inputs_validated(self):
         for changes in (dict(interval=True), dict(interval=0), dict(active=1), dict(cadence="months"),
