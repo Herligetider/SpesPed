@@ -1127,15 +1127,30 @@
       "status": "implementing",
       "requiredEvidence": "Published revisions, authorized reuse, license restrictions, change impact",
       "implementationAgent": "/root/j09_curriculum",
-      "reviewAgent": null,
-      "commits": [],
+      "reviewAgent": "/root/review_j09",
+      "commits": [
+        "d065091e8915594a3177876193f675c18ca0aa23"
+      ],
       "evidence": [
         {
           "type": "work_assignment",
           "result": "Native BC06 curriculum/class-plan/resource/material backend assigned to /root/j09_curriculum with source/license/scope/version gates, actual owner ports, PostgreSQL and independent review. Root owns shared teaching/gateway integration and registration. No feature completion claimed."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "d065091e8915594a3177876193f675c18ca0aa23",
+          "result": "BC06 backend and actualApp registration pinned:15tables,reviewed public/Montessori schemes,mixedageclassplans,private/scoped resource library andvariants,native datedteams,datedlicense/source checks,actualexperience,inventory andexplicitmissingadapters. Author33tests passed1intentionalSQLite concurrency skip;PG race ran.Root2actualApp composition tests passedSQLite/PG usingnativeoriginals and unavailabledependency/reservationdefaults.Independent review assigned /root/review_j09. No F09/F10 completion claim."
         }
       ],
-      "findings": []
+      "findings": [],
+      "remainingWork": [
+        "Independently review and repair the pinned backend and actualApp composition.",
+        "Implement a real BC07 future-session dependency index and validate/apply keep/change decisions without changing recorded actuals.",
+        "Bind exact class plans, curriculum schemes and resource selections into plan/teaching bases and AI execution with current source/license rechecks.",
+        "Subscribe source corrections/recalls to the exact-source impact hook and consume owned impact-decision events.",
+        "Implement real J15 material reservation ledger and practitioner/admin authority choices.",
+        "Complete J20 UI, original/variant comparison, actual resource-use feedback, grounded suggestions/tagging, suitability confirmation and independent normal/adverse browser acceptance."
+      ]
     },
     {
       "id": "J10",

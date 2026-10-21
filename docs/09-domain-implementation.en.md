@@ -332,3 +332,38 @@ remain the authoritative action gates. A reload must select the persisted job
 and basis instead of silently creating another generation. This backend port
 does not yet complete browser recovery; its UI and independent acceptance remain
 required.
+
+### Curriculum and resource consumer contracts
+
+BC06 is registered under `/curriculum` in the actual application. Its exact-read
+ports are `current_class_context(db, actor, school_id, plan_revision_id, on_date,
+learner_id=None)` and `resolve_resource(db, actor, school_id,
+resource_revision_id, purpose='read', learner_id=None)`. Dates are inclusive local
+dates. Resource purposes distinguish read, use, copy and AI; permission to read
+never implies the others. Both ports recheck original sources and current rights,
+and neither commits the consumer's transaction nor establishes pupil suitability.
+
+The default evidence adapter resolves actual BC02 original storage or confirmed
+controlled pupil excerpts. Pupil-derived resources remain private, including
+their variants. Institutional sharing cannot expand underlying source access.
+Native resource teams have explicit dated membership; they do not grant pupil
+case access. Source correction handling exposes
+`record_source_correction_impacts(db, actor, school_id, exact_old_reference)` for
+the event consumer, with exact-source deduplication in the caller's transaction.
+The event subscription itself is still required.
+
+The owning teaching context must supply
+`app.state.curriculum_future_session_port` with exact upcoming session revisions,
+owners, learner IDs and instants, and validate an owner's keep/change decision.
+The production dependency index and application of those decisions remain to be
+implemented. Required impact checks currently return `session_impact_unavailable`
+and roll back when this port is absent. Tests use an explicitly synthetic index;
+it must never be installed as a production adapter. Likewise, the future J15
+`curriculum_material_reservation_port` must return an exact inventory version,
+interval and reservation-ledger revision. Current inventory counts do not prove
+bookable availability; absent ledger integration returns `unavailable`.
+
+Exact curriculum/resource selection into IEP and teaching bases, AI license
+checks on those selections, practitioner authority controls and the complete J20
+browser workflow remain separate required integration work. The BC06 backend
+candidate is not full F09/F10 acceptance.
