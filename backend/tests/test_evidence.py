@@ -55,7 +55,7 @@ def env(request, tmp_path):
         url = f"sqlite:///{tmp_path}/test.db"
     config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
     config.attributes["database_url"] = url
-    command.upgrade(config, "j04_evidence")
+    command.upgrade(config, "j04_structuring")
     factory = make_session_factory(url)
     settings = Settings(environment="test", database_url=url, allowed_origins=[ORIGIN])
     with factory.begin() as db:
@@ -444,7 +444,7 @@ def test_migration_downgrade_preserves_foundation_and_reupgrade(env):
     assert "identity_learners" in tables and "evidence_sources" not in tables
     with factory() as db:
         assert db.get(Learner, ids["a"]) is not None
-    command.upgrade(config, "j04_evidence")
+    command.upgrade(config, "j04_structuring")
     assert "evidence_sources" in inspect(factory.kw["bind"]).get_table_names()
 
 

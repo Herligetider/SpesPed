@@ -28,7 +28,7 @@ class Expected(Command):
     expected_version: int = Field(ge=1)
 
 
-FieldName = Literal["content", "learner", "document_date", "goal", "measure", "follow_up", "hours", "document_type"]
+FieldName = Literal["content", "learner", "document_date", "goal", "measure", "follow_up", "hours", "document_type", "mentioned_learner"]
 
 
 def validate_field(name, value):
@@ -44,6 +44,15 @@ def validate_field(name, value):
         date.fromisoformat(value)
     elif name == "learner":
         UUID(value)
+    elif name == "mentioned_learner":
+        if len(value) > 320 or any(ord(c) < 32 for c in value):
+            raise ValueError("A mentioned learner requires a bounded name")
+        try:
+            UUID(value)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("A name proposal cannot assign a learner identity")
     return value
 
 
@@ -120,3 +129,42 @@ class RegisterDerivative(Command):
     target_id: UUID
     target_revision: int = Field(ge=1)
     state: Literal["draft", "shared"]
+
+
+class ApplyStructuring(Expected):
+    job_id: UUID
+    assignee_id: UUID
+
+
+ClarificationReason = Literal['unresolved_attribution', 'ambiguous_field', 'unsupported_field', 'missing_source_span', 'disagreement', 'invalid_structuring_output', 'missing_information']
+
+
+class CreateClarification(Expected):
+    assignee_id: UUID
+    reason: ClarificationReason
+    detail: str = Field(min_length=1, max_length=2000)
+    proposal_id: UUID | None = None
+    field_name: FieldName | None = None
+    page: int | None = Field(default=None, ge=1, le=200)
+    span_start: int | None = Field(default=None, ge=0)
+    span_end: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode='after')
+    def complete_span(self):
+        supplied = (self.page, self.span_start, self.span_end)
+        if any(x is not None for x in supplied) and not all(x is not None for x in supplied):
+            raise ValueError('Supply a complete source span')
+        return self
+
+
+class ReassignClarification(Expected):
+    assignee_id: UUID
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class ResolveClarification(Expected):
+    resolution: str = Field(min_length=1, max_length=2000)
+
+
+class ReopenClarification(Expected):
+    reason: str = Field(min_length=1, max_length=1000)

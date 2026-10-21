@@ -220,7 +220,13 @@ def update_intake_completion(db, row):
     # The source row is locked by the caller. A reviewed interpretation is not a
     # release to a pupil; accepted/edited fields still require confirmation.
     counts = review_progress(db, row)
-    if counts["pending"]:
+    from .models import ClarificationTask
+    open_tasks = db.scalar(select(func.count()).select_from(ClarificationTask).where(
+        ClarificationTask.school_id == row.school_id, ClarificationTask.source_id == row.id,
+        ClarificationTask.source_revision == row.current_revision, ClarificationTask.state == 'open'))
+    if open_tasks:
+        row.state = "needs_clarification"
+    elif counts["pending"]:
         row.state = "needs_review"
     elif counts["reviewed_unconfirmed"]:
         row.state = "awaiting_confirmation"
@@ -248,16 +254,17 @@ def propose(db, actor, school_id, source_id, command):
     return proposal
 
 
-def get_proposal(db, actor, school_id, proposal_id):
+def get_proposal(db, actor, school_id, proposal_id, *, runtime=None):
     intake_access(db, actor, school_id)
     proposal = db.scalar(select(ExtractionProposal).where(ExtractionProposal.id == proposal_id, ExtractionProposal.school_id == school_id))
     if proposal is None:
         raise access_denied()
+    require_proposal_model_access(db, actor, proposal, runtime)
     return proposal
 
 
-def review(db, actor, school_id, proposal_id, command):
-    proposal = get_proposal(db, actor, school_id, proposal_id)
+def review(db, actor, school_id, proposal_id, command, runtime=None):
+    proposal = get_proposal(db, actor, school_id, proposal_id, runtime=runtime)
     check_version(proposal, command.expected_version)
     if proposal.outcome != "pending":
         raise conflict("This field has already been reviewed.")
@@ -293,8 +300,8 @@ def attribution(command):
     return fields
 
 
-def confirm(db, actor, school_id, proposal_id, command, goal_validator=None):
-    proposal = get_proposal(db, actor, school_id, proposal_id)
+def confirm(db, actor, school_id, proposal_id, command, goal_validator=None, runtime=None):
+    proposal = get_proposal(db, actor, school_id, proposal_id, runtime=runtime)
     require_learner_access(db, actor, school_id, str(command.learner_id), "evidence.write")
     check_version(proposal, command.expected_version)
     row = source(db, actor, school_id, proposal.source_id, lock=True)
@@ -448,3 +455,152 @@ def timeline(db, actor, school_id, learner_id, *, date_basis="occurred", start=N
     total = db.scalar(select(func.count()).select_from(statement.subquery()))
     rows = db.scalars(statement.order_by(time.desc(), EvidenceItem.id).offset(offset).limit(limit)).all()
     return {"items": [evidence_view(db, row) for row in rows], "total": total}
+
+
+def authorized_assignee(db, school_id, user_id):
+    from spesped.auth import Actor
+    intake_access(db, Actor(str(user_id)), school_id)
+    return str(user_id)
+
+
+def task_transition(db, actor, task, action, explanation):
+    from .models import ClarificationTransition
+    event(db, actor, task.school_id, 'source.clarification_' + action, task)
+    db.add(ClarificationTransition(school_id=task.school_id, task_id=task.id, task_version=task.version,
+        actor_id=actor.user_id, assignee_id=task.assignee_id, action=action, state=task.state, explanation=explanation))
+
+
+def new_task(db, actor, row, assignee_id, reason, detail, *, proposal=None, field_name=None, page=None, start=None, end=None):
+    from .models import ClarificationTask
+    assignee = authorized_assignee(db, row.school_id, assignee_id)
+    task = ClarificationTask(school_id=row.school_id, source_id=row.id, source_revision=row.current_revision,
+        proposal_id=proposal.id if proposal else None, field_name=proposal.field_name if proposal else field_name, assignee_id=assignee, reason=reason, detail=detail,
+        page=page, span_start=start, span_end=end, state='open')
+    db.add(task)
+    task_transition(db, actor, task, 'created', detail)
+    return task
+
+
+def create_clarification(db, actor, school_id, source_id, command, runtime=None):
+    row = source(db, actor, school_id, source_id, lock=True)
+    check_version(row, command.expected_version)
+    proposal = get_proposal(db, actor, school_id, str(command.proposal_id), runtime=runtime) if command.proposal_id else None
+    if proposal and (proposal.source_id != row.id or proposal.source_revision != row.current_revision):
+        raise access_denied()
+    if command.page is not None:
+        span(db, row, row.current_revision, command.page, command.span_start, command.span_end)
+    task = new_task(db, actor, row, command.assignee_id, command.reason, command.detail, proposal=proposal,
+                    field_name=command.field_name, page=command.page, start=command.span_start, end=command.span_end)
+    update_intake_completion(db, row)
+    return task
+
+
+def get_clarification(db, actor, school_id, source_id, task_id, *, lock=False):
+    from .models import ClarificationTask
+    row = source(db, actor, school_id, source_id, lock=lock)
+    statement = select(ClarificationTask).where(ClarificationTask.school_id == school_id,
+        ClarificationTask.source_id == row.id, ClarificationTask.id == task_id)
+    if lock:
+        statement = statement.with_for_update()
+    task = db.scalar(statement)
+    if task is None:
+        raise access_denied()
+    return row, task
+
+
+def change_clarification(db, actor, school_id, source_id, task_id, command, action):
+    row, task = get_clarification(db, actor, school_id, source_id, task_id, lock=True)
+    check_version(task, command.expected_version)
+    if action == 'reassigned':
+        task.assignee_id = authorized_assignee(db, school_id, command.assignee_id)
+        explanation = command.reason
+    elif action == 'resolved':
+        if task.state != 'open':
+            raise conflict('Only an open clarification can be resolved.')
+        task.state, task.resolution = 'resolved', command.resolution
+        task.resolved_by, task.resolved_at = actor.user_id, utcnow()
+        explanation = command.resolution
+    else:
+        if task.state != 'resolved':
+            raise conflict('Only a resolved clarification can be reopened.')
+        task.state, task.resolution, task.resolved_by, task.resolved_at = 'open', None, None, None
+        explanation = command.reason
+    # Even a reassignment to the same owner is an explicit, versioned command.
+    task.updated_at = utcnow()
+    task_transition(db, actor, task, action, explanation)
+    update_intake_completion(db, row)
+    return task
+
+
+def require_proposal_model_access(db, actor, proposal, runtime):
+    if proposal.generation_job_id is not None:
+        from spesped.contexts.platform import service as gateway
+        if runtime is None:
+            raise DomainError('gateway_unavailable', 'The reviewed proposal is currently unavailable; manual fields remain available.', 503)
+        job = gateway._load(db, actor, proposal.school_id, proposal.generation_job_id)
+        gateway._require_visible(db, actor, job, runtime)
+
+
+def apply_structuring(db, actor, school_id, source_id, command, runtime):
+    """Import a complete validated result atomically; never perform field review."""
+    from spesped.contexts.platform import service as gateway
+    from spesped.contexts.platform.providers import validate_structure
+    from .models import StructuringApplication
+    row = source(db, actor, school_id, source_id, lock=True)
+    job = gateway._load(db, actor, school_id, str(command.job_id))
+    gateway._require_visible(db, actor, job, runtime)
+    if (job.purpose != 'intake_structuring' or job.learner_id is not None or len(job.source_manifest) != 1
+            or job.source_manifest[0]['reference'] != {'kind': 'intake', 'source_id': row.id, 'revision': row.current_revision}):
+        raise access_denied()
+    prior = db.scalar(select(StructuringApplication).where(StructuringApplication.school_id == school_id, StructuringApplication.job_id == job.id, StructuringApplication.attempt_number == job.attempts))
+    if prior:
+        if prior.assignee_id != str(command.assignee_id):
+            raise DomainError('idempotency_conflict', 'This extraction attempt already has another clarification owner. Use explicit reassignment.', 409)
+        return prior
+    check_version(row, command.expected_version)
+    authorized_assignee(db, school_id, command.assignee_id)
+    if job.state not in {'succeeded', 'failed', 'unavailable'}:
+        raise conflict('Apply only a completed or failed structuring job.')
+    application = StructuringApplication(school_id=school_id, source_id=row.id, source_revision=row.current_revision, job_id=job.id, attempt_number=job.attempts, assignee_id=str(command.assignee_id), state='applied' if job.state == 'succeeded' else 'manual_required')
+    db.add(application)
+    if job.state != 'succeeded':
+        new_task(db, actor, row, command.assignee_id, 'invalid_structuring_output', 'Automatic structuring failed. Review the preserved source and use manual extraction.')
+    else:
+        sources = gateway._current_sources(db, runtime, actor, job)
+        # Validate again before persistence, even if stored output was altered.
+        from spesped.contexts.platform.providers import ProviderFailure
+        try:
+            output = validate_structure({k: job.output.get(k) for k in ('fields', 'missing_evidence')}, sources)
+        except (ProviderFailure, AttributeError):
+            raise DomainError('invalid_structuring_output', 'The automatic output is invalid. Continue with manual extraction.', 409) from None
+        for field in output['fields']:
+            existing = db.scalar(select(ExtractionProposal).where(ExtractionProposal.school_id == school_id,
+                ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == row.current_revision,
+                ExtractionProposal.page == field['page'], ExtractionProposal.span_start == field['span_start'],
+                ExtractionProposal.span_end == field['span_end'], ExtractionProposal.field_name == field['field_name']))
+            if existing is not None:
+                if existing.proposed_value != field['value']:
+                    new_task(db, actor, row, command.assignee_id, 'disagreement', 'A new extraction disagrees with an existing field; review both against the source.', proposal=existing)
+                continue
+            proposal = ExtractionProposal(school_id=school_id, source_id=row.id, source_revision=row.current_revision,
+                page=field['page'], span_start=field['span_start'], span_end=field['span_end'], field_name=field['field_name'],
+                proposed_value=field['value'], unit=field['unit'], generation_job_id=job.id)
+            db.add(proposal)
+            event(db, actor, school_id, 'source.structured_field_proposed', proposal)
+            if field['field_name'] == 'mentioned_learner':
+                new_task(db, actor, row, command.assignee_id, 'unresolved_attribution', 'A mentioned name is a proposal only; confirm learner attribution and the controlled excerpt separately.', proposal=proposal,
+                         page=proposal.page, start=proposal.span_start, end=proposal.span_end)
+        for gap in output['missing_evidence']:
+            # Persist the controlled reason/field metadata. Model prose remains
+            # exclusively behind the gateway recall/revision visibility gate.
+            new_task(db, actor, row, command.assignee_id, gap['reason'],
+                'Review missing or ambiguous source support for ' + (gap['field_name'] or 'this source') + '.', field_name=gap['field_name'])
+        # Unknown attribution is always visible, even when the model omits names.
+        links = db.scalar(select(SourceSubjectLink.id).where(SourceSubjectLink.school_id == school_id,
+            SourceSubjectLink.source_id == row.id, SourceSubjectLink.source_revision == row.current_revision, SourceSubjectLink.revoked_at.is_(None)))
+        if not links and not any(f['field_name'] == 'mentioned_learner' for f in output['fields']):
+            new_task(db, actor, row, command.assignee_id, 'unresolved_attribution', 'No learner attribution is confirmed for this source revision.')
+    row.updated_at = utcnow()
+    update_intake_completion(db, row)
+    event(db, actor, school_id, 'source.structuring_applied', application)
+    return application

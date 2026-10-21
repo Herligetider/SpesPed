@@ -74,6 +74,8 @@ class ExtractionProposal(Aggregate, SchoolRow, Base):
     reviewed_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     outcome: Mapped[str] = mapped_column(String(20), default="pending")
     reviewer_id: Mapped[str | None] = mapped_column(ForeignKey("identity_users.id"), nullable=True)
+    generation_job_id: Mapped[str | None] = mapped_column(ForeignKey("platform_generation_jobs.id", name="fk_evidence_proposal_job"), nullable=True)
+    unit: Mapped[str | None] = mapped_column(String(30), nullable=True)
     review_reason: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     __table_args__ = (ForeignKeyConstraint(["school_id", "source_id", "source_revision"], ["evidence_source_revisions.school_id", "evidence_source_revisions.source_id", "evidence_source_revisions.revision"]), UniqueConstraint("school_id", "id"), UniqueConstraint("school_id", "source_id", "source_revision", "page", "span_start", "span_end", "field_name"), CheckConstraint("page >= 1 AND span_start >= 0 AND span_end > span_start"), CheckConstraint("outcome IN ('pending','accepted','edited','rejected')"))
 
@@ -158,3 +160,56 @@ class EvidenceEvent(SchoolRow, Base):
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     occurred_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     processed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
+class StructuringApplication(Aggregate, SchoolRow, Base):
+    __tablename__ = "evidence_structuring_applications"
+    source_id: Mapped[str] = mapped_column(String(36))
+    source_revision: Mapped[int] = mapped_column(Integer)
+    job_id: Mapped[str] = mapped_column(String(36))
+    attempt_number: Mapped[int] = mapped_column(Integer)
+    assignee_id: Mapped[str] = mapped_column(ForeignKey("identity_users.id"))
+    __table_args__ = (
+        ForeignKeyConstraint(["school_id", "source_id", "source_revision"], ["evidence_source_revisions.school_id", "evidence_source_revisions.source_id", "evidence_source_revisions.revision"]),
+        ForeignKeyConstraint(["school_id", "job_id"], ["platform_generation_jobs.school_id", "platform_generation_jobs.id"]),
+        UniqueConstraint("school_id", "job_id", "attempt_number"),
+        CheckConstraint("attempt_number >= 1"),
+    )
+
+
+class ClarificationTask(Aggregate, SchoolRow, Base):
+    __tablename__ = "evidence_clarification_tasks"
+    source_id: Mapped[str] = mapped_column(String(36))
+    source_revision: Mapped[int] = mapped_column(Integer)
+    proposal_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    assignee_id: Mapped[str] = mapped_column(ForeignKey("identity_users.id"))
+    field_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    reason: Mapped[str] = mapped_column(String(60))
+    detail: Mapped[str] = mapped_column(String(2000))
+    page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    span_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    span_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resolution: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    resolved_by: Mapped[str | None] = mapped_column(ForeignKey("identity_users.id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    __table_args__ = (
+        ForeignKeyConstraint(["school_id", "source_id", "source_revision"], ["evidence_source_revisions.school_id", "evidence_source_revisions.source_id", "evidence_source_revisions.revision"]),
+        ForeignKeyConstraint(["school_id", "proposal_id"], ["evidence_proposals.school_id", "evidence_proposals.id"]),
+        CheckConstraint("state IN ('open','resolved')"),
+        CheckConstraint("(state = 'open' AND resolution IS NULL AND resolved_by IS NULL AND resolved_at IS NULL) OR (state = 'resolved' AND resolution IS NOT NULL AND resolved_by IS NOT NULL AND resolved_at IS NOT NULL)"),
+        CheckConstraint("(page IS NULL AND span_start IS NULL AND span_end IS NULL) OR (page IS NOT NULL AND span_start IS NOT NULL AND span_end IS NOT NULL AND page >= 1 AND span_start >= 0 AND span_end > span_start)"),
+    )
+
+
+class ClarificationTransition(SchoolRow, Base):
+    __tablename__ = 'evidence_clarification_transitions'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    task_id: Mapped[str] = mapped_column(ForeignKey('evidence_clarification_tasks.id'))
+    task_version: Mapped[int] = mapped_column(Integer)
+    actor_id: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
+    assignee_id: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
+    action: Mapped[str] = mapped_column(String(30))
+    state: Mapped[str] = mapped_column(String(30))
+    explanation: Mapped[str] = mapped_column(String(2000))
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    __table_args__ = (UniqueConstraint('task_id', 'task_version'),)

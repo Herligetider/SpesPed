@@ -16,7 +16,7 @@ from spesped.db import utcnow
 from spesped.errors import DomainError, access_denied
 from .contracts import (GatewayRuntime, GenerationRequest, PolicyCommand, ReleaseCommand,
                         ReviewCommand, SourceInput, SourceRef, PURPOSE_CAPABILITIES,
-                        TEMPLATE_VERSION, SCHEMA_VERSION)
+                        TEMPLATE_VERSION, SCHEMA_VERSION, release_versions, release_schema)
 from .models import GenerationAttempt, GenerationJob, ModelEvaluation, ModelRelease, PlatformEvent, ProcessingPolicy
 from .providers import ProviderFailure, invoke, validate_provider
 
@@ -39,6 +39,13 @@ def _version(record, expected):
 def _authorize(db, actor, school_id, learner_id, purpose):
     if purpose not in PURPOSE_CAPABILITIES:
         raise access_denied()
+    if purpose == 'intake_structuring':
+        if learner_id is not None:
+            raise access_denied()
+        require_authority(db, actor, school_id, 'evidence.intake')
+        return
+    if learner_id is None:
+        raise access_denied()
     require_learner_access(db, actor, school_id, learner_id)
     today = school_today(db.get(School, school_id))
     action = 'ai.' + purpose
@@ -55,7 +62,9 @@ def _resolve(db, runtime, actor, school_id, learner_id, purpose, references):
     if len({r.key for r in references}) != len(references):
         raise DomainError('duplicate_source', 'Select each source revision once.', 422)
     # Raw intake material is only allowed on its explicitly authorized OCR path.
-    if purpose != 'evidence_extraction' and any(r.kind == 'intake' for r in references):
+    if purpose == 'intake_structuring' and (learner_id is not None or len(references) != 1 or references[0].kind != 'intake'):
+        raise access_denied()
+    if purpose not in {'evidence_extraction', 'intake_structuring'} and any(r.kind == 'intake' for r in references):
         raise access_denied()
     sources = runtime.source_resolver.resolve(db, actor, school_id, learner_id, purpose, references)
     by_key = {s.reference.key: s for s in sources}
@@ -96,7 +105,7 @@ def _configuration(db, runtime, job):
     if policy is None or policy.state != 'active' or policy.version != job.policy_version:
         raise ProviderFailure('processing_policy_unavailable')
     if (release is None or release.state != 'reviewed' or release.configuration_digest != job.release_digest
-            or release.template_version != TEMPLATE_VERSION or release.output_schema_version != SCHEMA_VERSION):
+            or (release.template_version, release.output_schema_version) != release_versions(job.purpose)):
         raise ProviderFailure('reviewed_release_required')
     evaluation = db.get(ModelEvaluation, release.evaluation_id)
     if (evaluation is None or evaluation.school_id != job.school_id or evaluation.release_id != release.id
@@ -105,6 +114,8 @@ def _configuration(db, runtime, job):
             or release.reviewed_evaluation_digest != evaluation.artifact_digest
             or digest(evaluation.evidence) != evaluation.artifact_digest):
         raise ProviderFailure('reviewed_release_required')
+    if job.purpose == 'intake_structuring' and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
+        raise ProviderFailure('purpose_evaluation_required')
     if job.purpose not in policy.configuration['purposes'] or PURPOSE_CAPABILITIES[job.purpose] != release.capability or policy.provider_key != release.provider_key:
         raise ProviderFailure('purpose_not_supported')
     provider = runtime.providers.get(policy.provider_key)
@@ -161,7 +172,7 @@ def provider_digest(provider):
 
 def release_configuration_digest(command, provider):
     from .contracts import SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS, Suggestion
-    return digest({'release': command.model_dump(), 'provider_digest': provider_digest(provider), 'template': SYSTEM_PROMPT, 'purpose_instructions': PURPOSE_INSTRUCTIONS, 'schema': Suggestion.model_json_schema()})
+    return digest({'release': command.model_dump(), 'provider_digest': provider_digest(provider), 'template': SYSTEM_PROMPT, 'purpose_instructions': PURPOSE_INSTRUCTIONS, 'schema': release_schema(command.output_schema_version).model_json_schema()})
 
 
 def create_release(db: Session, actor: Actor, school_id: str, command: ReleaseCommand, runtime: GatewayRuntime):
@@ -277,7 +288,7 @@ def review_release(db, actor, school_id, release_id, command: ReviewCommand):
 
 
 def create_job(db, actor, school_id, command: GenerationRequest, runtime: GatewayRuntime):
-    learner_id = str(command.learner_id)
+    learner_id = str(command.learner_id) if command.learner_id is not None else None
     _authorize(db, actor, school_id, learner_id, command.purpose)
     fingerprint = digest(command.model_dump(mode='json'))
     existing = db.scalar(select(GenerationJob).where(GenerationJob.school_id == school_id, GenerationJob.actor_id == actor.user_id, GenerationJob.logical_request_key == command.logical_request_key))
@@ -341,6 +352,7 @@ def get_job(db, actor, school_id, job_id, runtime):
 
 def cancel_job(db, actor, school_id, job_id, expected_version, runtime):
     job = _load(db, actor, school_id, job_id, lock=True)
+    _require_visible(db, actor, job, runtime)
     _version(job, expected_version)
     if job.state in {'succeeded', 'cancelled'}:
         raise DomainError('invalid_job_transition', 'This generation cannot be cancelled in its current state.', 409)

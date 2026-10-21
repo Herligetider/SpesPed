@@ -8,14 +8,15 @@ from dataclasses import dataclass, field
 from typing import Literal, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.orm import Session
 from spesped.auth import Actor
 
 Capability = Literal['generation', 'ocr', 'speech', 'embeddings']
-Purpose = Literal['teaching_suggestion', 'evidence_extraction', 'document_draft', 'transcription', 'embedding']
-PURPOSE_CAPABILITIES = {'teaching_suggestion': 'generation', 'document_draft': 'generation', 'evidence_extraction': 'ocr', 'transcription': 'speech', 'embedding': 'embeddings'}
+Purpose = Literal['teaching_suggestion', 'evidence_extraction', 'document_draft', 'transcription', 'embedding', 'intake_structuring']
+PURPOSE_CAPABILITIES = {'teaching_suggestion': 'generation', 'document_draft': 'generation', 'evidence_extraction': 'ocr', 'transcription': 'speech', 'embedding': 'embeddings', 'intake_structuring': 'generation'}
 PURPOSE_INSTRUCTIONS = {
+    'intake_structuring': 'Propose typed document fields from the supplied JSON pages. Return exact page, zero-based character offsets and verbatim quote for every field. Mentioned learner is a name only, never a UUID or resolved attribution. Hours are source content, never legal entitlements. Use missing_evidence for ambiguous or unsupported fields; never invent a span.',
     'teaching_suggestion': 'Propose a feasible teaching activity and support instructions. Distinguish recorded observations from proposed activities.',
     'document_draft': 'Propose draft document paragraphs using only the supplied evidence. Make missing information visible.',
     'evidence_extraction': 'Extract the image text as source-linked statements for human confirmation. Do not infer facts beyond the image.',
@@ -50,7 +51,7 @@ class SourceRef(StrictModel):
 class SourceInput:
     reference: SourceRef
     school_id: str
-    learner_id: str
+    learner_id: str | None
     purpose: str
     content: str | bytes
     media_type: str = 'text/plain'
@@ -60,17 +61,57 @@ class SourceInput:
 
 
 class SourceResolver(Protocol):
-    def resolve(self, db: Session, actor: Actor, school_id: str, learner_id: str,
+    def resolve(self, db: Session, actor: Actor, school_id: str, learner_id: str | None,
                 purpose: str, references: list[SourceRef]) -> list[SourceInput]: ...
 
 
 class GenerationRequest(StrictModel):
-    learner_id: UUID
+    learner_id: UUID | None = None
     purpose: Purpose
     policy_id: UUID
     release_id: UUID
     logical_request_key: str = Field(min_length=1, max_length=120, pattern=r'^[A-Za-z0-9_.:-]+$')
     sources: list[SourceRef] = Field(min_length=1, max_length=20)
+
+
+    @model_validator(mode='after')
+    def subject_scope(self):
+        if self.purpose == 'intake_structuring':
+            if self.learner_id is not None or len(self.sources) != 1 or self.sources[0].kind != 'intake':
+                raise ValueError('Intake structuring requires exactly one intake source and no learner attribution')
+        elif self.learner_id is None:
+            raise ValueError('This purpose requires a learner')
+        return self
+
+
+class StructuredField(StrictModel):
+    field_name: Literal['mentioned_learner', 'document_date', 'document_type', 'goal', 'measure', 'follow_up', 'hours']
+    value: str = Field(min_length=1, max_length=4000)
+    source_ref: str = Field(min_length=1, max_length=120)
+    page: int = Field(ge=1, le=200)
+    span_start: int = Field(ge=0)
+    span_end: int = Field(ge=1)
+    quote: str = Field(min_length=1, max_length=4000)
+    unit: Literal['hours'] | None = None
+
+
+class StructuredGap(StrictModel):
+    field_name: Literal['mentioned_learner', 'document_date', 'document_type', 'goal', 'measure', 'follow_up', 'hours'] | None
+    reason: Literal['ambiguous_field', 'unsupported_field', 'missing_source_span', 'disagreement', 'missing_information']
+    detail: str = Field(min_length=1, max_length=2000)
+
+
+class IntakeStructure(StrictModel):
+    fields: list[StructuredField] = Field(max_length=80)
+    missing_evidence: list[StructuredGap] = Field(max_length=20)
+
+
+def release_versions(purpose):
+    return ('intake-structuring.v1', 'intake-structure.v1') if purpose == 'intake_structuring' else (TEMPLATE_VERSION, SCHEMA_VERSION)
+
+
+def release_schema(schema_version):
+    return IntakeStructure if schema_version == 'intake-structure.v1' else Suggestion
 
 
 class Statement(StrictModel):
@@ -85,7 +126,7 @@ class Suggestion(StrictModel):
 
 class PolicyCommand(StrictModel):
     provider_key: str = Field(min_length=1, max_length=80)
-    purposes: list[Purpose] = Field(min_length=1, max_length=5)
+    purposes: list[Purpose] = Field(min_length=1, max_length=6)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
     max_input_bytes: int = Field(default=64000, ge=100, le=2_000_000)
     max_output_tokens: int = Field(default=2048, ge=32, le=8192)
@@ -98,8 +139,17 @@ class ReleaseCommand(StrictModel):
     provider_key: str = Field(min_length=1, max_length=80)
     model_version: str = Field(min_length=1, max_length=160, pattern=r'^[A-Za-z0-9_.:/-]+$')
     capability: Capability
-    template_version: Literal['bounded-suggestion.v1'] = TEMPLATE_VERSION
-    output_schema_version: Literal['suggestion.v1'] = SCHEMA_VERSION
+    template_version: Literal['bounded-suggestion.v1', 'intake-structuring.v1'] = TEMPLATE_VERSION
+    output_schema_version: Literal['suggestion.v1', 'intake-structure.v1'] = SCHEMA_VERSION
+
+
+    @model_validator(mode='after')
+    def matching_schema(self):
+        if (self.template_version == 'intake-structuring.v1') != (self.output_schema_version == 'intake-structure.v1'):
+            raise ValueError('Template and schema must match')
+        if self.output_schema_version == 'intake-structure.v1' and self.capability != 'generation':
+            raise ValueError('Structuring requires generation')
+        return self
 
 
 class VersionCommand(StrictModel):

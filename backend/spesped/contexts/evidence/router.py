@@ -71,7 +71,7 @@ def source_view(db, row, revision=None):
 
 
 def proposal_view(row):
-    return {key: getattr(row, key) for key in ("id", "version", "state", "source_id", "source_revision", "page", "span_start", "span_end", "field_name", "proposed_value", "reviewed_value", "outcome", "review_reason", "reviewer_id")}
+    return {key: getattr(row, key) for key in ("id", "version", "state", "source_id", "source_revision", "page", "span_start", "span_end", "field_name", "proposed_value", "reviewed_value", "outcome", "review_reason", "reviewer_id", "generation_job_id", "unit")}
 
 
 @router.post("/intake/notes", status_code=201)
@@ -177,13 +177,17 @@ def inspect(school_id: UUID, source_id: UUID, command: Expected, request: Reques
 
 
 @router.get("/intake/{source_id}/proposals")
-def proposals(school_id: UUID, source_id: UUID, revision: int | None = Query(None, ge=1), outcome: Literal["pending", "accepted", "edited", "rejected"] | None = None, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+def proposals(school_id: UUID, source_id: UUID, request: Request, revision: int | None = Query(None, ge=1), origin: Literal['manual', 'model'] | None = None, outcome: Literal["pending", "accepted", "edited", "rejected"] | None = None, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
     row = service.source(db, actor, str(school_id), str(source_id))
     query = select(ExtractionProposal).where(ExtractionProposal.school_id == str(school_id), ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == (revision or row.current_revision))
+    if origin is not None:
+        query = query.where(ExtractionProposal.generation_job_id.is_(None) if origin == 'manual' else ExtractionProposal.generation_job_id.is_not(None))
     if outcome:
         query = query.where(ExtractionProposal.outcome == outcome)
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     rows = db.scalars(query.order_by(ExtractionProposal.page, ExtractionProposal.span_start, ExtractionProposal.id).offset(offset).limit(limit)).all()
+    for proposal in rows:
+        service.require_proposal_model_access(db, actor, proposal, getattr(request.app.state, 'ai_gateway', None))
     record_audit(db, actor, str(school_id), "source.proposals_read", "source", row.id)
     commit(db)
     return {"items": [proposal_view(p) for p in rows], "total": total}
@@ -196,14 +200,14 @@ def propose(school_id: UUID, source_id: UUID, command: ProposeField, actor: Acto
 
 
 @router.post("/extraction-proposals/{proposal_id}/review")
-def review(school_id: UUID, proposal_id: UUID, command: ReviewField, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
-    row = mutate(db, lambda: service.review(db, actor, str(school_id), str(proposal_id), command))
+def review(school_id: UUID, proposal_id: UUID, command: ReviewField, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    row = mutate(db, lambda: service.review(db, actor, str(school_id), str(proposal_id), command, getattr(request.app.state, 'ai_gateway', None)))
     return proposal_view(row)
 
 
 @router.post("/extraction-proposals/{proposal_id}/confirm", status_code=201)
 def confirm(school_id: UUID, proposal_id: UUID, command: ConfirmEvidence, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
-    row = mutate(db, lambda: service.confirm(db, actor, str(school_id), str(proposal_id), command, getattr(request.app.state, "evidence_goal_validator", None)))
+    row = mutate(db, lambda: service.confirm(db, actor, str(school_id), str(proposal_id), command, getattr(request.app.state, "evidence_goal_validator", None), runtime=getattr(request.app.state, "ai_gateway", None)))
     return service.evidence_view(db, row)
 
 
@@ -267,3 +271,63 @@ def impacts(school_id: UUID, evidence_id: UUID, offset: int = Query(0, ge=0), li
     total = db.scalar(select(func.count()).select_from(statement.subquery()))
     rows = db.scalars(statement.order_by(CorrectionImpact.created_at.desc()).offset(offset).limit(limit)).all()
     return {"items": [{key: getattr(impact, key) for key in ("id", "old_revision", "new_revision", "derivative_id", "disposition", "created_at")} for impact in rows], "total": total}
+
+
+from .schemas import ApplyStructuring, CreateClarification, ReassignClarification, ResolveClarification, ReopenClarification
+from .models import ClarificationTask, ClarificationTransition
+
+
+def clarification_view(task):
+    return {key: getattr(task, key) for key in ('id', 'version', 'state', 'source_id', 'source_revision',
+        'proposal_id', 'field_name', 'assignee_id', 'reason', 'detail', 'page', 'span_start', 'span_end', 'resolution', 'resolved_by', 'resolved_at')}
+
+
+@router.post('/intake/{source_id}/structuring/apply', status_code=201)
+def apply_structuring(school_id: UUID, source_id: UUID, command: ApplyStructuring, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    from spesped.contexts.platform.router import runtime
+    result = mutate(db, lambda: service.apply_structuring(db, actor, str(school_id), str(source_id), command, runtime(request)))
+    return {key: getattr(result, key) for key in ('id', 'version', 'state', 'source_id', 'source_revision', 'job_id', 'attempt_number')}
+
+
+@router.post('/intake/{source_id}/clarifications', status_code=201)
+def create_clarification(school_id: UUID, source_id: UUID, command: CreateClarification, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    return clarification_view(mutate(db, lambda: service.create_clarification(db, actor, str(school_id), str(source_id), command, getattr(request.app.state, 'ai_gateway', None))))
+
+
+@router.get('/intake/{source_id}/clarifications')
+def list_clarifications(school_id: UUID, source_id: UUID, state: Literal['open', 'resolved'] | None = None, revision: int | None = Query(None, ge=1), assignee_id: UUID | None = None, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    row = service.source(db, actor, str(school_id), str(source_id))
+    query = select(ClarificationTask).where(ClarificationTask.school_id == str(school_id), ClarificationTask.source_id == row.id)
+    for column, value in ((ClarificationTask.state, state), (ClarificationTask.source_revision, revision), (ClarificationTask.assignee_id, str(assignee_id) if assignee_id else None)):
+        if value is not None:
+            query = query.where(column == value)
+    total = db.scalar(select(func.count()).select_from(query.subquery()))
+    rows = db.scalars(query.order_by(ClarificationTask.created_at, ClarificationTask.id).offset(offset).limit(limit)).all()
+    record_audit(db, actor, str(school_id), 'source.clarifications_read', 'source', row.id)
+    commit(db)
+    return {'items': [clarification_view(t) for t in rows], 'total': total}
+
+
+@router.get('/intake/{source_id}/clarifications/{task_id}')
+def get_clarification(school_id: UUID, source_id: UUID, task_id: UUID, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    _, task = service.get_clarification(db, actor, str(school_id), str(source_id), str(task_id))
+    history = db.scalars(select(ClarificationTransition).where(ClarificationTransition.school_id == str(school_id), ClarificationTransition.task_id == task.id).order_by(ClarificationTransition.task_version)).all()
+    result = clarification_view(task) | {'history': [{k: getattr(h, k) for k in ('task_version', 'actor_id', 'assignee_id', 'action', 'state', 'explanation', 'occurred_at')} for h in history]}
+    record_audit(db, actor, str(school_id), 'source.clarification_read', 'clarification', task.id)
+    commit(db)
+    return result
+
+
+@router.post('/intake/{source_id}/clarifications/{task_id}/reassign')
+def reassign_clarification(school_id: UUID, source_id: UUID, task_id: UUID, command: ReassignClarification, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    return clarification_view(mutate(db, lambda: service.change_clarification(db, actor, str(school_id), str(source_id), str(task_id), command, 'reassigned')))
+
+
+@router.post('/intake/{source_id}/clarifications/{task_id}/resolve')
+def resolve_clarification(school_id: UUID, source_id: UUID, task_id: UUID, command: ResolveClarification, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    return clarification_view(mutate(db, lambda: service.change_clarification(db, actor, str(school_id), str(source_id), str(task_id), command, 'resolved')))
+
+
+@router.post('/intake/{source_id}/clarifications/{task_id}/reopen')
+def reopen_clarification(school_id: UUID, source_id: UUID, task_id: UUID, command: ReopenClarification, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    return clarification_view(mutate(db, lambda: service.change_clarification(db, actor, str(school_id), str(source_id), str(task_id), command, 'reopened')))

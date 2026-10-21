@@ -51,7 +51,7 @@ class ModelEvaluation(Base):
 class GenerationJob(Aggregate, Base):
     __tablename__ = 'platform_generation_jobs'
     school_id: Mapped[str] = mapped_column(ForeignKey('identity_schools.id'), index=True)
-    learner_id: Mapped[str] = mapped_column(String(36), index=True)
+    learner_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
     actor_id: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
     purpose: Mapped[str] = mapped_column(String(50))
     policy_id: Mapped[str] = mapped_column(String(36))
@@ -71,6 +71,7 @@ class GenerationJob(Aggregate, Base):
         ForeignKeyConstraint(['school_id', 'learner_id'], ['identity_learners.school_id', 'identity_learners.id']),
         ForeignKeyConstraint(['school_id', 'policy_id'], ['platform_processing_policies.school_id', 'platform_processing_policies.id']),
         ForeignKeyConstraint(['school_id', 'release_id'], ['platform_model_releases.school_id', 'platform_model_releases.id']),
+        CheckConstraint("(purpose = 'intake_structuring' AND learner_id IS NULL) OR (purpose != 'intake_structuring' AND learner_id IS NOT NULL)", name='ck_generation_subject'),
         CheckConstraint("state IN ('queued','running','succeeded','failed','unavailable','cancelled')"),
     )
 

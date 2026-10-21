@@ -93,7 +93,7 @@ def env(request,tmp_path,wire_server):
         url=make_url(dsn).update_query_dict({'options':f'-csearch_path={schema}'}).render_as_string(hide_password=False)
     else: url=f'sqlite:///{tmp_path}/gateway.db'
     cfg=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini')); cfg.attributes['database_url']=url
-    command.upgrade(cfg,'j08_platform'); factory=make_session_factory(url)
+    command.upgrade(cfg,'j04_structuring'); factory=make_session_factory(url)
     with factory.begin() as db:
         school,leader=provision_school(db,school_name='Synthetic gateway school',kind='public',timezone='Europe/Oslo',email='gateway@example.invalid',display_name='Synthetic operator',password='synthetic-gateway-password')
         learner=Learner(school_id=school.id,display_name='Synthetic learner',grade=4,group_name='Synthetic group'); db.add(learner); db.flush()
@@ -239,7 +239,7 @@ def test_real_local_ocr_speech_embeddings_protocol(env,capability,media_type,con
     source=replace(env.resolver.source,media_type=media_type,content=content,purpose={'ocr':'evidence_extraction','speech':'transcription','embeddings':'embedding'}[capability])
     with env.factory() as db:
         policy=db.get(service.ProcessingPolicy,env.ids['policy'])
-        output=invoke(env.runtime,env.runtime.providers['local'],SimpleNamespace(capability=capability,model_version='synthetic-'+capability),policy.configuration,[source])
+        output=invoke(env.runtime,env.runtime.providers['local'],SimpleNamespace(capability=capability,model_version='synthetic-'+capability,template_version='bounded-suggestion.v1',output_schema_version='suggestion.v1'),policy.configuration,[source])
     assert output['unconfirmed'] and env.server.requests[-1]['path']==path
     if capability=='speech': assert b'name="file"' in env.server.requests[-1]['body']
     elif capability=='ocr': assert env.server.requests[-1]['json']['messages'][1]['content'][2]['image_url']['url'].startswith('data:image/png;base64,')

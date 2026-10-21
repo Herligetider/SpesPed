@@ -9,6 +9,7 @@ import base64
 import ipaddress
 import json
 import math
+import re
 import time
 import subprocess
 import signal
@@ -18,7 +19,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from pydantic import ValidationError
-from .contracts import GatewayRuntime, ProviderSpec, SourceInput, Suggestion, SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS
+from .contracts import GatewayRuntime, ProviderSpec, SourceInput, Suggestion, SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS, IntakeStructure, release_schema, release_versions
 
 
 class ProviderFailure(Exception):
@@ -149,6 +150,48 @@ def validate_suggestion(value: dict, sources: list[SourceInput]) -> dict:
         raise ProviderFailure('invalid_output', 'failed') from None
 
 
+def validate_structure(value, sources):
+    from spesped.contexts.evidence.schemas import validate_field
+    try:
+        result = IntakeStructure.model_validate(value)
+        if not result.fields and not result.missing_evidence:
+            raise ValueError()
+        if any(not x.detail.strip() for x in result.missing_evidence):
+            raise ValueError()
+        pages_by_ref = {}
+        for source in sources:
+            payload = json.loads(source.content)
+            pages = payload['pages']
+            if not isinstance(pages, list) or not pages or any(not isinstance(p, str) for p in pages):
+                raise ValueError()
+            pages_by_ref[source.reference.key] = pages
+        seen = set()
+        for field in result.fields:
+            if not field.value.strip() or not field.quote.strip():
+                raise ValueError()
+            pages = pages_by_ref.get(field.source_ref)
+            if pages is None:
+                raise ProviderFailure('unsupported_source_reference', 'failed', 1)
+            if field.page > len(pages) or not 0 <= field.span_start < field.span_end <= len(pages[field.page-1]):
+                raise ValueError()
+            if pages[field.page-1][field.span_start:field.span_end] != field.quote:
+                raise ValueError()
+            validate_field(field.field_name, field.value)
+            # Normalization/inference is left to a human edit: automatic values
+            # must occur verbatim in the exact cited text.
+            if field.value not in field.quote or (field.field_name == 'hours') != (field.unit == 'hours'):
+                raise ValueError()
+            if field.field_name == 'hours' and (not re.search(r'(?<![\d.])' + re.escape(field.value) + r'(?![\d.])', field.quote) or not re.search(r'\b(?:(?:års)?timer?|hours?)\b', field.quote, re.IGNORECASE)):
+                raise ValueError()
+            key = (field.source_ref, field.page, field.span_start, field.span_end, field.field_name)
+            if key in seen:
+                raise ValueError()
+            seen.add(key)
+        return result.model_dump() | {'unconfirmed': True, 'requires_human_review': True, 'schema_version': 'intake-structure.v1'}
+    except (ValidationError, ValueError, TypeError, KeyError, IndexError):
+        raise ProviderFailure('invalid_output', 'failed') from None
+
+
 def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dict, sources: list[SourceInput]) -> dict:
     validate_provider(runtime, provider, sources)
     capability = release.capability
@@ -189,6 +232,8 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
     purpose = sources[0].purpose if sources else None
     if purpose not in PURPOSE_INSTRUCTIONS or any(s.purpose != purpose for s in sources):
         raise ProviderFailure('purpose_not_supported')
+    if (release.template_version, release.output_schema_version) != release_versions(purpose):
+        raise ProviderFailure('purpose_not_supported')
     content = [{'type': 'text', 'text': json.dumps({'approved_task': PURPOSE_INSTRUCTIONS[purpose]})}]
     for source in sources:
         if capability == 'ocr':
@@ -201,7 +246,7 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
             content.append({'type': 'text', 'text': json.dumps({'source_ref': source.reference.key, 'untrusted_source_data': source.content}, ensure_ascii=False)})
         else:
             raise ProviderFailure('capability_unavailable')
-    payload = {'model': release.model_version, 'messages': [{'role': 'system', 'content': SYSTEM_PROMPT}, {'role': 'user', 'content': content}], 'max_tokens': policy['max_output_tokens'], 'stream': False, 'response_format': {'type': 'json_schema', 'json_schema': {'name': 'suggestion', 'strict': True, 'schema': Suggestion.model_json_schema()}}}
+    payload = {'model': release.model_version, 'messages': [{'role': 'system', 'content': SYSTEM_PROMPT}, {'role': 'user', 'content': content}], 'max_tokens': policy['max_output_tokens'], 'stream': False, 'response_format': {'type': 'json_schema', 'json_schema': {'name': 'intake_structure' if purpose == 'intake_structuring' else 'suggestion', 'strict': True, 'schema': release_schema(release.output_schema_version).model_json_schema()}}}
     result = _post(provider, '/chat/completions', **common, json=payload)
     try:
         if result.get('model') != release.model_version:
@@ -212,4 +257,4 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
         output = json.loads(choice['message']['content'])
     except (KeyError, IndexError, ValueError, TypeError):
         raise ProviderFailure('invalid_output', 'failed') from None
-    return validate_suggestion(output, sources)
+    return validate_structure(output, sources) if purpose == 'intake_structuring' else validate_suggestion(output, sources)

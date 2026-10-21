@@ -27,9 +27,9 @@ class ConfigurationModel(BaseModel):
 class SyntheticAttestation(ConfigurationModel):
     fixture_name: str = Field(min_length=1, max_length=100)
     school_id: UUID
-    learner_id: UUID
+    learner_id: UUID | None = None
     reference: SourceRef
-    purposes: list[Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction"]] = Field(min_length=1)
+    purposes: list[Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "intake_structuring"]] = Field(min_length=1)
     content_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
@@ -40,7 +40,7 @@ class SyntheticManifest(ConfigurationModel):
 
 class EvaluationFixture(ConfigurationModel):
     name: str = Field(min_length=1, max_length=100)
-    purpose: Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "transcription"]
+    purpose: Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "transcription", "intake_structuring"]
     text: str | None = Field(default=None, min_length=1, max_length=20000)
     file: Path | None = None
     media_type: Literal["text/plain", "image/png", "image/jpeg", "audio/wav", "audio/mpeg", "audio/webm"] = "text/plain"
@@ -51,7 +51,7 @@ class EvaluationFixture(ConfigurationModel):
     def compatible_fixture(self):
         if (self.text is None) == (self.file is None):
             raise ValueError("An evaluation case requires either text or a synthetic media file")
-        if self.purpose in {"teaching_suggestion", "document_draft", "embedding"}:
+        if self.purpose in {"teaching_suggestion", "document_draft", "embedding", "intake_structuring"}:
             if self.text is None or self.media_type != "text/plain":
                 raise ValueError("This evaluation purpose requires plain text")
         elif self.file is None or not self.media_type.startswith("image/" if self.purpose == "evidence_extraction" else "audio/"):
@@ -90,7 +90,12 @@ class EvidenceSourceResolver:
         self.attestations = tuple(attestations)
 
     def resolve(self, db, actor, school_id, learner_id, purpose, references):
-        require_learner_access(db, actor, school_id, learner_id)
+        if purpose == "intake_structuring":
+            if learner_id is not None or len(references) != 1 or references[0].kind != "intake":
+                raise access_denied()
+            evidence.intake_access(db, actor, school_id)
+        else:
+            require_learner_access(db, actor, school_id, learner_id)
         result = []
         for reference in references:
             if reference.kind == "evidence":
@@ -108,6 +113,21 @@ class EvidenceSourceResolver:
                 content = json.dumps(value, default=lambda v: v.isoformat(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
                 resolved = SourceInput(reference, school_id, learner_id, purpose, content)
             else:
+                if purpose == "intake_structuring":
+                    source = evidence.source(db, actor, school_id, str(reference.source_id))
+                    if source.current_revision != reference.revision:
+                        raise DomainError("source_revision_changed", "Select the current source revision.", 409)
+                    inspected = evidence.inspection(db, source)
+                    if inspected is None or inspected.extraction_state != "ready" or inspected.scan_state not in {"clean", "not_required_note"}:
+                        raise DomainError("source_not_ready", "The source must pass scanning and extraction.", 409)
+                    version = evidence.source_revision(db, school_id, source.id, reference.revision)
+                    if self.storage is None:
+                        raise DomainError("source_storage_unavailable", "Source storage is not configured.", 503)
+                    evidence.read_original(self.storage, version)
+                    content = json.dumps({"pages": inspected.pages, "source_digest": version.digest}, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    resolved = SourceInput(reference, school_id, None, purpose, content)
+                    result.append(self._attest(resolved))
+                    continue
                 if purpose != "evidence_extraction":
                     raise access_denied()
                 source = evidence.source(db, actor, school_id, str(reference.source_id))
@@ -135,14 +155,18 @@ class EvidenceSourceResolver:
                 if self.storage is None:
                     raise DomainError("source_storage_unavailable", "Source storage is not configured.", 503)
                 resolved = SourceInput(reference, school_id, learner_id, purpose, evidence.read_original(self.storage, version), version.media_type)
-            for entry in self.attestations:
-                if (str(entry.school_id) == school_id and str(entry.learner_id) == learner_id
-                        and entry.reference == reference and purpose in entry.purposes
-                        and entry.content_digest == content_digest(resolved.content)):
-                    resolved = replace(resolved, provenance="synthetic_fixture", provenance_reference=entry.fixture_name)
-                    break
-            result.append(resolved)
+            result.append(self._attest(resolved))
         return result
+
+
+    def _attest(self, resolved):
+        for entry in self.attestations:
+            learner = str(entry.learner_id) if entry.learner_id is not None else None
+            if (str(entry.school_id) == resolved.school_id and learner == resolved.learner_id
+                    and entry.reference == resolved.reference and resolved.purpose in entry.purposes
+                    and entry.content_digest == content_digest(resolved.content)):
+                return replace(resolved, provenance="synthetic_fixture", provenance_reference=entry.fixture_name)
+        return resolved
 
 
 def load_evaluation_suites(path):
@@ -163,7 +187,7 @@ def load_evaluation_suites(path):
             raise ValueError("Evaluation case names must be unique within a suite")
         cases = []
         for index, fixture in enumerate(fixtures, 1):
-            ref = SourceRef(source_id=UUID(int=index), revision=1)
+            ref = SourceRef(kind="intake" if fixture.purpose == "intake_structuring" else "evidence", source_id=UUID(int=index), revision=1)
             content = fixture.text
             if fixture.file is not None:
                 asset = (path.parent / fixture.file).resolve()
@@ -177,7 +201,10 @@ def load_evaluation_suites(path):
                         raise ValueError()
                 except (ValueError, OSError):
                     raise ValueError("Invalid synthetic evaluation asset") from None
-            source = SourceInput(ref, fixture_school, fixture_learner, fixture.purpose, content, fixture.media_type,
+            if fixture.purpose == "intake_structuring":
+                # Fixed fixture configuration supplies literal extracted pages.
+                content = json.dumps({"pages": [content]}, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            source = SourceInput(ref, fixture_school, None if fixture.purpose == "intake_structuring" else fixture_learner, fixture.purpose, content, fixture.media_type,
                                  provenance="synthetic_fixture", provenance_reference=f"{name}/{fixture.name}")
             cases.append(EvaluationCase(fixture.name, fixture.purpose, (source,),
                                         tuple(fixture.required_substrings), tuple(fixture.forbidden_substrings)))

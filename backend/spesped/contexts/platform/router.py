@@ -23,7 +23,7 @@ def runtime(request: Request) -> GatewayRuntime:
 
 
 def job_view(job):
-    return {key: getattr(job, key) for key in ('id', 'school_id', 'learner_id', 'version', 'state', 'purpose', 'policy_id', 'policy_version', 'release_id', 'release_digest', 'source_manifest', 'output', 'error_code', 'attempts', 'created_at', 'updated_at')} | {'manual_fallback_available': True}
+    return {key: getattr(job, key) for key in ('id', 'school_id', 'learner_id', 'version', 'state', 'purpose', 'policy_id', 'policy_version', 'release_id', 'release_digest', 'source_manifest', 'output', 'error_code', 'attempts', 'created_at', 'updated_at')} | {'manual_fallback_available': True, 'subject_scope': ({'kind': 'intake', 'source': job.source_manifest[0]['reference']} if job.purpose == 'intake_structuring' else {'kind': 'learner', 'learner_id': job.learner_id})}
 
 
 def policy_view(policy):
