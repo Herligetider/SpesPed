@@ -471,7 +471,8 @@
         "2ccc30e499d87efba020068528c70f7e5a382a9a",
         "2e305db6db62b306ca13a1d1d1265f1b84204257",
         "54f40085911bb56f3fa2b3b38253db7e43d72c00",
-        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+        "e614152784c6962bbcf7076ec875d2b53d8007fd"
       ],
       "evidence": [
         {
@@ -561,6 +562,12 @@
           "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
           "path": "docs/reviews/suggestion-recovery-review.md",
           "result": "Bounded backend accepted with no actionable finding:18committed tests plus14independentSQLite/PostgreSQLcases acrossdocumentedruns. New-app durable resume/complete-response recovery,exactbasis/wrongmanifest isolation,livepermission/source/model checks,103-jobpagination,output-freeSQLincludingpriorIEPlineage andper-sessionreviewoutcomes passed. UIrecovery isseparatelyassigned;nofeaturepromoted."
+        },
+        {
+          "type": "independent_review",
+          "revision": "e614152784c6962bbcf7076ec875d2b53d8007fd",
+          "path": "docs/reviews/reporting-goal-projection-review.md",
+          "result": "Accepted bounded historical reporting goal read port: 83 candidate/owner regression tests and 8 independent checks passed on SQLite and actual PostgreSQL; 3 SQLite-only concurrency/deadlock skips with PostgreSQL counterparts passing. Exact historical labels and half-open applicability periods, imported declared validity, current source/case/actor authorization and caller transaction preservation verified. Native annual report consumer and UI remain separately required."
         }
       ],
       "findings": [
@@ -1111,7 +1118,8 @@
         "5a76a69923c55ecd2410e1d8599686960ad5e204",
         "8d82b74908bedecdacac330e71fa430a041c3700",
         "c18a0e05c7dd3519df6365e7a0bab740841f351a",
-        "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c"
+        "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
+        "ca3279b4e85c013c0998cedd9333a0ba98409192"
       ],
       "evidence": [
         {
@@ -1203,6 +1211,11 @@
           "revision": "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
           "path": "docs/reviews/document-gateway-review.md",
           "result": "Accepted bounded typed report/email gateway with no actionable finding: 49 candidate tests, 30 independent adverse checks, and 156 existing gateway regressions passed; 7 SQLite-only concurrency skips with actual PostgreSQL counterparts executed. Exact source and per-purpose evaluation binding, current recall, durable retry, provider boundaries and unchanged prior release digests verified. Native document template/evidence selection, application, approval, UI and dispatch remain separate required work; protocol validation does not establish factual quality."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
+          "result": "Root added public validate_generation_configuration for atomic document request enqueue. Fresh non-mutating owner reads return only current policy version and reviewed release digest; caller audit/document transaction remains owned by caller. 52 dual-database checks passed; independent review assigned to /root/review_composition. Configuration validation alone neither authorizes source processing nor invokes a provider."
         }
       ],
       "findings": [
@@ -1425,7 +1438,9 @@
       "implementationAgent": "/root/j11_documents",
       "reviewAgent": null,
       "commits": [
-        "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c"
+        "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
+        "e614152784c6962bbcf7076ec875d2b53d8007fd",
+        "ca3279b4e85c013c0998cedd9333a0ba98409192"
       ],
       "evidence": [
         {
@@ -1442,6 +1457,17 @@
           "revision": "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
           "path": "docs/reviews/document-gateway-review.md",
           "result": "Accepted bounded typed report/email gateway with no actionable finding: 49 candidate tests, 30 independent adverse checks, and 156 existing gateway regressions passed; 7 SQLite-only concurrency skips with actual PostgreSQL counterparts executed. Exact source and per-purpose evaluation binding, current recall, durable retry, provider boundaries and unchanged prior release digests verified. Native document template/evidence selection, application, approval, UI and dispatch remain separate required work; protocol validation does not establish factual quality."
+        },
+        {
+          "type": "independent_review",
+          "revision": "e614152784c6962bbcf7076ec875d2b53d8007fd",
+          "path": "docs/reviews/reporting-goal-projection-review.md",
+          "result": "Accepted bounded historical reporting goal read port: 83 candidate/owner regression tests and 8 independent checks passed on SQLite and actual PostgreSQL; 3 SQLite-only concurrency/deadlock skips with PostgreSQL counterparts passing. Exact historical labels and half-open applicability periods, imported declared validity, current source/case/actor authorization and caller transaction preservation verified. Native annual report consumer and UI remain separately required."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
+          "result": "Root added public validate_generation_configuration for atomic document request enqueue. Fresh non-mutating owner reads return only current policy version and reviewed release digest; caller audit/document transaction remains owned by caller. 52 dual-database checks passed; independent review assigned to /root/review_composition. Configuration validation alone neither authorizes source processing nor invokes a provider."
         }
       ],
       "findings": []
@@ -1725,7 +1751,8 @@
       "implementationAgent": "/root/j19_professional_authority",
       "reviewAgent": "/root/review_j19",
       "commits": [
-        "25ac24e2d1440c9000ea41e3f0c2ca4c2d3c253f"
+        "25ac24e2d1440c9000ea41e3f0c2ca4c2d3c253f",
+        "862958527d0616e0a37ba7e5231f7ea86719794d"
       ],
       "evidence": [
         {
@@ -1747,6 +1774,11 @@
           "type": "integration_verification",
           "revision": "25ac24e2d1440c9000ea41e3f0c2ca4c2d3c253f",
           "result": "Root frozen affected integration run: 95 passed, 3 SQLite-only concurrency skips, 166.88 seconds. Native professional and BC09 fresh-application composition, owned learning projections, assessment contracts and teaching tests used pinned archive imports and actual PostgreSQL. This bounded passing run does not close the independent J19 findings."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "862958527d0616e0a37ba7e5231f7ea86719794d",
+          "result": "Original author repaired J19-R1/R2 across two production files and a new regression file. Root verified all three frozen hashes before pinning. Author frozen archive plus only exact repair files: 72 passed, 2 SQLite concurrency skips, including original reviewer probes and actual PostgreSQL races. Original reviewer /root/review_j19 assigned exact repair commit for recheck; findings remain open until verified."
         }
       ],
       "findings": [
