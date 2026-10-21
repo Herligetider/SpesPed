@@ -13,9 +13,10 @@ from sqlalchemy.orm import Session
 from spesped.auth import Actor
 
 Capability = Literal['generation', 'ocr', 'speech', 'embeddings']
-Purpose = Literal['teaching_suggestion', 'evidence_extraction', 'document_draft', 'transcription', 'embedding', 'intake_structuring', 'session_planning']
-PURPOSE_CAPABILITIES = {'teaching_suggestion': 'generation', 'document_draft': 'generation', 'evidence_extraction': 'ocr', 'transcription': 'speech', 'embedding': 'embeddings', 'intake_structuring': 'generation', 'session_planning': 'generation'}
+Purpose = Literal['teaching_suggestion', 'evidence_extraction', 'document_draft', 'transcription', 'embedding', 'intake_structuring', 'session_planning', 'iep_drafting']
+PURPOSE_CAPABILITIES = {'teaching_suggestion': 'generation', 'document_draft': 'generation', 'evidence_extraction': 'ocr', 'transcription': 'speech', 'embedding': 'embeddings', 'intake_structuring': 'generation', 'session_planning': 'generation', 'iep_drafting': 'generation'}
 PURPOSE_INSTRUCTIONS = {
+    'iep_drafting': 'Propose IEP text and observable learning goals from the supplied authorized plan basis. Distinguish confirmed decisions, assessments and participation from proposed teaching content. Cite the supplied basis and make missing evidence explicit. Use null for plan fields with no proposal. A goal target may only identify an existing goal in this basis; use null for a proposed new goal. Never invent participation, alter rights, quantities, dates, curriculum references, approvals or qualifications. Human selection and separate professional approval are required.',
     'session_planning': 'Propose a practical structured teaching session from the supplied authorized teaching basis. Keep recorded goals, support needs and observations distinct from new proposed activities. Include preparation, materials, concrete steps with time estimates, support, simplification and observation focus. State missing or contradictory evidence. Never change the plan, decide rights, report a proposed activity as performed, or approve the session. Cite the supplied basis reference.',
     'intake_structuring': 'Propose typed document fields from the supplied JSON pages. Return exact page, zero-based character offsets and verbatim quote for every field. Mentioned learner is a name only, never a UUID or resolved attribution. Hours are source content, never legal entitlements. Use missing_evidence for ambiguous or unsupported fields; never invent a span.',
     'teaching_suggestion': 'Propose a feasible teaching activity and support instructions. Distinguish recorded observations from proposed activities.',
@@ -39,7 +40,7 @@ class StrictModel(BaseModel):
 
 
 class SourceRef(StrictModel):
-    kind: Literal['evidence', 'intake', 'teaching_basis'] = 'evidence'
+    kind: Literal['evidence', 'intake', 'teaching_basis', 'plan_basis'] = 'evidence'
     source_id: UUID
     revision: int = Field(ge=1)
 
@@ -87,6 +88,11 @@ class GenerationRequest(StrictModel):
                 raise ValueError('Session planning requires exactly one teaching basis')
         elif any(source.kind == 'teaching_basis' for source in self.sources):
             raise ValueError('Teaching basis is restricted to session planning')
+        if self.purpose == 'iep_drafting':
+            if len(self.sources) != 1 or self.sources[0].kind != 'plan_basis':
+                raise ValueError('IEP drafting requires exactly one plan basis')
+        elif any(source.kind == 'plan_basis' for source in self.sources):
+            raise ValueError('Plan basis is restricted to IEP drafting')
         return self
 
 
@@ -138,11 +144,46 @@ class TeachingSessionSuggestion(StrictModel):
     missing_evidence: list[BoundedText(2000)] = Field(max_length=20)
 
 
+class IEPGoalSuggestion(StrictModel):
+    proposal_key: str = Field(min_length=1, max_length=80, pattern=r'^[A-Za-z0-9_-]+$')
+    target_goal_id: UUID | None
+    title: BoundedText(320)
+    expected_action: BoundedText(10000)
+    arena: BoundedText(5000)
+    support: BoundedText(5000)
+    responsibility: BoundedText(5000)
+    evaluation_method: BoundedText(5000)
+
+
+class IEPDraftSuggestion(StrictModel):
+    title: BoundedText(320) | None
+    rationale: BoundedText(10000) | None
+    organization: BoundedText(5000) | None
+    responsibility: BoundedText(5000) | None
+    evaluation_method: BoundedText(5000) | None
+    goals: list[IEPGoalSuggestion] = Field(max_length=20)
+    source_refs: list[BoundedText(120)] = Field(min_length=1, max_length=20)
+    missing_evidence: list[BoundedText(2000)] = Field(max_length=20)
+
+    @model_validator(mode='after')
+    def meaningful_unique_proposals(self):
+        if not self.goals and not any(getattr(self, name) is not None for name in (
+                'title', 'rationale', 'organization', 'responsibility', 'evaluation_method')):
+            raise ValueError('At least one plan field or goal proposal is required')
+        keys = [goal.proposal_key for goal in self.goals]
+        targets = [goal.target_goal_id for goal in self.goals if goal.target_goal_id is not None]
+        if len(keys) != len(set(keys)) or len(targets) != len(set(targets)):
+            raise ValueError('Goal proposal keys and non-null targets must be unique')
+        return self
+
+
 def release_versions(purpose):
     if purpose == 'intake_structuring':
         return ('intake-structuring.v1', 'intake-structure.v1')
     if purpose == 'session_planning':
         return ('teaching-session.v1', 'teaching-session.v1')
+    if purpose == 'iep_drafting':
+        return ('iep-draft.v1', 'iep-draft.v1')
     return (TEMPLATE_VERSION, SCHEMA_VERSION)
 
 
@@ -151,6 +192,8 @@ def release_schema(schema_version):
         return IntakeStructure
     if schema_version == 'teaching-session.v1':
         return TeachingSessionSuggestion
+    if schema_version == 'iep-draft.v1':
+        return IEPDraftSuggestion
     return Suggestion
 
 
@@ -166,7 +209,7 @@ class Suggestion(StrictModel):
 
 class PolicyCommand(StrictModel):
     provider_key: str = Field(min_length=1, max_length=80)
-    purposes: list[Purpose] = Field(min_length=1, max_length=7)
+    purposes: list[Purpose] = Field(min_length=1, max_length=8)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
     max_input_bytes: int = Field(default=64000, ge=100, le=2_000_000)
     max_output_tokens: int = Field(default=2048, ge=32, le=8192)
@@ -179,17 +222,17 @@ class ReleaseCommand(StrictModel):
     provider_key: str = Field(min_length=1, max_length=80)
     model_version: str = Field(min_length=1, max_length=160, pattern=r'^[A-Za-z0-9_.:/-]+$')
     capability: Capability
-    template_version: Literal['bounded-suggestion.v1', 'intake-structuring.v1', 'teaching-session.v1'] = TEMPLATE_VERSION
-    output_schema_version: Literal['suggestion.v1', 'intake-structure.v1', 'teaching-session.v1'] = SCHEMA_VERSION
+    template_version: Literal['bounded-suggestion.v1', 'intake-structuring.v1', 'teaching-session.v1', 'iep-draft.v1'] = TEMPLATE_VERSION
+    output_schema_version: Literal['suggestion.v1', 'intake-structure.v1', 'teaching-session.v1', 'iep-draft.v1'] = SCHEMA_VERSION
 
 
     @model_validator(mode='after')
     def matching_schema(self):
         expected = {'bounded-suggestion.v1': 'suggestion.v1', 'intake-structuring.v1': 'intake-structure.v1',
-                    'teaching-session.v1': 'teaching-session.v1'}
+                    'teaching-session.v1': 'teaching-session.v1', 'iep-draft.v1': 'iep-draft.v1'}
         if self.output_schema_version != expected[self.template_version]:
             raise ValueError('Template and schema must match')
-        if self.output_schema_version in {'intake-structure.v1', 'teaching-session.v1'} and self.capability != 'generation':
+        if self.output_schema_version in {'intake-structure.v1', 'teaching-session.v1', 'iep-draft.v1'} and self.capability != 'generation':
             raise ValueError('Structured generation requires generation capability')
         return self
 

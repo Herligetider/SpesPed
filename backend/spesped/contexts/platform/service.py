@@ -72,6 +72,11 @@ def _resolve(db, runtime, actor, school_id, learner_id, purpose, references):
             raise access_denied()
     elif any(r.kind == 'teaching_basis' for r in references):
         raise access_denied()
+    if purpose == 'iep_drafting':
+        if learner_id is None or len(references) != 1 or references[0].kind != 'plan_basis':
+            raise access_denied()
+    elif any(r.kind == 'plan_basis' for r in references):
+        raise access_denied()
     sources = runtime.source_resolver.resolve(db, actor, school_id, learner_id, purpose, references)
     by_key = {s.reference.key: s for s in sources}
     if len(sources) != len(references) or len(by_key) != len(references) or set(by_key) != {r.key for r in references}:
@@ -136,7 +141,7 @@ def _configuration(db, runtime, job, *, metadata_only=False):
             or release.reviewed_evaluation_digest != evaluation.artifact_digest
             or digest(evaluation.evidence) != evaluation.artifact_digest):
         raise ProviderFailure('reviewed_release_required')
-    if job.purpose in {'intake_structuring', 'session_planning'} and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
+    if job.purpose in {'intake_structuring', 'session_planning', 'iep_drafting'} and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
         raise ProviderFailure('purpose_evaluation_required')
     if job.purpose not in policy.configuration['purposes'] or PURPOSE_CAPABILITIES[job.purpose] != release.capability or policy.provider_key != release.provider_key:
         raise ProviderFailure('purpose_not_supported')
@@ -197,9 +202,10 @@ def release_configuration_digest(command, provider):
     # Distinct new templates must not silently change the digest of existing
     # evaluated instruction sets. Original template versions retain their input.
     legacy_purposes = ('intake_structuring', 'teaching_suggestion', 'document_draft', 'evidence_extraction')
-    instructions = ({'session_planning': PURPOSE_INSTRUCTIONS['session_planning']}
-                    if command.template_version == 'teaching-session.v1'
-                    else {purpose: PURPOSE_INSTRUCTIONS[purpose] for purpose in legacy_purposes})
+    distinct = {'teaching-session.v1': 'session_planning', 'iep-draft.v1': 'iep_drafting'}
+    purpose = distinct.get(command.template_version)
+    instructions = ({purpose: PURPOSE_INSTRUCTIONS[purpose]} if purpose
+                    else {name: PURPOSE_INSTRUCTIONS[name] for name in legacy_purposes})
     return digest({'release': command.model_dump(), 'provider_digest': provider_digest(provider), 'template': SYSTEM_PROMPT, 'purpose_instructions': instructions, 'schema': release_schema(command.output_schema_version).model_json_schema()})
 
 

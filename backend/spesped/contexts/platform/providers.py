@@ -19,7 +19,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from pydantic import ValidationError
-from .contracts import GatewayRuntime, ProviderSpec, SourceInput, Suggestion, SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS, IntakeStructure, TeachingSessionSuggestion, release_schema, release_versions
+from .contracts import GatewayRuntime, ProviderSpec, SourceInput, Suggestion, SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS, IntakeStructure, TeachingSessionSuggestion, IEPDraftSuggestion, release_schema, release_versions
 
 
 class ProviderFailure(Exception):
@@ -207,6 +207,23 @@ def validate_session(value, sources):
         raise ProviderFailure('invalid_output', 'failed') from None
 
 
+def validate_iep_draft(value, sources):
+    try:
+        result = IEPDraftSuggestion.model_validate(value)
+        allowed = {source.reference.key for source in sources}
+        unknown = sum(ref not in allowed for ref in result.source_refs)
+        if unknown:
+            raise ProviderFailure('unsupported_source_reference', 'failed', unknown)
+        if len(set(result.source_refs)) != len(result.source_refs):
+            raise ValueError()
+        # UUID goal targets remain proposals. The plans consumer must match
+        # them to its exact immutable basis before exposing/applying them.
+        return result.model_dump(mode='json') | {'unconfirmed': True, 'requires_human_review': True,
+                                                 'schema_version': 'iep-draft.v1'}
+    except (ValidationError, ValueError, TypeError):
+        raise ProviderFailure('invalid_output', 'failed') from None
+
+
 def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dict, sources: list[SourceInput]) -> dict:
     validate_provider(runtime, provider, sources)
     capability = release.capability
@@ -261,7 +278,7 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
             content.append({'type': 'text', 'text': json.dumps({'source_ref': source.reference.key, 'untrusted_source_data': source.content}, ensure_ascii=False)})
         else:
             raise ProviderFailure('capability_unavailable')
-    schema_name = {'intake_structuring': 'intake_structure', 'session_planning': 'teaching_session'}.get(purpose, 'suggestion')
+    schema_name = {'intake_structuring': 'intake_structure', 'session_planning': 'teaching_session', 'iep_drafting': 'iep_draft'}.get(purpose, 'suggestion')
     payload = {'model': release.model_version, 'messages': [{'role': 'system', 'content': SYSTEM_PROMPT}, {'role': 'user', 'content': content}], 'max_tokens': policy['max_output_tokens'], 'stream': False, 'response_format': {'type': 'json_schema', 'json_schema': {'name': schema_name, 'strict': True, 'schema': release_schema(release.output_schema_version).model_json_schema()}}}
     result = _post(provider, '/chat/completions', **common, json=payload)
     try:
@@ -277,4 +294,6 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
         return validate_structure(output, sources)
     if purpose == 'session_planning':
         return validate_session(output, sources)
+    if purpose == 'iep_drafting':
+        return validate_iep_draft(output, sources)
     return validate_suggestion(output, sources)

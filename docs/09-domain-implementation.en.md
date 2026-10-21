@@ -143,6 +143,34 @@ This bounded gateway was independently accepted at `ac55549`; see the
 The teaching consumer, application route composition and UI require their own
 verification; this contract does not declare the complete teaching flow delivered.
 
+IEP proposal generation uses the separate `iep_drafting` purpose and
+`ai.iep_drafting` authority. It accepts exactly one immutable `plan_basis`
+reference at revision 1. The plans context's
+`resolve_generation_source(db, actor, school_id, learner_id, purpose, reference)`
+authorizes and rechecks the original confirmed decision, assessment, profile,
+source and target-plan/goal coordinates before returning canonical JSON in a
+`SourceInput` with `text/plain` media type. The gateway content digest binds that
+input; a caller cannot provide a trusted digest or synthetic provenance flag.
+
+Both the distinct template and schema are `iep-draft.v1`. Required nullable plan
+fields are title, rationale, organization, responsibility and evaluation method;
+null means no proposal. The required goals list has at most 20 entries with a
+unique proposal key, nullable exact target goal ID and bounded proposed title,
+expected action, arena, support, responsibility and evaluation method. Non-null
+target IDs must be unique. The plans consumer validates target IDs against the
+original immutable basis before presenting or applying proposals. At least one
+nonnull plan field or goal is required, with unique supplied source references
+and an explicit missing-evidence list. Dates, quantities, rights, curriculum
+references, participation and approval fields are excluded from model output.
+New goal dates and curriculum choices come from explicit human input.
+
+Plans routes supply `db.info['plans_runtime']` from the assembled AI gateway.
+Selection, regeneration, rejection and activation remain separate commands;
+per-field model lineage survives ordinary manual edits until an explicit human
+replacement severs the selected dependency. Standalone adaptation generation
+and curriculum integration remain recorded F08 work. This new IEP boundary and
+its plans consumer are implementation candidates awaiting independent review.
+
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
 requires governance case authority, the owning context's live case resolver and

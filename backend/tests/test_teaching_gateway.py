@@ -380,7 +380,8 @@ def test_legacy_release_digests_preserve_original_prompt_set():
     for template, schema in [('bounded-suggestion.v1', 'suggestion.v1'), ('intake-structuring.v1', 'intake-structure.v1')]:
         command = ReleaseCommand(provider_key='local', model_version='synthetic-v1', capability='generation',
                                  template_version=template, output_schema_version=schema)
-        legacy_instructions = {key: value for key, value in PURPOSE_INSTRUCTIONS.items() if key != 'session_planning'}
+        legacy_instructions = {key: PURPOSE_INSTRUCTIONS[key] for key in (
+            'intake_structuring', 'teaching_suggestion', 'document_draft', 'evidence_extraction')}
         old_algorithm = service.digest({'release': command.model_dump(), 'provider_digest': service.provider_digest(provider),
             'template': SYSTEM_PROMPT, 'purpose_instructions': legacy_instructions,
             'schema': release_schema(schema).model_json_schema()})
