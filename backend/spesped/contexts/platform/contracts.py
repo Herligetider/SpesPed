@@ -89,8 +89,8 @@ class GenerationRequest(StrictModel):
         elif any(source.kind == 'teaching_basis' for source in self.sources):
             raise ValueError('Teaching basis is restricted to session planning')
         if self.purpose == 'iep_drafting':
-            if len(self.sources) != 1 or self.sources[0].kind != 'plan_basis':
-                raise ValueError('IEP drafting requires exactly one plan basis')
+            if len(self.sources) != 1 or self.sources[0].kind != 'plan_basis' or self.sources[0].revision != 1:
+                raise ValueError('IEP drafting requires exactly one immutable plan basis at revision 1')
         elif any(source.kind == 'plan_basis' for source in self.sources):
             raise ValueError('Plan basis is restricted to IEP drafting')
         return self

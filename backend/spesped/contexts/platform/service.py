@@ -73,11 +73,23 @@ def _resolve(db, runtime, actor, school_id, learner_id, purpose, references):
     elif any(r.kind == 'teaching_basis' for r in references):
         raise access_denied()
     if purpose == 'iep_drafting':
-        if learner_id is None or len(references) != 1 or references[0].kind != 'plan_basis':
+        if learner_id is None or len(references) != 1 or references[0].kind != 'plan_basis' or references[0].revision != 1:
             raise access_denied()
     elif any(r.kind == 'plan_basis' for r in references):
         raise access_denied()
-    sources = runtime.source_resolver.resolve(db, actor, school_id, learner_id, purpose, references)
+    # Workers open fresh sessions. Nested plan/session lineage must validate
+    # against this trusted runtime, including during completion rechecks.
+    # Keep the binding local to resolution and restore any caller context.
+    missing = object()
+    previous = db.info.get('ai_gateway_runtime', missing)
+    db.info['ai_gateway_runtime'] = runtime
+    try:
+        sources = runtime.source_resolver.resolve(db, actor, school_id, learner_id, purpose, references)
+    finally:
+        if previous is missing:
+            db.info.pop('ai_gateway_runtime', None)
+        else:
+            db.info['ai_gateway_runtime'] = previous
     by_key = {s.reference.key: s for s in sources}
     if len(sources) != len(references) or len(by_key) != len(references) or set(by_key) != {r.key for r in references}:
         raise access_denied()

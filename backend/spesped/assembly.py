@@ -91,7 +91,7 @@ class EvidenceSourceResolver:
 
     def resolve(self, db, actor, school_id, learner_id, purpose, references):
         if purpose == "iep_drafting":
-            if learner_id is None or len(references) != 1 or references[0].kind != "plan_basis":
+            if learner_id is None or len(references) != 1 or references[0].kind != "plan_basis" or references[0].revision != 1:
                 raise access_denied()
             require_learner_access(db, actor, school_id, learner_id)
             from spesped.contexts.plans import service as plans

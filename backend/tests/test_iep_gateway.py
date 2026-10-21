@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from spesped.assembly import load_evaluation_suites
 from spesped.contexts.platform import service
-from spesped.contexts.platform.contracts import EvaluationCase, GenerationRequest, IEPDraftSuggestion, ReleaseCommand, ReviewCommand, SourceInput, SourceRef
+from spesped.contexts.platform.contracts import EvaluationCase, GatewayRuntime, GenerationRequest, IEPDraftSuggestion, ReleaseCommand, ReviewCommand, SourceInput, SourceRef
 from spesped.contexts.platform.models import ProcessingPolicy
 from spesped.contexts.platform.providers import ProviderFailure, validate_iep_draft
 from spesped.errors import DomainError
@@ -160,5 +160,27 @@ def test_operator_fixture_and_source_purpose_boundaries(tmp_path):
     assert source.reference.kind == 'plan_basis' and source.provenance == 'synthetic_fixture'
     valid = dict(learner_id=uuid4(), purpose='iep_drafting', policy_id=uuid4(), release_id=uuid4(), logical_request_key='iep', sources=[source.reference])
     assert GenerationRequest(**valid).purpose == 'iep_drafting'
-    for change in ({'learner_id': None}, {'sources': []}, {'sources': [source.reference, source.reference]}, {'sources': [SourceRef(source_id=uuid4(), revision=1)]}, {'purpose': 'document_draft'}, {'purpose': 'session_planning'}):
+    for change in ({'learner_id': None}, {'sources': []}, {'sources': [source.reference, source.reference]}, {'sources': [SourceRef(kind='plan_basis', source_id=uuid4(), revision=2)]}, {'sources': [SourceRef(source_id=uuid4(), revision=1)]}, {'purpose': 'document_draft'}, {'purpose': 'session_planning'}):
         with pytest.raises(ValidationError): GenerationRequest(**(valid | change))
+
+
+@pytest.mark.parametrize('existing', ['missing', None, 'outer-context'])
+@pytest.mark.parametrize('fail', [False, True])
+def test_source_resolution_binds_current_runtime_and_restores_caller_context(existing, fail):
+    school, learner = str(uuid4()), str(uuid4())
+    reference = SourceRef(kind='plan_basis', source_id=uuid4(), revision=1)
+    db = SimpleNamespace(info={} if existing == 'missing' else {'ai_gateway_runtime': existing})
+    before = db.info.copy()
+    class Resolver:
+        def resolve(self, session, actor, school_id, learner_id, purpose, references):
+            assert session.info['ai_gateway_runtime'] is configured
+            if fail:
+                raise DomainError('synthetic_source_unavailable', 'Synthetic failure', 409)
+            return [SourceInput(reference, school, learner, 'iep_drafting', '{}')]
+    configured = GatewayRuntime(environment='test', source_resolver=Resolver())
+    if fail:
+        with pytest.raises(DomainError):
+            service._resolve(db, configured, None, school, learner, 'iep_drafting', [reference])
+    else:
+        assert service._resolve(db, configured, None, school, learner, 'iep_drafting', [reference])[0].reference == reference
+    assert db.info == before
