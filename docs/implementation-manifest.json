@@ -405,6 +405,12 @@
           "type": "implementer_report",
           "revision": "22fe0b15c6edc36ec604048ac96019f74eb8b97e",
           "result": "Unicode file/revision headers and searchable authorized assignee choices: six SQLite/PostgreSQL transport and access tests passed. Independent backend review is underway; repaired UI has its own browser review."
+        },
+        {
+          "type": "independent_review",
+          "revision": "22fe0b15c6edc36ec604048ac96019f74eb8b97e",
+          "path": "docs/reviews/intake-transport-review.md",
+          "result": "Accepted Unicode transport and current authorized assignee boundary: 18 focused regressions and 10 independent adverse probes passed across SQLite and PostgreSQL. README-only corrections at 86c06f2 also checked. UI and full feature acceptance remain separate."
         }
       ],
       "findings": [
@@ -437,7 +443,7 @@
         "J05/teaching/downstream consumer integration and J07 UI.",
         "F05 owned follow-up for already shared derivative corrections remains required in disclosure/document consumer integration.",
         "Protected-case and dictated-audio consumers plus production model/hardware quality remain required under their owning jobs.",
-        "Independently review 22fe0b1 Unicode transport and authorized assignee contract, then verify with the repaired J07 UI."
+        "Verify the independently accepted Unicode upload and named-assignee boundary in the repaired J07 browser workflow."
       ]
     },
     {
