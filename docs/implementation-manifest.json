@@ -472,7 +472,8 @@
         "2e305db6db62b306ca13a1d1d1265f1b84204257",
         "54f40085911bb56f3fa2b3b38253db7e43d72c00",
         "c18a0e05c7dd3519df6365e7a0bab740841f351a",
-        "e614152784c6962bbcf7076ec875d2b53d8007fd"
+        "e614152784c6962bbcf7076ec875d2b53d8007fd",
+        "5c676a8951cc4aed5a268b300ed342e1154391bd"
       ],
       "evidence": [
         {
@@ -572,6 +573,11 @@
         {
           "type": "work_assignment",
           "result": "A separate native plan timestamp defect was reproduced while testing document choices: equivalent +02:00 and UTC timestamps produce different review outcomes after database round-trip. Two offset cases failed and two UTC controls passed across SQLite and PostgreSQL. Assigned /root/j05_offset_canonicalization (Sol high) to normalize new typed timestamp writes in the plans owner without changing the shared digest format or existing approved history. Owns plans/service.py, optional plans/schemas.py and a new focused test only; independent review required. Reproduction: var/j11-documents/repro-plan-offset-results.json."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "5c676a8951cc4aed5a268b300ed342e1154391bd",
+          "result": "Pinned two verified author files normalizing newly written typed plan/goal/contribution/allocation timestamps before digest calculation. Author reports 14 focused passes, 4 original reproduction passes and 111 nearby owner passes with 3 SQLite-only concurrency skips. No shared digest-format change, migration or silent rehash of existing corrupted records. Separate /root/review_plan_offset is testing the exact archive; acceptance pending."
         }
       ],
       "findings": [
@@ -1536,6 +1542,10 @@
           "revision": "b39ecb08e16209d7d99ebbb7747bac90a01750ac",
           "path": "docs/reviews/document-choices-review.md",
           "result": "Both document-choice findings closed. The independent reviewer verified all eight frozen file hashes and ran 52 cases, including the original adverse and cap probes, on SQLite and PostgreSQL. Four additional cases verified absent pupil participation and both repeated instants on the DST transition day, with filtering before caps and correct pagination. Bounded choice/recovery/inbox extension accepted; document UI and whole features remain separate."
+        },
+        {
+          "type": "work_assignment",
+          "result": "Assigned original backend owner a narrow metadata-only recovery read for source/model-unavailable documents. Current revision_view withholds content/snapshot and omits lineage; UI cannot safely infer exact generated-field coordinates. Contract must expose only current revision identity, safe section keys and generated field keys under current document-write scope, without withheld prose/excerpts. Native transaction preservation and current authority tests required on SQLite and PostgreSQL; separate independent review follows."
         }
       ],
       "findings": [
@@ -1988,10 +1998,11 @@
       ],
       "status": "implementing",
       "requiredEvidence": "Browser journeys, revisions and source review; public/Montessori fixtures",
-      "implementationAgent": "/root/j20_document_ui",
+      "implementationAgent": "/root/j20_document_recovery",
       "reviewAgent": "/root/review_document_ui",
       "commits": [
-        "d15671bf89ce4f2e5d88388da5df7f9d4636a300"
+        "d15671bf89ce4f2e5d88388da5df7f9d4636a300",
+        "d00c118665e6d9acaf1a94c2d173328b1bb3ca31"
       ],
       "evidence": [
         {
@@ -2007,6 +2018,16 @@
           "revision": "d15671bf89ce4f2e5d88388da5df7f9d4636a300",
           "path": "docs/reviews/document-ui-review.md",
           "result": "Six-file document UI candidate including root learner tab pinned. Fourauthor hashes verified; author10focusedtests+typecheck; reviewer14tests/typecheck/build pass but7 actionable findings reproduced or confirmed against native contracts. Root actual native PostgreSQL browser confirms blank auto-selected editor and422 nested request key. Original author repairing all7 findings. No browser/report workflow or whole-feature acceptance."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "d00c118665e6d9acaf1a94c2d173328b1bb3ca31",
+          "path": "docs/reviews/document-ui-review.md",
+          "result": "Changes still required. Exact archived candidate: 19 focused tests, typecheck/build and original regression probes pass. Native root browser confirms revision schema fixed and initial editor isolated, but a filled gap explanation is lost before save. Independent deferred-template probe confirms late inventory responses overwrite editor text/reason/gaps (R2/R5). Further probes confirm rebuild mode crosses document selection, empty-basis recovery is blocked and old typed references remain. Native HTTP probe confirms independent human rewrite must explicitly sever old generated-field bindings. R1/R3/R4/R6 original findings closed; R2/R5/R7 and new R8 remain open. No full workflow acceptance."
+        },
+        {
+          "type": "work_assignment",
+          "result": "Escalated complex recovery repairs from Luna to /root/j20_document_recovery (Sol high), per the model policy. Exclusive ownership transferred for the four document feature files; original author stopped. Requires safe editor lifetime, exact current source/typed-reference selection, honest gap-only drafts and explicit severance for independent human rewrites. Root retains browser integration; the same distinct reviewer will recheck."
         }
       ],
       "findings": [
@@ -2014,7 +2035,7 @@
           "id": "J20-DUI-R1",
           "priority": "P1",
           "description": "Manual revision missing required nested request_key",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R2",
@@ -2026,13 +2047,13 @@
           "id": "J20-DUI-R3",
           "priority": "P1",
           "description": "Denied refresh retains protected workspace/editor/proposal data",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R4",
           "priority": "P2",
           "description": "Period/context changes retain hidden old basis selections",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R5",
@@ -2044,12 +2065,18 @@
           "id": "J20-DUI-R6",
           "priority": "P2",
           "description": "Contribution responses and reloads not bound to selected document",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J20-DUI-R7",
           "priority": "P2",
           "description": "Changed source basis has no existing-document rebuild path",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R8",
+          "priority": "P1",
+          "description": "Rebuild mode persists across document selection and displays source-stale prose",
           "status": "repair_in_progress"
         }
       ]
@@ -3923,7 +3950,7 @@
     {
       "date": "2026-10-21",
       "classification": "progress",
-      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 is still running. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted.",
+      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 is still running. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted. The document UI recheck reopened editor/gap loss and identified unsafe rebuild state; implementation escalated to Sol with a separately assigned metadata recovery contract. Plan timestamp repair5c676a8 is pinned for independent review.",
       "verification": {
         "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
