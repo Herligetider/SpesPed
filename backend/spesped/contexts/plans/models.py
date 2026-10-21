@@ -49,6 +49,7 @@ class IndividualEducationPlan(Aggregate, SubjectRow, Base):
 
 class PlanRevision(Aggregate, SchoolRow, Base):
     __tablename__ = 'plans_revisions'
+    generation_lineage: Mapped[dict] = mapped_column(JSON,default=dict,server_default='{}')
     plan_id: Mapped[str] = mapped_column(String(36))
     revision: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(320))
@@ -73,6 +74,38 @@ class PlanRevision(Aggregate, SchoolRow, Base):
     activation_until: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     approval_binding: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     __table_args__ = (ForeignKeyConstraint(['school_id','plan_id'],['plans_individual_education_plans.school_id','plans_individual_education_plans.id']), UniqueConstraint('school_id','id'), UniqueConstraint('school_id','plan_id','revision'), CheckConstraint('effective_from < effective_until'), CheckConstraint("state IN ('draft','in_review','approved','active','historical')"), CheckConstraint("origin IN ('authored','imported')"))
+
+
+class PlanGenerationBasis(SchoolRow, Base):
+    __tablename__ = 'plans_generation_bases'
+    dependencies: Mapped[dict] = mapped_column(JSON)
+    dependency_digest: Mapped[str] = mapped_column(String(64))
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=new_id)
+    learner_id: Mapped[str] = mapped_column(String(36))
+    plan_id: Mapped[str] = mapped_column(String(36))
+    plan_revision_id: Mapped[str] = mapped_column(String(36))
+    content: Mapped[dict] = mapped_column(JSON)
+    digest: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(),default=utcnow)
+    __table_args__ = (UniqueConstraint('school_id','id'),ForeignKeyConstraint(['school_id','learner_id'],['identity_learners.school_id','identity_learners.id']),ForeignKeyConstraint(['school_id','plan_id'],['plans_individual_education_plans.school_id','plans_individual_education_plans.id']),ForeignKeyConstraint(['school_id','plan_revision_id'],['plans_revisions.school_id','plans_revisions.id']))
+
+
+class PlanProposalReview(SchoolRow, Base):
+    __tablename__ = 'plans_proposal_reviews'
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=new_id)
+    plan_id: Mapped[str] = mapped_column(String(36))
+    plan_revision_id: Mapped[str] = mapped_column(String(36))
+    basis_id: Mapped[str] = mapped_column(String(36))
+    job_id: Mapped[str] = mapped_column(String(36))
+    proposal_digest: Mapped[str] = mapped_column(String(64))
+    outcome: Mapped[str] = mapped_column(String(20))
+    selected_fields: Mapped[list] = mapped_column(JSON)
+    selected_goal_keys: Mapped[list] = mapped_column(JSON)
+    reviewer_id: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
+    reason: Mapped[str] = mapped_column(Text)
+    reviewed_at: Mapped[datetime] = mapped_column(UTCDateTime(),default=utcnow)
+    __table_args__ = (ForeignKeyConstraint(['school_id','plan_id'],['plans_individual_education_plans.school_id','plans_individual_education_plans.id']),ForeignKeyConstraint(['school_id','plan_revision_id'],['plans_revisions.school_id','plans_revisions.id']),ForeignKeyConstraint(['school_id','basis_id'],['plans_generation_bases.school_id','plans_generation_bases.id']),ForeignKeyConstraint(['school_id','job_id'],['platform_generation_jobs.school_id','platform_generation_jobs.id']),CheckConstraint("outcome IN ('applied','rejected','discarded')"),UniqueConstraint('school_id','job_id'))
 
 
 class LearningGoal(SchoolRow, Base):
@@ -201,7 +234,7 @@ def _immutable_record(mapper,connection,target):
 
 
 def _immutable_plan_content(mapper,connection,target):
-    fields=('plan_id','revision','title','rationale','organization','responsibility','evaluation_method','participation_record','decision_id','decision_revision_id','effective_from','effective_until','origin','sources','original_approval','created_by')
+    fields=('plan_id','revision','title','rationale','organization','responsibility','evaluation_method','participation_record','decision_id','decision_revision_id','effective_from','effective_until','origin','sources','original_approval','created_by','generation_lineage')
     if any(_inspect(target).attrs[name].history.has_changes() for name in fields):
         _immutable_record(mapper,connection,target)
 
@@ -212,7 +245,7 @@ def _immutable_profile_content(mapper,connection,target):
         _immutable_record(mapper,connection,target)
 
 
-for _record in (LearningGoal,GoalRevision,Adaptation,PlanContribution,ProvisionAllocation,PlanApproval,ProfileReview):
+for _record in (LearningGoal,GoalRevision,Adaptation,PlanContribution,ProvisionAllocation,PlanApproval,ProfileReview,PlanGenerationBasis,PlanProposalReview):
     _event.listen(_record,'before_update',_immutable_record)
 _event.listen(PlanRevision,'before_update',_immutable_plan_content)
 _event.listen(ProfileStatement,'before_update',_immutable_profile_content)

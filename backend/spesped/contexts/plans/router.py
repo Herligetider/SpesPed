@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from spesped.auth import Actor, get_actor
@@ -11,7 +11,12 @@ from . import service
 from .models import IndividualEducationPlan, PlanRevision, PlanImpact, GoalRevision, PlanApproval, ProfileStatement, ProfileReview
 from .schemas import ProfileInput,ProfileReviewInput,CreatePlan,RevisePlan,PlanLifecycle
 
-router=APIRouter(prefix='/api/v1/schools/{school_id}',tags=['learning profiles and plans'])
+def bind_runtime(request:Request,db:Session=Depends(get_db)):
+    try:db.info['plans_runtime']=gateway_runtime(request)
+    except DomainError:db.info['plans_runtime']=None
+
+
+router=APIRouter(prefix='/api/v1/schools/{school_id}',tags=['learning profiles and plans'],dependencies=[Depends(bind_runtime)])
 
 
 def plan_view(db,actor,row,revision=None):
@@ -19,6 +24,8 @@ def plan_view(db,actor,row,revision=None):
     revision=revision or service.current_revision(db,row)
     value={'id':row.id,'learner_id':row.learner_id,'kind':row.kind,'version':row.version,'state':row.state,'current_revision':row.current_revision,'active_revision_id':row.active_revision_id,'revision_state':revision.state,'content_digest':revision.content_digest,'approved_by':revision.approved_by,'approved_at':revision.approved_at,'activated_at':revision.activated_at,'activation_until':revision.activation_until}
     status=source_status(db,actor,row.school_id,row.learner_id,service.projection_bindings(db,actor,row,revision))
+    from .generation import lineage_status
+    if lineage_status(db,actor,row,revision) != 'current': status='review_required'
     issues=[]
     try: service.validate_plan_basis(db,actor,row,revision,historical=revision.state == 'historical')
     except DomainError as exc:
@@ -144,3 +151,49 @@ def statement_history(school_id:UUID,learner_id:UUID,statement_id:UUID,offset:in
     record_audit(db,actor,str(school_id),'profile.history_read','profile_statement',row.id);commit(db)
     items=[service.profile_review_projection(db,actor,str(school_id),str(learner_id),row,service.content_row(r,('id','outcome','reason','reviewer_id','reviewed_at')),('reason',)) for r in reviews[offset:offset+limit]]
     return {'items':items,'total':len(reviews)}
+
+
+from . import generation
+from .schemas import GenerationBasisInput,PlanSuggestionRequest,PlanSuggestionReview
+from spesped.contexts.platform.router import runtime as gateway_runtime,job_view
+
+
+def generation_runtime(request:Request,db:Session=Depends(get_db)):
+    configured=gateway_runtime(request)
+    db.info['plans_runtime']=configured
+    return configured
+
+
+@router.post('/education-plans/{plan_id}/generation-bases',status_code=201)
+def generation_basis(school_id:UUID,plan_id:UUID,command:GenerationBasisInput,runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    basis=mutate(db,lambda:generation.create_basis(db,actor,str(school_id),str(plan_id),command))
+    return generation.basis_view(db,actor,str(school_id),basis.id)
+
+
+@router.get('/plan-generation-bases/{basis_id}')
+def read_generation_basis(school_id:UUID,basis_id:UUID,runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    value=generation.basis_view(db,actor,str(school_id),str(basis_id))
+    record_audit(db,actor,str(school_id),'plan.generation_basis_read','plan_generation_basis',str(basis_id));commit(db);return value
+
+
+@router.post('/education-plans/{plan_id}/suggestions',status_code=201)
+def suggest_plan(school_id:UUID,plan_id:UUID,command:PlanSuggestionRequest,runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    return job_view(generation.request_suggestion(db,actor,str(school_id),str(plan_id),command,runtime))
+
+
+@router.get('/education-plans/{plan_id}/suggestions/{job_id}')
+def plan_suggestion(school_id:UUID,plan_id:UUID,job_id:UUID,basis_id:UUID,runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    value=generation.diff(db,actor,str(school_id),str(plan_id),str(basis_id),str(job_id),runtime)
+    record_audit(db,actor,str(school_id),'plan.suggestion_read','education_plan',str(plan_id));commit(db);return value
+
+
+@router.post('/education-plans/{plan_id}/suggestion-reviews')
+def review_plan_suggestion(school_id:UUID,plan_id:UUID,command:PlanSuggestionReview,runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    row=mutate(db,lambda:generation.review(db,actor,str(school_id),str(plan_id),command,runtime))
+    return plan_view(db,actor,row)
+
+
+@router.get('/education-plans/{plan_id}/suggestion-reviews')
+def plan_suggestion_reviews(school_id:UUID,plan_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    value=generation.review_history(db,actor,str(school_id),str(plan_id),offset,limit)
+    record_audit(db,actor,str(school_id),'plan.suggestion_reviews_read','education_plan',str(plan_id));commit(db);return value

@@ -139,6 +139,7 @@ REVISION_FIELDS = ('id','plan_id','revision','title','rationale','organization',
 
 def snapshot(db, revision):
     value = content_row(revision, REVISION_FIELDS)
+    if revision.generation_lineage: value['generation_lineage']=revision.generation_lineage
     value['goals'] = [content_row(g, GOAL_FIELDS) for g in children(db, GoalRevision, revision)]
     value['adaptations'] = [content_row(a, ('id','goal_id','measure','arena','responsibility','evaluation_method')) for a in children(db,Adaptation,revision)]
     value['contributions'] = [content_row(c, ('id','goal_id','participant','role','content','disagreement','response','occurred_at','source')) for c in children(db,PlanContribution,revision)]
@@ -154,6 +155,8 @@ def all_bindings(db, revision):
 
 
 def validate_plan_basis(db, actor, row, revision, *, bounds=True, historical=False):
+    from .generation import validate_lineage
+    validate_lineage(db,actor,row,revision)
     sources(db, actor, row.school_id, row.learner_id, projection_bindings(db,actor,row,revision))
     allocations = children(db, ProvisionAllocation, revision)
     if row.kind == 'ordinary_teaching':
@@ -185,7 +188,7 @@ def validate_plan_basis(db, actor, row, revision, *, bounds=True, historical=Fal
         raise conflict('The stored content no longer matches its review digest.')
 
 
-def save_plan(db, actor, school_id, learner_id, command, plan_id=None):
+def save_plan(db, actor, school_id, learner_id, command, plan_id=None, *, generation_lineage=None):
     check_access(db, actor, school_id, learner_id, 'plans.write')
     # Serialize independent creations/revisions for this pupil, including activation.
     db.scalar(select(Learner).where(Learner.school_id == school_id,Learner.id == learner_id).with_for_update())
@@ -196,14 +199,30 @@ def save_plan(db, actor, school_id, learner_id, command, plan_id=None):
         row = plan(db,actor,school_id,plan_id,'plans.write',lock=True)
         if row.learner_id != learner_id: raise access_denied()
         expected(row,command)
+        previous=current_revision(db,row)
+        lineage=dict(previous.generation_lineage or {})
+        for path in getattr(command,'sever_generation_fields',[]):
+            if path not in lineage: raise DomainError('generation_field_unknown','Select an existing generated field to replace independently.',422)
+            parts=path.split('.')
+            if len(parts) == 1:
+                replaced=hasattr(command,path) and getattr(command,path) != getattr(previous,path)
+            elif len(parts) == 3 and parts[0] == 'goals':
+                old=next((g for g in children(db,GoalRevision,previous) if g.goal_id == parts[1]),None)
+                new=next((g for g in command.goals if str(g.goal_id) == parts[1]),None)
+                replaced=old is not None and (new is None or getattr(new,parts[2]) != getattr(old,parts[2]))
+            else:replaced=False
+            if not replaced:raise DomainError('independent_replacement_required','Independently replace or remove each selected field; unchanged generated text retains its provenance.',422)
+            lineage.pop(path)
         row.current_revision += 1; touch(row)
     else:
+        lineage={}
         row = IndividualEducationPlan(school_id=school_id,learner_id=learner_id,kind=command.kind,state='draft')
         db.add(row); db.flush()
+    if generation_lineage: lineage.update(generation_lineage)
     binding_values = sources(db,actor,school_id,learner_id,command.sources)
     if command.original_approval: source_binding(db,actor,school_id,learner_id,command.original_approval.source)
-    values = command.model_dump(exclude={'request_key','expected_version','kind','sources','original_approval','goals','adaptations','contributions','allocations','decision_id','decision_revision_id'})
-    revision = PlanRevision(school_id=school_id,plan_id=row.id,revision=row.current_revision,**values,decision_id=str(command.decision_id) if command.decision_id else None,decision_revision_id=str(command.decision_revision_id) if command.decision_revision_id else None,sources=binding_values,original_approval=command.original_approval.model_dump(mode='json') if command.original_approval else None,created_by=actor.user_id,content_digest='pending',state='draft')
+    values = command.model_dump(exclude={'request_key','expected_version','kind','sources','original_approval','goals','adaptations','contributions','allocations','decision_id','decision_revision_id','sever_generation_fields'})
+    revision = PlanRevision(school_id=school_id,plan_id=row.id,revision=row.current_revision,**values,generation_lineage=lineage,decision_id=str(command.decision_id) if command.decision_id else None,decision_revision_id=str(command.decision_revision_id) if command.decision_revision_id else None,sources=binding_values,original_approval=command.original_approval.model_dump(mode='json') if command.original_approval else None,created_by=actor.user_id,content_digest='pending',state='draft')
     db.add(revision); db.flush()
     goal_ids=set()
     for value in command.goals:
@@ -244,7 +263,7 @@ def save_plan(db, actor, school_id, learner_id, command, plan_id=None):
     revision.content_digest=canonical_content_digest(snapshot(db,revision))
     validate_plan_basis(db,actor,row,revision,bounds=False)
     depend(db,actor,school_id,learner_id,all_bindings(db,revision),'education_plan',row.id,row.current_revision)
-    event(db,actor,row,'plan.revision_created',revision_id=revision.id)
+    event(db,actor,row,'plan.revision_created',revision_id=revision.id,independent_replacements=getattr(command,'sever_generation_fields',[]))
     remember(db,actor,school_id,operation,command,digest,row.id,PlanCommand)
     return row
 
@@ -371,3 +390,9 @@ def projection_bindings(db,actor,row,revision):
         allocations=children(db,ProvisionAllocation,revision)
         bindings.extend(entitlements.decision_bindings(db,actor,row.school_id,row.learner_id,revision.decision_id,revision.decision_revision_id,[a.provision_id for a in allocations]))
     return bindings
+
+
+# Public owning-context source port used by application assembly.
+def resolve_generation_source(db,actor,school_id,learner_id,purpose,reference):
+    from .generation import resolve_generation_source as resolve
+    return resolve(db,actor,school_id,learner_id,purpose,reference)

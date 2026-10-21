@@ -110,10 +110,58 @@ class CreatePlan(PlanContent, Retry):
     kind: Literal['individual_education','ordinary_teaching']
 
 
-class RevisePlan(PlanContent, Expected): pass
+class RevisePlan(PlanContent, Expected):
+    # An edit remains derived until the human explicitly replaces these paths.
+    sever_generation_fields: list[str] = Field(default_factory=list,max_length=2000)
 
 
 class PlanLifecycle(Expected):
     revision_id: UUID
     content_digest: str = Field(pattern='^[a-f0-9]{64}$')
     reason: str = Field(min_length=1, max_length=2000)
+
+
+class GenerationBasisInput(Expected):
+    plan_revision_id: UUID
+    assessment_ids: list[UUID] = Field(min_length=1, max_length=20)
+    profile_statement_ids: list[UUID] = Field(default_factory=list, max_length=100)
+
+    @model_validator(mode='after')
+    def unique_basis(self):
+        for values in (self.assessment_ids,self.profile_statement_ids):
+            if len(values) != len(set(values)): raise ValueError('Select each basis record once')
+        return self
+
+
+class PlanSuggestionRequest(Command):
+    request_key: str = Field(min_length=1,max_length=120,pattern=r'^[A-Za-z0-9_.:-]+$')
+    basis_id: UUID
+    policy_id: UUID
+    release_id: UUID
+
+
+class NewGoalSelection(Period):
+    parent_goal_id: UUID | None = None
+    proposal_key: str = Field(min_length=1,max_length=80)
+    curriculum_reference: str = Field(min_length=1,max_length=320)
+
+
+class PlanSuggestionReview(Expected):
+    job_id: UUID
+    basis_id: UUID
+    plan_revision_id: UUID
+    proposal_digest: str = Field(pattern=r'^[a-f0-9]{64}$')
+    outcome: Literal['applied','rejected','discarded']
+    selected_fields: list[Literal['title','rationale','organization','responsibility','evaluation_method']] = Field(default_factory=list,max_length=5)
+    selected_goal_keys: list[str] = Field(default_factory=list,max_length=20)
+    new_goals: list[NewGoalSelection] = Field(default_factory=list,max_length=20)
+    reason: str = Field(min_length=1,max_length=2000)
+
+    @model_validator(mode='after')
+    def selection(self):
+        if len(self.selected_fields) != len(set(self.selected_fields)) or len(self.selected_goal_keys) != len(set(self.selected_goal_keys)):
+            raise ValueError('Select each proposal once')
+        if self.outcome == 'applied' and not (self.selected_fields or self.selected_goal_keys): raise ValueError('Select fields or goals explicitly')
+        if self.outcome != 'applied' and (self.selected_fields or self.selected_goal_keys or self.new_goals): raise ValueError('Rejected/discarded proposals cannot apply text')
+        if len({g.proposal_key for g in self.new_goals}) != len(self.new_goals): raise ValueError('Duplicate new goal selection')
+        return self
