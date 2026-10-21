@@ -99,3 +99,62 @@ One initial browser launch preceded fixture readiness and was rerun after `ids.j
 The planning module's separate review already withholds acceptance for J07-PL-R1 (P2, repeated-hour/microsecond editing) and J07-PL-R2 (P1, recalled current-plan prose in history after partial refresh failure). Those are independent baseline findings, not duplicate teaching findings or repairs covered here. The integrated root UI cannot be accepted while either module's blocking findings remain unresolved.
 
 Passing checks do not establish whole-feature completion. Durable model-job listing/resume, full Nynorsk, timed practitioner/assistant usability, the production qualification adapter, and assessed provision-comparison UI remain required work. Legal sources were not re-researched. No production files were edited, and the reviewer did not commit, push or spawn agents.
+
+## Independent repair recheck — `280bdcc43a04d3a65ffe88f9f2c60eea97016bd6`
+
+Rechecked on 2026-10-21 by the same independent reviewer. The original review above is preserved. This recheck covers the 12 repair files only; it excludes the concurrently developed proposal-recovery UI and other later changes.
+
+**Verdict: R1, R2 and R4 are verified fixed at this pin. R3 remains partially fixed, with two independently reproduced P2 gaps below. Overall teaching acceptance remains withheld.**
+
+### Verified repairs
+
+- **J07-TE-R1:** Assignment access revisions now invalidate dependent message/actual-input reads together. Fresh current-access validation gates retained views, and a redacted brief gates message text, review reasons and historical review reasons. In real Chromium, the original post-recall question receives 409 and no cached guidance or reconciliation prose remains visible. A separate assistant context received an intentionally failed current-assignment GET while two pre-recall child responses were held. All retained views were hidden during that failed validation. After actual model release revocation, retry returned a redacted assignment; releasing the held old message/input responses still exposed no recalled guidance or review text. Independently recorded actual activity remained visible under its own access rules. This verifies the original finding and the partial-refresh/late-response branch.
+- **J07-TE-R2:** Real prose-only corrections preserve both an original null session/assignment pair and an original exact session/assignment pair while a different session is selected. The probe also confirms that `.000123` occurrence precision and revision history are retained.
+- **J07-TE-R4:** The actual `App` displays `LocalValidationError` instructions for the nonexistent Oslo time without sending a basis command. The exact-pin app tests also pass the unassessed-ITO corrective-message case and the unexpected-error case, which keeps an arbitrary diagnostic private behind the generic fallback. Code inspection confirms the typed exception is the only new ordinary-error disclosure branch.
+- **J07-TE-R3, original simple case:** Local session, observation and delivery drafts now survive ordinary internal tab round trips when their saved backing records remain unchanged. This does not cover the two remaining cases below.
+
+### J07-TE-R3 — P2 remains: concurrent refresh still destroys the local session draft
+
+Repair locations: `web/src/features/teaching/TeachingWorkspace.tsx:555–560`, `:593–595`, `:647–648`.
+
+Returning to sessions correctly fetches the current record, but a newer saved revision immediately replaces `retainedCurrent` and changes the `CurrentSession` key. React therefore destroys the local draft rather than showing it alongside the competing revision for an explicit decision.
+
+Independent real-browser reproduction:
+
+1. Open a manual session and type `INDEPENDENT PRESERVED SESSION DRAFT` into preparation.
+2. Move to another teaching tab.
+3. Save a real parallel revision through the authenticated API with preparation `INDEPENDENT CONCURRENT SAVED PREPARATION`.
+4. Return to sessions. The automatic refresh displays revision 2 and the editor contains the concurrent text; the user's unsaved preparation is gone without warning or an explicit comparison/rebase decision.
+
+Evidence: `var/review-j07-teaching-repair/independent-evidence.json` (`R3_concurrent_refresh_destroys_draft`), `independent-recheck.mjs`, `draft-freshness.png`.
+
+Required behavior: separate current server projection from the scoped local edit buffer. A fresh competing revision should invalidate approval/write assumptions and offer a deliberate comparison/rebase; it must not silently replace the local buffer. Recalled source/model prose must continue to remain hidden while resolving this state.
+
+### J07-TE-R3 — P2 remains: preserved basis drafts do not refresh reusable observations
+
+Repair locations: `web/src/features/teaching/TeachingWorkspace.tsx:622`; `web/src/features/teaching/CreateSession.tsx:123–130`.
+
+The new-session form now stays mounted while hidden, but receives no active-tab signal and its observation-choice read depends only on client/school/learner. Returning to the tab refreshes the session list/current session, not the basis choices.
+
+Independent real-browser reproduction:
+
+1. Open “Planlegg ny økt”, enter a planned time and arena, choose an active goal, and open reusable observations.
+2. Move to Observasjoner and save `INDEPENDENT NEW NOTE WHILE BASIS OPEN` through the UI.
+3. Return to sessions. The arena and goal draft survive, but the new confirmed observation is absent from the selectable basis choices. An authoritative observation-list GET confirms it exists. There is no successful-read refresh control in that choice section; closing/reopening the new-session form loses its draft.
+
+Evidence: the same independent script/JSON records `R3_choices_not_refreshed` with `newObservationExists: true` and `visibleChoiceCount: 0`.
+
+Required behavior: refresh current reusable choices when a retained basis form is reactivated, without dropping typed values or exact selections. Revalidate selected IDs against those fresh choices before use. Check the equivalent retained source/profile and staff choices where applicable.
+
+### Recheck method, results and cleanup
+
+Created a fresh archive at `var/review-j07-teaching-repair/pin` and independently built its full application. Python used absolute archived `backend` and `backend/tests` imports; `import-origins.txt` confirms the archived application. Real FastAPI served only the archived production bundle on the reviewer listener. Actual PostgreSQL used a new synthetic schema, `j05_626a7a6efb2f439eba26b7a7c5a664c2`, separate from the first review and author fixtures. All 12 repair files were subsequently checked byte-for-byte against the exact commit (`exact-files.log`).
+
+- Archived `npm test -- --reporter=verbose`: **77 passed**, six files, 3.29 s (`web-tests.log`).
+- Archived `npm run build`: TypeScript and production build passed, 53 modules (`build.log`).
+- `node var/review-j07-teaching-repair/normal-replay.mjs`: replay of the author normal scenario against the independently frozen full app completed all 11 workflow steps, including actual local model execution, human approvals, assistant input/reconciliation, group counting, next-basis reuse and narrow viewport (`normal-replay.log`, `evidence.json`).
+- `node var/review-j07-teaching-repair/independent-recheck.mjs`: independently authored original-finding and combined adverse probes completed; verified repairs and both remaining R3 violations are recorded in `independent-evidence.json`. Exit 0 means evidence collection completed, not overall acceptance.
+
+The initial scaffolding-copy command referenced the author's old browser filename; the reviewer corrected it to `normal.mjs` before running the browser. No application change was made. All test/browser processes were awaited. The reviewer listener was stopped, only its recorded temporary schema was removed after signal termination, and a namespace check verified cleanup (`cleanup.log`). Probes, logs and screenshots remain for the next recheck.
+
+The reviewer appended only this report and wrote ignored review artifacts. No production edits, commits, pushes or subagents. Prior planning-review findings and all previously listed whole-feature limitations remain outside this bounded repair acceptance.

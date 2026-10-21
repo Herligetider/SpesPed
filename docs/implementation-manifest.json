@@ -883,6 +883,12 @@
           "type": "repair_candidate",
           "revision": "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
           "result": "Teaching R1–R4 repair pinned separately from pending recovery UI. Authorisolated77webtests/build passed; actualApp+frozenbackendc18 Chromium/PostgreSQL11normaland6adversechecks passed. Includes immediate read-dependency invalidation,allassignmentprosegating,originalobservationlinks,visiteddraftpreservationwithfreshreactivatedchoices,andtypedlocalvalidation. Originalindependentreviewer /root/review_composition assignedexactrecheck; allfourfindingsremainopen untilverified."
+        },
+        {
+          "type": "independent_review",
+          "revision": "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
+          "path": "docs/reviews/J07-teaching-review.md",
+          "result": "R1, R2 and R4 independently verified fixed. Frozen 77 web tests, production build, normal 11-step Chromium/PostgreSQL workflow and independent adverse probes completed. R3 remains P2: concurrent revision refresh loses local preparation and retained basis lacks refreshed observation choices. Original author assigned bounded R3 repair; teaching acceptance remains withheld."
         }
       ],
       "findings": [
@@ -968,32 +974,32 @@
           "id": "J07-TE-R1",
           "priority": "P1",
           "description": "Assistant assignment conflict refresh hides a recalled brief but retains cached guidance and reconciliation prose.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-TE-R2",
           "priority": "P2",
           "description": "Correcting an originally unlinked observation while a session is selected silently links it to that session revision.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-TE-R3",
           "priority": "P2",
-          "description": "Switching internal teaching tabs unmounts the editor and discards an unsaved session draft.",
+          "description": "Ordinary tab changes preserve drafts, but a concurrent saved session revision silently replaces unsaved preparation on tab return; a retained basis draft does not refresh newly confirmed observation choices.",
           "status": "open"
         },
         {
           "id": "J07-TE-R4",
           "priority": "P2",
           "description": "Root App formatting discards corrective messages from locally validated teaching dates and ITO input, leaving only a generic failure.",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Close and independently recheck J07-TE-R1/R2/R3/R4, finish teaching/App integration acceptance, and implement durable pending-generation retrieval/resume UI plus remaining complete-workflow gaps."
+        "Close and independently recheck J07-TE-R3 concurrent-refresh draft preservation and fresh basis observation choices; finish teaching/App integration acceptance and durable generation recovery UI, plus remaining complete-workflow gaps."
       ]
     },
     {
@@ -1164,7 +1170,8 @@
       "implementationAgent": "/root/j09_curriculum",
       "reviewAgent": "/root/review_j09",
       "commits": [
-        "d065091e8915594a3177876193f675c18ca0aa23"
+        "d065091e8915594a3177876193f675c18ca0aa23",
+        "c5bf1ecd51deb98f843196bd62922ca68aaa73a4"
       ],
       "evidence": [
         {
@@ -1181,6 +1188,12 @@
           "revision": "d065091e8915594a3177876193f675c18ca0aa23",
           "path": "docs/reviews/J09-review.md",
           "result": "Changes required: J09-R1 contradictory active theme/pupil/goal decisions and J09-R2 stale actual support unmarked in resource experience projection. Baseline35passed1intentionalSQLite-onlyconcurrency skip; independent12dualDBprobes passedincludingdefectreproductions. Originalauthorassignedboundedrepairs. Fullconsumer/UIintegrationsremainrequired."
+        },
+        {
+          "type": "independent_review",
+          "revision": "c5bf1ecd51deb98f843196bd62922ca68aaa73a4",
+          "path": "docs/reviews/J09-review.md",
+          "result": "Bounded BC06 backend and actual-application composition accepted: R1/R2 independently verified fixed. Frozen suite 46 passed, 2 intentional SQLite-only concurrency skips; both PostgreSQL races ran. Independent dual-database recheck 12 passed, including three-choice immutable correction/replay and current actor-aware historic experience/redaction. Static migration alignment, roundtrip and retained-data refusal passed. Full consumer, reservation and UI integrations remain outstanding; no complete feature promoted."
         }
       ],
       "findings": [
@@ -1188,17 +1201,16 @@
           "id": "J09-R1",
           "priority": "P2",
           "description": "Changing an exact theme/pupil/goal decision appends contradictory active bindings without a correction or supersession workflow.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J09-R2",
           "priority": "P2",
           "description": "Resource experience listing does not mark supporting actual participation stale after a correction to absence/zero minutes.",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
-        "Independently review and repair the pinned backend and actualApp composition.",
         "Implement a real BC07 future-session dependency index and validate/apply keep/change decisions without changing recorded actuals.",
         "Bind exact class plans, curriculum schemes and resource selections into plan/teaching bases and AI execution with current source/license rechecks.",
         "Subscribe source corrections/recalls to the exact-source impact hook and consume owned impact-decision events.",

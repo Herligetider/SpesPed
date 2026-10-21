@@ -69,3 +69,38 @@ These disclosed boundaries remain required work; they are not accepted as comple
 - Practitioner/admin authority controls and J20 browser journeys for source/original comparison, period/reference review, explicit goal/resource selection, changes and human publication.
 
 The reviewed commit therefore does not establish completion of all 40 features, full F09/F10 workspace/recovery behavior, production readiness or current legal approval. The September legal registry was not re-researched during this software review. Independent recheck of the two findings is required before accepting this bounded job.
+
+## Independent R1/R2 repair recheck — 21 October 2026
+
+**Rechecked commit:** `c5bf1ecd51deb98f843196bd62922ca68aaa73a4`.
+
+**Updated verdict: verified for the assigned J09 BC06 backend and actual-application composition scope. J09-R1 and J09-R2 are fixed; no additional reproducible finding remained in this bounded recheck.** The original review and reproduction evidence remain above. The explicit BC07 dependency/decision application, BC05/BC07 selection/AI, source-event subscription, J15 reservation and J20/UI integration boundaries remain outstanding. This acceptance does not declare complete F09/F10 delivery, all 40 features complete, production readiness or legal approval.
+
+Recheck used a new frozen archive at `var/review-j09/recheck-c5bf1ec` and absolute backend/test import paths, with byte-for-byte verification against the exact commit in `var/review-j09/recheck-pin.log`. The BC06 repair consists of the seven files named in the author's handoff: models, schemas, service, router, the pre-acceptance static migration, curriculum fixtures and curriculum tests. Other changes present in the committed repository are not accepted by this review. No production files were changed by the reviewer.
+
+### Finding dispositions
+
+- **J09-R1 fixed** (`service.py:302–342`, correction endpoint at `router.py:294`, model/migration active-choice index): duplicate fresh creation returns 409. The explicit correction command requires the exact expected version, checks current learner/source/goal/theme access, preserves coordinates and authored history, supersedes the previous choice and creates a successor with actor, reason and lineage. Both database schemas enforce one active choice per exact binding through a partial unique index. The executed PostgreSQL competing-correction test produced one winner and one version conflict, exactly two authored rows and one active choice. Direct duplicate database insertion was rejected, distinct goal links remained possible, and an unassigned manager received 403 before stale-version information. Independently reproduced the original scenario with fixed expectations and extended it through `adapt → not_relevant → participate`: current context returned only `participate`, history retained all three rows and the original adaptation, stale corrections returned 409, and replaying either the original creation or the first correction exposed its now-superseded logical record instead of stale active success.
+- **J09-R2 fixed** (`service.py:513–545`, list projection at `router.py:218`, current reprojection on idempotent replay at `service.py:62–65`): creation, listing and replay use the actor-aware experience projection. A corrected actual retains its exact historical reference and recorded account with `actual_status=historical`, `state=review_required` and explicit review/source markers. It is not silently rebound to a replacement actual. Lost resource/original permission or stale originals redact experience prose; loss of current learner access denies retrieval. Executed tests cover actual correction, strongly retained cached actual/permission objects, native original replacement, resource withdrawal and idempotent replay after permission loss. The independent original absence-correction scenario now returned the required historical/review state on both databases, including replay. A second authorized actor could initially read shared history, then lost the experience prose after their own original-source grant was revoked, and received 403 after their pupil assignment was revoked. An independently added pending-actual edit returned `dependency_pending` while leaving the dirty ORM value untouched. The stored experience text and exact historic attribution remained retained.
+
+### Commands and results
+
+Set the assigned isolated synthetic PostgreSQL URL in `SPESPED_TEST_POSTGRES_URL` and use these absolute imports:
+
+```sh
+# Working directory: /Users/lauritz/Programming/SpesPed/var/review-j09/recheck-c5bf1ec
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j09/recheck-c5bf1ec/backend:/Users/lauritz/Programming/SpesPed/var/review-j09/recheck-c5bf1ec/backend/tests \
+  /Users/lauritz/Programming/SpesPed/backend/.venv/bin/python -m pytest \
+  backend/tests/test_curriculum.py backend/tests/test_curriculum_composition.py -q
+
+# Working directory: /Users/lauritz/Programming/SpesPed
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j09/recheck-c5bf1ec/backend:/Users/lauritz/Programming/SpesPed/var/review-j09/recheck-c5bf1ec/backend/tests \
+  backend/.venv/bin/python -m pytest var/review-j09/test_recheck_j09.py -q -s
+```
+
+- Frozen repaired implementation/composition suite: **46 passed, 2 skipped**, 64.00 seconds. Both skips are explicitly PostgreSQL-only concurrency tests' SQLite instances. Both PostgreSQL races ran.
+- Independently authored recheck probes: **12 passed**, 17.21 seconds. All six scenarios ran on SQLite and PostgreSQL; the original defect probes now assert corrected behavior. Four earlier adverse checks also remain green: original-authority revocation on replay/cross-school denial, source-recall variant traversal with caller rollback/deduplication, retained-license narrowing/loss of old sharing, and inconsistent inventory availability rejection.
+- The changed static migration's model/metadata alignment, empty downgrade/upgrade roundtrip, retained-data downgrade refusal and preservation of retained rows passed on both databases. The partial active-choice uniqueness constraint was verified against the actual migrated schemas.
+- Final logs and evidence: `var/review-j09/recheck-baseline.log`, `var/review-j09/recheck-independent.log`, `var/review-j09/recheck-pin.log`, and `var/review-j09/test_recheck_j09.py`.
+- The same two nonfatal warnings remain: Starlette/httpx TestClient deprecation and Pydantic's `copy` field-name shadowing.
+- All reviewer-owned execution sessions completed. Synthetic fixture teardown ran for the unique PostgreSQL schemas; no global cleanup or demo database access occurred. No commits, pushes, subagents or external messages were used.
