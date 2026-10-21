@@ -324,11 +324,17 @@ def test_transaction_audit_outbox_failure_rolls_back_business_and_receipt(env,mo
 def test_no_rule_adapter_is_unavailable_and_readonly_rule_context_contract(env):
     case,h,_=setup(env,'physical');c,_,ids,_,_,app=env;p=base(ids)+'/cases/'+case['id']
     assert c.get(p).json()['rule_context']['state']=='unavailable'
-    app.state.safeguarding_rule_context=lambda db,actor,school,learner,cid:ReviewedRuleContext(str(uuid4()),2,('synthetic-obligation',),('Document actual facts',),('Reviewed notification requirement, not performed',))
-    result=c.get(p).json();assert result['rule_context']['state']=='reviewed'
+    app.state.safeguarding_rule_context=lambda db,actor,school,learner,cid:ReviewedRuleContext(state='review_required',obligations=({
+        'id':str(uuid4()),'version':1,'state':'unresolved','applicability':'unresolved','source':None,
+        'review_required':True,'required_action':None,'required_document_types':(),
+        'unresolved_inputs':('reviewed_school_profile',),'deadline_kind':'unresolved',
+        'recorded_deadline_date':None,'recorded_deadline_at':None,
+    },))
+    result=c.get(p).json();assert result['rule_context']['state']=='review_required'
     assert result['actual_contacts']==[]
     app.state.safeguarding_rule_context=lambda *args:{'approved':True}
-    assert c.get(p).status_code==503
+    response=c.get(p)
+    assert response.status_code==200 and response.json()['rule_context']['state']=='unavailable'
 
 
 def test_concurrent_duplicate_create_and_cas_mutation(env):

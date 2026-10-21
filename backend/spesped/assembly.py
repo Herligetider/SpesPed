@@ -1,5 +1,5 @@
 """Explicit context adapters; no user-selected endpoints or source provenance flags."""
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
 import json
 from pathlib import Path
@@ -243,7 +243,8 @@ def load_evaluation_suites(path):
 def governance_evidence_validator(db, actor, school_id, learner_id, case_id, reference_id):
     from spesped.contexts.governance.ports import ValidatedEvidenceReference
     if case_id is not None:
-        raise DomainError("case_evidence_unavailable", "Protected case evidence requires its owning context.", 503)
+        from spesped.contexts.safeguarding.service import validate_evidence_reference
+        return validate_evidence_reference(db, actor, school_id, learner_id, case_id, reference_id)
     if learner_id is None:
         raise access_denied()
     item = evidence.evidence(db, actor, school_id, reference_id)
@@ -252,6 +253,13 @@ def governance_evidence_validator(db, actor, school_id, learner_id, case_id, ref
     ref = SourceRef(source_id=reference_id, revision=item.current_revision)
     source = EvidenceSourceResolver().resolve(db, actor, school_id, learner_id, "document_draft", [ref])[0]
     return ValidatedEvidenceReference(reference_id, school_id, learner_id, None, item.current_revision, content_digest(source.content))
+
+
+def safeguarding_rule_context(db, actor, school_id, learner_id, case_id):
+    from spesped.contexts.governance.projections import case_requirements
+    from spesped.contexts.safeguarding.ports import ReviewedRuleContext
+    projection = case_requirements(db, actor, school_id, learner_id, case_id)
+    return ReviewedRuleContext.model_validate(asdict(projection))
 
 
 def configure_contexts(app, settings):
@@ -286,3 +294,8 @@ def configure_contexts(app, settings):
             raise ValueError("AI provider does not match the configured processing boundary") from None
     app.state.ai_gateway = runtime
     app.state.governance_evidence_validator = governance_evidence_validator
+    from spesped.contexts.safeguarding.service import resolve_case_learner
+    from spesped.contexts.plans.service import validate_goal_reference
+    app.state.governance_case_scope_resolver = resolve_case_learner
+    app.state.safeguarding_rule_context = safeguarding_rule_context
+    app.state.evidence_goal_validator = validate_goal_reference

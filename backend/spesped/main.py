@@ -10,6 +10,9 @@ from spesped.contexts.identity.router import router as identity_router
 from spesped.contexts.evidence.router import router as evidence_router
 from spesped.contexts.platform.router import router as platform_router
 from spesped.contexts.governance.router import router as governance_router
+from spesped.contexts.entitlements.router import router as entitlements_router
+from spesped.contexts.plans.router import router as plans_router
+from spesped.contexts.safeguarding.router import router as safeguarding_router
 from spesped.assembly import configure_contexts
 
 
@@ -53,6 +56,9 @@ def create_app(settings: Settings | None = None, session_factory=None) -> FastAP
     app.include_router(evidence_router)
     app.include_router(platform_router)
     app.include_router(governance_router)
+    app.include_router(entitlements_router)
+    app.include_router(plans_router)
+    app.include_router(safeguarding_router)
     return app
 
 

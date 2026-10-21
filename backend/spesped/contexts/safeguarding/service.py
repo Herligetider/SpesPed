@@ -156,14 +156,19 @@ def detail(db,actor,school_id,case_id,export=False):
 
 def rule_context(db,actor,case):
     resolver=db.info.get('safeguarding_rule_context')
+    unavailable=ReviewedRuleContext(state='unavailable').model_dump(mode='json')
     if resolver is None:
-        return {'state':'unavailable','reason':'No reviewed school rule adapter is configured. Use established manual contact procedures; no duty or notification is marked fulfilled.'}
-    context=resolver(db,actor,case.school_id,case.learner_id,case.id)
-    if not isinstance(context,ReviewedRuleContext) or not context.profile_id or context.profile_revision<1:
-        raise DomainError('rule_context_unavailable','The reviewed rule context could not be validated.',503)
-    return {'state':'reviewed','profile_id':context.profile_id,'profile_revision':context.profile_revision,
-        'obligation_ids':list(context.obligation_ids),'documentation_requirements':list(context.documentation_requirements),
-        'notification_requirements':list(context.notification_requirements)}
+        return unavailable
+    from pydantic import ValidationError
+    try:
+        context=resolver(db,actor,case.school_id,case.learner_id,case.id)
+        if not isinstance(context,ReviewedRuleContext):
+            return unavailable
+        return ReviewedRuleContext.model_validate(context.model_dump()).model_dump(mode='json')
+    except (DomainError,ValidationError):
+        # Case access has already succeeded. Optional governance authority or
+        # configuration must not block this dossier or imply a fulfilled duty.
+        return unavailable
 
 
 def list_cases(db,actor,school_id,offset=0,limit=50,learner_id=None,kind=None):

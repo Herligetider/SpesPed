@@ -110,7 +110,14 @@ remain separate jobs.
 
 ## Evidence, AI and governance configuration
 
-The assembled application registers identity, evidence, AI and governance routes.
+The assembled application registers identity, evidence, AI, governance, support
+entitlements, education plans and protected safeguarding routes. Evidence goal
+bindings resolve through plans; governance case references and evidence resolve
+through the protected case's current authorized snapshot. The protected workspace
+keeps recorded rule obligations and their source states separate from actual
+contacts/actions. Missing optional rule context remains visibly unavailable and
+does not block otherwise authorized case work. This composition still requires
+independent integration review and the remaining user interfaces.
 `b1_integrate_contexts` joins their separate migrations into one head. Apply all
 migrations before starting the application. Context review results and remaining
 findings are tracked in `docs/reviews/`; registration does not establish complete

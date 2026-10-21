@@ -27,7 +27,7 @@ def integrated(env, wire_server, tmp_path):
     client, factory, app, ids = env
     cfg = Config(str(Path(__file__).resolve().parents[1] / 'alembic.ini'))
     cfg.attributes['database_url'] = factory.kw['bind'].url.render_as_string(hide_password=False)
-    command.upgrade(cfg, 'j04_manual_recovery')
+    command.upgrade(cfg, 'b4_integrate_comparison_basis')
     suite = tmp_path / 'synthetic-suite.json'
     suite.write_text(json.dumps({'version': 1, 'suites': {'integration-v1': [{
         'name': 'synthetic-norwegian-observation', 'purpose': 'teaching_suggestion',
@@ -97,8 +97,9 @@ def test_confirmed_excerpt_to_reviewed_generation_and_correction(integrated):
         old = governance_evidence_validator(db, Actor(ids['reviewer']), ids['school'], ids['a'], None, item['id'])
         with pytest.raises(DomainError):
             governance_evidence_validator(db, Actor(ids['reviewer']), ids['school'], ids['b'], None, item['id'])
-        with pytest.raises(DomainError, match='Protected case'):
+        with pytest.raises(DomainError) as invalid_case:
             governance_evidence_validator(db, Actor(ids['reviewer']), ids['school'], ids['a'], str(uuid4()), item['id'])
+        assert invalid_case.value.status_code == 403
     post(client, base(ids) + f'/evidence/{item["id"]}/corrections', {
         **attribution(ids), 'expected_version': item['version'], 'content': 'Synthetic pupil needed reading support.',
         'reason': 'Correcting a synthetic observation.',

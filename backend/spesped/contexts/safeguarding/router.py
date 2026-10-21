@@ -11,6 +11,7 @@ router=APIRouter(prefix='/api/v1/schools/{school_id}/safeguarding',tags=['safegu
 
 def safeguarding_db(request:Request,db:Session=Depends(get_db)):
     db.info['safeguarding_rule_context']=getattr(request.app.state,'safeguarding_rule_context',None)
+    db.info['governance_case_scope_resolver']=getattr(request.app.state,'governance_case_scope_resolver',None)
     return db
 
 

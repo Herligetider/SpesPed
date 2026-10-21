@@ -150,9 +150,17 @@ rules; the port never classifies a generic action as a notification. Multiple
 source profiles remain distinct. Empty/inaccessible sets are unavailable, and
 legal completeness is always unassessed. Reading creates or fulfills no task.
 The bounded read port was independently accepted at `30c656f`; see
-[the review](reviews/protected-rule-projection-review.md). Protected-workspace
-composition remains required; it is not yet registered as the safeguarding
-rule-context adapter.
+[the review](reviews/protected-rule-projection-review.md). The application now
+registers a candidate safeguarding adapter that preserves each recorded
+obligation's source, applicability, deadline and review state. Its strict context
+type rejects contradictory review/actionability claims. Missing or denied optional
+governance context yields an unavailable projection after the owning case's access
+check, so otherwise authorized case detail and manual urgent work remain usable.
+This never grants case access or marks a duty fulfilled. Plans/entitlements and
+safeguarding routes, the evidence-to-goal validator, the protected case resolver
+and exact current snapshot validator are also registered by application assembly.
+This composition awaits its independent integration review; UI and reviewed
+school configuration remain required.
 
 Foundation public Python contracts:
 
