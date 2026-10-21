@@ -120,15 +120,37 @@ def require_learner_access(db: Session, actor: Actor, school_id: str, learner_id
 
 
 def require_delegation(db, actor, school_id, action, valid_from, valid_until, learner_id=None, case_id=None):
-    """Managing assignments is separate from permission to delegate their content.
+    """Delegate only within the actor's effective membership and authority.
 
-    A school-wide bootstrap delegation is explicit. Other managers can only
-    delegate authority they already hold in the exact scope and effective period.
+    Explicit delegation may cover a school, pupil or case, including the first
+    case grant. This is a delegation-only rule: require_authority still demands
+    an exact case grant before reading or acting on protected case content.
     """
-    try:
-        grant = require_authority(db, actor, school_id, "authority.delegate", learner_id, case_id)
-    except DomainError:
-        grant = require_authority(db, actor, school_id, action, learner_id, case_id)
-    if valid_from < grant.valid_from or (grant.valid_until is not None and (valid_until is None or valid_until > grant.valid_until)):
+    membership = require_school_access(db, actor, school_id)
+    if not period_contains(membership, valid_from, valid_until):
+        raise access_denied()
+    today = school_today(db.get(School, school_id))
+    query = select(AuthorityGrant).where(
+        AuthorityGrant.school_id == school_id,
+        AuthorityGrant.user_id == actor.user_id,
+        AuthorityGrant.action == "authority.delegate",
+        *active_at(AuthorityGrant, today),
+        or_(AuthorityGrant.learner_id.is_(None), AuthorityGrant.learner_id == learner_id) if learner_id else AuthorityGrant.learner_id.is_(None),
+        or_(AuthorityGrant.case_id.is_(None), AuthorityGrant.case_id == case_id) if case_id else AuthorityGrant.case_id.is_(None),
+    )
+    for grant in db.scalars(query):
+        if period_contains(grant, valid_from, valid_until):
+            return grant
+    # Managers without delegation permission may only delegate an exact content
+    # authority they currently hold; a case grant never becomes school-wide.
+    grant = require_authority(db, actor, school_id, action, learner_id, case_id)
+    if not period_contains(grant, valid_from, valid_until):
         raise access_denied()
     return grant
+
+
+def period_contains(record, valid_from, valid_until):
+    return valid_from >= record.valid_from and (
+        record.valid_until is None or
+        (valid_until is not None and valid_until <= record.valid_until)
+    )

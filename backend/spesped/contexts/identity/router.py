@@ -5,10 +5,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as postgres_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from spesped.audit import record_audit
-from spesped.auth import Actor, active_at, csrf_token, get_actor, hash_token, password_hasher, require_authority, require_delegation, require_learner_access, require_origin, require_school_access, school_today, verify_password
+from spesped.auth import Actor, active_at, csrf_token, get_actor, hash_token, password_hasher, period_contains, require_authority, require_delegation, require_learner_access, require_origin, require_school_access, school_today, verify_password
 from spesped.db import get_db, utcnow
 from spesped.errors import DomainError, access_denied
 from .models import AuthorityGrant, Enrollment, GuardianRelationship, IdentityEvent, Learner, LoginSession, LoginThrottle, School, SchoolMembership, StaffAssignment, UserAccount
@@ -33,6 +35,20 @@ def me_view(db, actor, request, raw):
     return {"user": {"id": user.id, "email": user.email, "display_name": user.display_name}, "csrf_token": csrf_token(raw, request.app.state.settings.secret_key), "schools": school_views(db, actor)}
 
 
+def claim_login_throttle(db, key, now):
+    """Create the first key atomically, then serialize account checks on its row.
+
+    PostgreSQL's conflicting upsert waits for the current owner before the row
+    lock is acquired. SQLite serializes the corresponding writer transaction.
+    No expensive password check occurs before this durable key is claimed.
+    """
+    insert = postgres_insert if db.get_bind().dialect.name == "postgresql" else sqlite_insert
+    db.execute(insert(LoginThrottle).values(
+        key=key, failures=0, window_started_at=now, blocked_until=None,
+    ).on_conflict_do_nothing(index_elements=[LoginThrottle.key]))
+    return db.scalar(select(LoginThrottle).where(LoginThrottle.key == key).with_for_update())
+
+
 @router.post("/auth/login")
 def login(data: Login, request: Request, response: Response, db: Session = Depends(get_db)):
     require_origin(request)
@@ -40,15 +56,13 @@ def login(data: Login, request: Request, response: Response, db: Session = Depen
     email = data.email.strip().lower()
     now = utcnow()
     throttle_key = hashlib.sha256(email.encode()).hexdigest()
-    throttle = db.scalar(select(LoginThrottle).where(LoginThrottle.key == throttle_key).with_for_update())
-    if throttle and throttle.blocked_until and throttle.blocked_until > now:
+    throttle = claim_login_throttle(db, throttle_key, now)
+    now = utcnow()  # Lock contention must not extend an expired block by using an old clock.
+    if throttle.blocked_until and throttle.blocked_until > now:
         raise DomainError("login_throttled", "Please wait before trying to sign in again.", 429)
     user = db.scalar(select(UserAccount).where(UserAccount.email == email))
     valid = verify_password(data.password, user.password_hash if user else None)
     if not valid or not user or user.state != "active":
-        if throttle is None:
-            throttle = LoginThrottle(key=throttle_key, failures=0, window_started_at=now)
-            db.add(throttle)
         if now - throttle.window_started_at > timedelta(minutes=settings.login_lock_minutes):
             throttle.failures = 0
             throttle.window_started_at = now
@@ -57,8 +71,7 @@ def login(data: Login, request: Request, response: Response, db: Session = Depen
             throttle.blocked_until = now + timedelta(minutes=settings.login_lock_minutes)
         db.commit()
         raise DomainError("invalid_credentials", "The email or password is incorrect.", 401)
-    if throttle:
-        db.delete(throttle)
+    db.delete(throttle)
     if password_hasher.check_needs_rehash(user.password_hash):
         user.password_hash = password_hasher.hash(data.password)
     # Re-authentication rotates and invalidates the current browser session.
@@ -263,15 +276,40 @@ def add_guardian(school_id: UUID, data: GuardianInput, actor: Actor = Depends(ge
 MANAGED = {"memberships": (SchoolMembership, "membership.manage"), "assignments": (StaffAssignment, "assignment.manage"), "authorities": (AuthorityGrant, "authority.manage"), "guardians": (GuardianRelationship, "guardian.manage")}
 
 
+def managed_query(db, actor, school_id, model, authority):
+    """Filter records by current management scope before lookup/count/pagination."""
+    require_school_access(db, actor, school_id)
+    query = select(model).where(model.school_id == school_id)
+    try:
+        require_authority(db, actor, school_id, authority)
+        return query
+    except DomainError:
+        # Membership and authority administration deliberately require school-wide
+        # powers. Assignment and guardian management support individual pupils.
+        if model not in {StaffAssignment, GuardianRelationship}:
+            raise access_denied()
+    today = school_today(db.get(School, school_id))
+    learner_ids = select(AuthorityGrant.learner_id).where(
+        AuthorityGrant.school_id == school_id,
+        AuthorityGrant.user_id == actor.user_id,
+        AuthorityGrant.action == authority,
+        AuthorityGrant.learner_id.is_not(None),
+        AuthorityGrant.case_id.is_(None),
+        *active_at(AuthorityGrant, today),
+    )
+    if db.scalar(learner_ids.limit(1)) is None:
+        raise access_denied()
+    return query.where(model.learner_id.in_(learner_ids))
+
+
 @router.get("/schools/{school_id}/access/{record_kind}")
 def list_access(school_id: UUID, record_kind: str, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
     sid = str(school_id)
     if record_kind not in MANAGED:
         raise access_denied()
     model, authority = MANAGED[record_kind]
-    require_authority(db, actor, sid, authority)
+    query = managed_query(db, actor, sid, model, authority)
     from sqlalchemy import func
-    query = select(model).where(model.school_id == sid)
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     rows = db.scalars(query.order_by(model.id).offset(offset).limit(limit)).all()
     return {"items": [dated_view(row) for row in rows], "total": total}
@@ -283,14 +321,15 @@ def change_access(school_id: UUID, record_kind: str, record_id: UUID, data: Date
     if record_kind not in MANAGED:
         raise access_denied()
     model, authority = MANAGED[record_kind]
-    # Check authority before lookup to avoid existence disclosure.
-    require_authority(db, actor, sid, authority)
-    row = db.scalar(select(model).where(model.id == str(record_id), model.school_id == sid))
+    # The access-filtered lookup gives identical denials for hidden/missing rows.
+    row = db.scalar(managed_query(db, actor, sid, model, authority).where(model.id == str(record_id)))
     if row is None:
         raise access_denied()
+    require_authority(db, actor, sid, authority, learner_id=row.learner_id if model in {StaffAssignment, GuardianRelationship} else None)
     if row.version != data.expected_version:
         raise DomainError("version_conflict", "This record changed. Reload and try again.", 409)
-    if data.state == "active":
+    expands_access = data.state == "active" and (row.state != "active" or not period_contains(row, data.valid_from, data.valid_until))
+    if expands_access:
         if isinstance(row, StaffAssignment):
             for action in row.actions:
                 require_delegation(db, actor, sid, action, data.valid_from, data.valid_until, row.learner_id)

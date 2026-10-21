@@ -45,6 +45,9 @@ path `/api`. Production requires Secure cookies, PostgreSQL, an explicit strong
 secret and explicit HTTPS origins. Terminate TLS at the private reverse proxy.
 No caller-supplied identity or role headers are accepted. Passwords use Argon2id.
 Invalid credentials have a common response and durable bounded retry throttling.
+The throttle key is atomically inserted before password checking; PostgreSQL
+row locks serialize concurrent checks for the same account, including its first
+attempt, so parallel failures cannot lose counts.
 
 School dates are inclusive in that school's IANA timezone. Session timestamps
 are UTC instants. Membership alone allows school entry. A current assignment
@@ -66,9 +69,16 @@ Additional identity commands are:
 - `PATCH .../access/{kind}/{id}`: `expected_version`, `state` (`active`/`revoked`), dates.
 
 Each management command needs explicit `membership.manage`, `assignment.manage`,
-`authority.manage` or `guardian.manage`. Creating or reactivating assignments or
-authorities additionally requires explicit `authority.delegate` or the actor's
-own exact authority, covering the target scope and requested validity period.
+`authority.manage` or `guardian.manage`. Assignment and guardian management can
+be scoped to one pupil; lists, counts and updates enforce that same scope. A
+manager can revoke or shorten an existing grant without retaining its content
+permission. Creating, reactivating or extending assignments or authorities
+additionally requires explicit `authority.delegate` or the actor's own exact
+authority, covering the target scope and requested validity period. Both the
+actor's current membership and authority must cover the whole requested period.
+Explicit delegation can issue the first grant for a case; that delegation alone
+never permits reading its content. Ordinary case authorization still requires
+an exact case match; downstream case modules must validate case ownership.
 Thus technical management permission cannot grant itself pupil rights. To change
 actions or relationships, revoke the old record and create a new dated record.
 Accounts are provisioned through local commands at this stage; account lifecycle,
@@ -90,7 +100,9 @@ SPESPED_TEST_POSTGRES_URL='postgresql+psycopg://USER:PASSWORD@HOST/TEST_DATABASE
 
 PostgreSQL tests create/drop uniquely named schemas. They apply the versioned
 migration, exercise real HTTP sessions, scope, delegation, expiry, conflicts,
-transaction rollback and persistence. Without that environment variable,
+transaction rollback and persistence. Regression cases also cover initial
+case delegation, pupil-scoped revocation/list filtering, delegation membership
+expiry and simultaneous first-login failures against real PostgreSQL. Without that environment variable,
 PostgreSQL cases are explicitly skipped. This subset does not complete F01,
 F02, F27 or F34; production operations, restoration, encryption/key management,
 full school administration and downstream case/record/disclosure workflows

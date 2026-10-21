@@ -342,3 +342,159 @@ def test_cookie_production_attributes(env):
         response = secure.post("/api/v1/auth/login", json={"email": "teacher@example.invalid", "password": PASSWORD}, headers={"Origin": ORIGIN})
         cookie = response.headers["set-cookie"].lower()
         assert "httponly" in cookie and "secure" in cookie and "samesite=lax" in cookie and "path=/api" in cookie
+
+
+def test_explicit_delegation_bootstraps_case_grants_without_case_read_access(env):
+    client, factory, settings, ids = env
+    headers = login(client, "leader")
+    base = f'/api/v1/schools/{ids["school"]}'
+    case_id, other_case = str(uuid4()), str(uuid4())
+    grant = {"user_id": ids["teacher"], "action": "case.read", "learner_id": ids["learner"], "case_id": case_id, "valid_from": date.today().isoformat()}
+    response = client.post(base + "/authorities", json=grant, headers=headers)
+    assert response.status_code == 201, response.text
+    with factory() as db:
+        # School-wide delegation enables issuance, never implicit content access.
+        with pytest.raises(DomainError):
+            require_authority(db, Actor(ids["leader"]), ids["school"], "case.read", ids["learner"], case_id)
+        assert require_authority(db, Actor(ids["teacher"]), ids["school"], "case.read", ids["learner"], case_id)
+        for learner_id, requested_case in ((ids["learner"], other_case), (ids["hidden"], case_id), (ids["learner"], None)):
+            with pytest.raises(DomainError):
+                require_authority(db, Actor(ids["teacher"]), ids["school"], "case.read", learner_id, requested_case)
+    # A case-specific delegate can issue the initial content grant for that case
+    # but cannot turn it into another case or a school-wide delegation.
+    scoped = client.post(base + "/authorities", json={**grant, "user_id": ids["tech"], "action": "authority.delegate"}, headers=headers)
+    assert scoped.status_code == 201
+    tech_headers = login(client, "tech")
+    assert client.post(base + "/authorities", json={**grant, "action": "case.update"}, headers=tech_headers).status_code == 201
+    assert client.post(base + "/authorities", json={**grant, "case_id": other_case}, headers=tech_headers).status_code == 403
+    assert client.post(base + "/authorities", json={**grant, "case_id": None}, headers=tech_headers).status_code == 403
+    with factory() as db:
+        with pytest.raises(DomainError):
+            require_authority(db, Actor(ids["tech"]), ids["school"], "case.read", ids["learner"], case_id)
+
+
+@pytest.mark.parametrize("record_kind,authority", [("assignments", "assignment.manage"), ("guardians", "guardian.manage")])
+def test_scoped_manager_lists_shortens_and_revokes_only_own_pupil_scope(env, record_kind, authority):
+    client, factory, settings, ids = env
+    today = date.today()
+    with factory.begin() as db:
+        db.add_all([
+            AuthorityGrant(school_id=ids["school"], user_id=ids["teacher"], action=authority, learner_id=ids["learner"], valid_from=today, granted_by=ids["leader"]),
+            AuthorityGrant(school_id=ids["school"], user_id=ids["teacher"], action="learner.read", learner_id=ids["learner"], valid_from=today, granted_by=ids["leader"]),
+        ])
+    base = f'/api/v1/schools/{ids["school"]}'
+    headers = login(client, "teacher")
+    if record_kind == "assignments":
+        values = {"user_id": ids["tech"], "actions": ["learner.read"], "purpose": "synthetic"}
+    else:
+        values = {"guardian_user_id": ids["guardian"], "relationship": "parent", "source_reference": "synthetic-source", "parental_responsibility": True, "information_rights": "confirmed"}
+    values.update({"learner_id": ids["learner"], "valid_from": today.isoformat()})
+    created = client.post(base + f"/{record_kind}", json=values, headers=headers)
+    assert created.status_code == 201, created.text
+    own_id = created.json()["id"]
+    leader_headers = login(client, "leader")
+    hidden = client.post(base + f"/{record_kind}", json={**values, "learner_id": ids["hidden"]}, headers=leader_headers)
+    assert hidden.status_code == 201
+    hidden_id = hidden.json()["id"]
+    teacher_headers = login(client, "teacher")
+    managed_path = base + f"/access/{record_kind}"
+    listing = client.get(managed_path).json()
+    assert listing["total"] >= 1 and all(item["learner_id"] == ids["learner"] for item in listing["items"])
+    assert hidden_id not in {item["id"] for item in listing["items"]}
+    page = client.get(managed_path + "?limit=1&offset=0").json()
+    assert page["total"] == listing["total"] and len(page["items"]) == 1
+    # Removing the manager's content authority cannot prevent reducing access.
+    with factory.begin() as db:
+        content = db.scalar(select(AuthorityGrant).where(AuthorityGrant.user_id == ids["teacher"], AuthorityGrant.action == "learner.read"))
+        content.state = "revoked"
+    change = {"expected_version": 1, "state": "active", "valid_from": today.isoformat(), "valid_until": today.isoformat()}
+    shortened = client.patch(managed_path + f"/{own_id}", json=change, headers=teacher_headers)
+    assert shortened.status_code == 200 and shortened.json()["version"] == 2
+    hidden_denial = client.patch(managed_path + f"/{hidden_id}", json=change, headers=teacher_headers)
+    missing_denial = client.patch(managed_path + f"/{uuid4()}", json=change, headers=teacher_headers)
+    assert hidden_denial.status_code == missing_denial.status_code == 403
+    assert hidden_denial.json() == missing_denial.json()
+    assert client.patch(managed_path + f"/{own_id}", json=change, headers=teacher_headers).status_code == 409
+    revoked = client.patch(managed_path + f"/{own_id}", json={**change, "expected_version": 2, "state": "revoked"}, headers=teacher_headers)
+    assert revoked.status_code == 200 and revoked.json()["state"] == "revoked"
+    if record_kind == "assignments":
+        # Reopening this assignment would increase access and still requires
+        # content/delegation authority, which was revoked above.
+        assert client.patch(managed_path + f"/{own_id}", json={**change, "expected_version": 3}, headers=teacher_headers).status_code == 403
+    with factory() as db:
+        model = StaffAssignment if record_kind == "assignments" else GuardianRelationship
+        assert db.get(model, hidden_id).version == 1 and db.get(model, hidden_id).state == "active"
+
+
+@pytest.mark.parametrize("bound", ["membership", "content", "delegation"])
+def test_delegation_uses_intersection_of_membership_and_authority_periods(env, bound):
+    client, factory, settings, ids = env
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+    with factory.begin() as db:
+        membership = db.scalar(select(SchoolMembership).where(SchoolMembership.user_id == ids["tech"]))
+        membership.valid_until = today if bound == "membership" else tomorrow
+        db.add(AuthorityGrant(school_id=ids["school"], user_id=ids["tech"], action="authority.delegate" if bound == "delegation" else "learner.read", learner_id=ids["hidden"], valid_from=today, valid_until=today if bound != "membership" else None, granted_by=ids["leader"]))
+    headers = login(client, "tech")
+    base = f'/api/v1/schools/{ids["school"]}'
+    values = {"user_id": ids["teacher"], "action": "learner.read", "learner_id": ids["hidden"], "valid_from": tomorrow.isoformat(), "valid_until": None}
+    assert client.post(base + "/authorities", json=values, headers=headers).status_code == 403
+    assert client.post(base + "/authorities", json={**values, "valid_from": today.isoformat(), "valid_until": tomorrow.isoformat()}, headers=headers).status_code == 403
+    # Both lower and upper bounds apply, and an inclusive matching end is valid.
+    assert client.post(base + "/authorities", json={**values, "valid_from": (today - timedelta(days=1)).isoformat(), "valid_until": today.isoformat()}, headers=headers).status_code == 403
+    allowed = client.post(base + "/authorities", json={**values, "valid_from": today.isoformat(), "valid_until": today.isoformat()}, headers=headers)
+    assert allowed.status_code == 201, allowed.text
+    assignment = {"user_id": ids["teacher"], "learner_id": ids["hidden"], "actions": ["learner.read"], "purpose": "synthetic", "valid_from": tomorrow.isoformat()}
+    assert client.post(base + "/assignments", json=assignment, headers=headers).status_code == 403
+
+
+def test_concurrent_first_postgres_login_failures_are_claimed_before_password_checks(env, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier, Lock
+    from sqlalchemy import event
+    import hashlib
+    import spesped.contexts.identity.router as router_module
+    from spesped.contexts.identity.models import LoginThrottle
+
+    client, factory, settings, ids = env
+    engine = factory.kw["bind"]
+    if engine.dialect.name != "postgresql":
+        pytest.skip("Row-lock concurrency is verified on PostgreSQL")
+    attempts = 6
+    barrier = Barrier(attempts)
+    lock = Lock()
+    verified = 0
+    real_verify = router_module.verify_password
+
+    def before_insert(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith("INSERT INTO identity_login_throttles"):
+            barrier.wait(timeout=15)
+
+    def counted_verify(password, encoded):
+        nonlocal verified
+        with lock:
+            verified += 1
+        return real_verify(password, encoded)
+
+    event.listen(engine, "before_cursor_execute", before_insert)
+    monkeypatch.setattr(router_module, "verify_password", counted_verify)
+    app = create_app(settings.model_copy(update={"login_attempt_limit": 3}), factory)
+
+    def attempt(_):
+        with TestClient(app, raise_server_exceptions=False) as separate:
+            return separate.post("/api/v1/auth/login", json={"email": "teacher@example.invalid", "password": "synthetic-wrong-password"}, headers={"Origin": ORIGIN}).status_code
+
+    try:
+        with ThreadPoolExecutor(max_workers=attempts) as executor:
+            statuses = list(executor.map(attempt, range(attempts)))
+    finally:
+        event.remove(engine, "before_cursor_execute", before_insert)
+    assert sorted(statuses) == [401, 401, 401, 429, 429, 429]
+    assert verified == 3
+    with factory() as db:
+        row = db.get(LoginThrottle, hashlib.sha256(b"teacher@example.invalid").hexdigest())
+        assert row.failures == 3 and row.blocked_until > utcnow()
+    with TestClient(app) as separate:
+        followup = separate.post("/api/v1/auth/login", json={"email": "teacher@example.invalid", "password": PASSWORD}, headers={"Origin": ORIGIN})
+        assert followup.status_code == 429
+    assert verified == 3
