@@ -51,12 +51,19 @@ Use opaque UUIDs for identifiers. Every tenant-owned table carries `school_id`;
 references are checked in the same school and meaningful learner/case scope.
 Store UTC-aware instants and a school's IANA timezone. Store occurrence and entry
 times separately. SummaryPeriod accepts inclusive local dates and resolves to a
-half-open interval using local midnight, including daylight-saving transitions.
+half-open interval using each date's first real instant. A skipped midnight moves
+to the transition instant; a repeated midnight uses its earlier occurrence. A
+range containing no real instants is rejected. Recurrences skip wholly nonexistent
+dates, while explicit occurrence/entry instants still reject nonexistent wall times.
 
 `EffectivePeriod`, `SourceReference`, `EvidenceAttribution`, `DurationMinutes`,
 `EntitlementQuantity`, `AssessmentScore`, `ApprovalBinding`, `RecipientScope`,
 `DraftRecurrence` and `ApplicabilityResult` are explicit validated types. The
-domain model defines their meanings. Do not coerce a missing amount into zero,
+domain model defines their meanings. `EntitlementQuantity` requires an exact
+`DecisionProvisionReference(scope, decision_id, decision_revision, provision_id)`;
+addition checks that identity as well as period, category, clause and counting basis.
+A textual clause label does not identify a decision or an individual entitlement.
+Do not coerce a missing amount into zero,
 an unknown right into permission, or a missing observation into a progress finding.
 
 An aggregate has `id`, `school_id`, `version`, creation/update instants and explicit
@@ -69,6 +76,16 @@ Transactions persist state, necessary audit metadata and outbox events together.
 Audit records store actor/action/target/time/outcome, not duplicated pupil prose.
 Jobs reauthorize current access at execution, and enforce unique logical request
 keys. An uncertain external outcome is reconciled before any new send attempt.
+
+One-off email drafting uses `ManualDraftRequest(scope, period, requested_at,
+logical_request_key)` and needs no schedule or activation. Retry the same logical
+command with the same key; use a fresh key for a deliberately new request. Its
+`request_digest` detects conflicting reuse of a key with a changed period. The
+application must include additional semantic command fields (purpose, topic selection,
+language and recipient scope where relevant) in its durable request fingerprint.
+Schedule-bound `DraftRequest` instead deduplicates schedule/revision/subject/period.
+Neither request type authorizes sending. Durable uniqueness, current authorization
+and duplicate-payload conflict handling belong to the application service.
 
 ## Authentication and access contract
 

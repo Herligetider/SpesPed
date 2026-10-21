@@ -82,13 +82,14 @@
         "F40"
       ],
       "dependsOn": [],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Boundary and adverse domain examples, especially DST, revision and unsupported evidence",
       "implementationAgent": "/root/j02_domain_core",
       "reviewAgent": "/root/review_j02",
       "commits": [
         "bd207c8c3422a0bf56c742953444ca96a1c5be21",
-        "35c613a765f6dfe43e839b3876278068535cf31f"
+        "35c613a765f6dfe43e839b3876278068535cf31f",
+        "65eae8b6f0748a0839592620be38a41fa490bb77"
       ],
       "evidence": [
         {
@@ -102,6 +103,11 @@
           "path": "docs/reviews/J02-review.md",
           "result": "25 required tests and 6 additional checks passed; three actionable findings require repair",
           "revision": "35c613a765f6dfe43e839b3876278068535cf31f"
+        },
+        {
+          "type": "test_run",
+          "result": "32 domain tests passed after all three repairs; independent recheck pending",
+          "revision": "65eae8b6f0748a0839592620be38a41fa490bb77"
         }
       ],
       "findings": [
@@ -131,12 +137,14 @@
         "F31"
       ],
       "dependsOn": [],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Production build, typed client, keyboard flow, real API integration after J01",
       "implementationAgent": "/root/j03_web_shell",
       "reviewAgent": "/root/review_j03",
       "commits": [
-        "7f3d652a20af3465f65fd57cf86c96dd317582d1"
+        "7f3d652a20af3465f65fd57cf86c96dd317582d1",
+        "afa7247",
+        "9ac02a2"
       ],
       "evidence": [
         {
@@ -155,6 +163,11 @@
           "path": "docs/reviews/J03-review.md",
           "result": "Seven actionable findings; live API/browser gate open",
           "revision": "7f3d652a20af3465f65fd57cf86c96dd317582d1"
+        },
+        {
+          "type": "test_run",
+          "result": "15 web tests and typecheck passed; seven repairs and explicit loopback proxy pending independent recheck and live browser gate",
+          "revision": "9ac02a2"
         }
       ],
       "findings": [
