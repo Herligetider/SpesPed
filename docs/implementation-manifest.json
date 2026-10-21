@@ -459,7 +459,7 @@
         "J02",
         "J04"
       ],
-      "status": "awaiting_review",
+      "status": "changes_requested",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
@@ -518,6 +518,12 @@
           "type": "implementer_report",
           "revision": "2ccc30e499d87efba020068528c70f7e5a382a9a",
           "result": "Generated IEP consumer candidate: 32 SQLite/PostgreSQL tests passed, including active-plan regeneration and imported-origin preservation; earlier broader plans/teaching run 143 passed with five expected SQLite skips. Populated migration roundtrip preserves legacy checks and digests. Independent review assigned."
+        },
+        {
+          "type": "independent_review",
+          "revision": "2ccc30e499d87efba020068528c70f7e5a382a9a",
+          "path": "docs/reviews/J05-generation-review.md",
+          "result": "32 author tests and nine independent checks passed with one expected SQLite skip. Two P2 metadata contract defects reproduced on SQLite/PostgreSQL: outer goal predicate implicitly flushes pending state; new generation helper returns current for a pending source-link revocation. Original author repairing. No additional source/case/replay/selection finding."
         }
       ],
       "findings": [
@@ -538,6 +544,18 @@
           "priority": "P2",
           "description": "Opposing plan revision/lifecycle locks deadlock with undefined retry response",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J05-GEN-R1",
+          "priority": "P2",
+          "description": "Full curated goal predicate autoflushes pending dependency changes before reaching new no-autoflush lineage helper.",
+          "status": "open"
+        },
+        {
+          "id": "J05-GEN-R2",
+          "priority": "P2",
+          "description": "New generation metadata helper returns current while an exact source link has a pending revocation.",
+          "status": "open"
         }
       ],
       "remainingWork": [
