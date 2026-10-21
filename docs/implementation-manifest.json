@@ -578,6 +578,12 @@
           "type": "repair_candidate",
           "revision": "5c676a8951cc4aed5a268b300ed342e1154391bd",
           "result": "Pinned two verified author files normalizing newly written typed plan/goal/contribution/allocation timestamps before digest calculation. Author reports 14 focused passes, 4 original reproduction passes and 111 nearby owner passes with 3 SQLite-only concurrency skips. No shared digest-format change, migration or silent rehash of existing corrupted records. Separate /root/review_plan_offset is testing the exact archive; acceptance pending."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "5c676a8951cc4aed5a268b300ed342e1154391bd",
+          "path": "docs/reviews/plan-offset-review.md",
+          "result": "Narrow timestamp repair accepted with no actionable findings. Independent archived verification: 18 focused/original reproduction passes, 2 additional historical-corruption boundary passes and 111 nearby owner passes, with 3 expected SQLite-only concurrency skips. All 57 nearby PostgreSQL cases passed. The parent archive independently reproduced both offset failures while UTC controls passed. Existing corrupted history remains unchanged and rejected; a new valid revision can be reviewed and activated without silently repairing old digests."
         }
       ],
       "findings": [
@@ -627,7 +633,7 @@
           "id": "J05-TZ-R1",
           "priority": "P2",
           "description": "New plans with non-UTC offsets fail exact review after database timestamps normalize to UTC",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
@@ -3950,7 +3956,7 @@
     {
       "date": "2026-10-21",
       "classification": "progress",
-      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 completed: 1,138 passed, 26 skipped and 90 subtests passed; later changes retain separate verification requirements. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted. The document UI recheck reopened editor/gap loss and identified unsafe rebuild state; implementation escalated to Sol with a separately assigned metadata recovery contract. Plan timestamp repair 5c676a8 is pinned for independent review.",
+      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 completed: 1,138 passed, 26 skipped and 90 subtests passed; later changes retain separate verification requirements. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted. The document UI recheck reopened editor/gap loss and identified unsafe rebuild state; implementation escalated to Sol with a separately assigned metadata recovery contract. Plan timestamp repair 5c676a8 is pinned for independent review. The separate plan timestamp repair at 5c676a8 is independently accepted (131 passes and 3 SQLite-only skips). Root native browser harnesses exited cleanly and both owned PostgreSQL schemas were confirmed removed; evidence archives remain.",
       "verification": {
         "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",

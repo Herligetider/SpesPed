@@ -44,8 +44,8 @@ errors in the recorded guardian/revision journey.
 The ignored `var/document-guardian-browser/` directory contains the frozen source
 revision, `build.log`, native `server.py`, `imports.json`, owned `schema.txt`,
 `browser.mjs`, `evidence.json`, `create.mjs`, `create-evidence.json`, and screenshots.
-The serving process uses port 18970 and owns only its generated schema; teardown
-must target that exact process/schema and preserve other agents' servers.
+The first harness used port 18970 and owned only its generated schema. Cleanup
+must target its exact process/schema and preserve other agents' servers.
 
 Commands: `npm --prefix var/document-guardian-browser/pin/web run build`,
 `node var/document-guardian-browser/browser.mjs`, and
@@ -88,3 +88,8 @@ overwrites, document-specific rebuild state, empty-basis recovery and obsolete
 typed/AI bindings. Those repairs and the narrow recovery metadata read are assigned
 separately. This checkpoint does not close those findings or accept the whole
 document workflow.
+
+Both root harnesses were subsequently stopped with SIGINT. Their fixture finalizers
+completed with exit code 0, and read-only PostgreSQL checks confirmed both exact
+owned schemas were absent. Each evidence directory contains `cleanup.json`; other
+servers and schemas were preserved.
