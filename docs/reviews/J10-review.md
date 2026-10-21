@@ -71,3 +71,47 @@ The executed suites cover instrument review/version and licensing, finite explic
 - Full delivery of all 40 features and production/legal readiness are not established by this backend review. No current-law research was performed; the September legal registry is not newly approved.
 
 All reviewer-owned execution sessions completed and fixture teardown ran. Changes require independent repair verification before this bounded job is accepted.
+
+## Independent R1/R2 repair recheck — 21 October 2026
+
+**Rechecked commit:** `7443e4e1b4e0c3a9a6dfdd2b6cedd6bc53d3d09e`.
+
+**Updated verdict: verified for the assigned BC09 backend and actual-application composition scope. J10-R1 and J10-R2 are fixed; no additional actionable finding remained in this bounded recheck.** The original review and evidence remain above. Native J19 authority, typed AI, browser/UI and dispatch/authoritative-system integration remain outstanding; this verdict does not establish full F11/F17/F19 or all-40-feature completion, production readiness or legal approval.
+
+The recheck used a new frozen archive under `var/review-j10/repair-7443e4e`, with absolute archive backend/test imports. `var/review-j10/recheck-pin.log` verifies the five repair files against the exact commit, records frozen application/service module paths, and separately confirms that the original `j10_assessment.py` migration is byte-for-byte unchanged from the initially reviewed candidate. Uncommitted source-maintenance backend/web changes in the shared checkout were excluded.
+
+### Finding dispositions
+
+**J10-R1 fixed.** `resolve_reference` now carries an explicit `source_review` marker for an available but review-required historical progress review. The marker changes the resolved source digest and propagates through nested progress references, statement bases and staff-contribution sources. A review-required source is therefore distinct from a current source even when its exact confirmed human revision remains retained. Statement/progress transitions and statement finalization reject the unresolved basis. New draft statements referencing such history visibly need basis rather than silently resetting the warning. Previously finalized statements keep their human judgement, exact finalization and finalized state, while detail and replay report the live source warning.
+
+The executed regression suite verified late observations through nested confirmed reviews, existing/new statements, creation/finalization replay, revision history, new progress references, and source corrections. It also verified that a fresh human review over the new evidence permits subsequent work without clearing the original historical warning. Late confirmed BC02 goal evidence propagates its exact evidence/revision coordinate; a late disputed report changes the evidence-availability marker without being promoted into usable confirmed evidence.
+
+The original independently authored failing workflow was rerun with fixed expectations on both databases: the upstream review and downstream statement now report review required, the statement retains the original content/digest, finalization returns 409 and no finalization is persisted. An additional independent contribution-only workflow finalized a statement while its source was current, then added late contradictory progress evidence. Detail and exact finalization replay preserved the same human content/finalization while reporting the contribution's review dependency. An attempted subsequent factual communication entry returned 409 and created no communication row. These checks verify that the repair reaches contribution consumers as well as the main statement basis.
+
+**J10-R2 fixed.** The forward `j10_assessment_events` migration adds aware `occurred_at`/`recorded_at`, `correlation_id` and explicit `schema_version` without editing the original migration. New emitter records use schema version 1, a command correlation, the request key as causation and minimized payload. Actual administration start/result and recorded communication events preserve their supplied occurrence instants separately from recording time; recording time also supplies `created_at`. Idempotent command replay adds no event. Existing caller correlation state is restored when the command ends.
+
+Retained events are explicitly schema version 0: both event times use the only known original `created_at`, and correlation uses the retained event ID. The migration documents this legacy limitation rather than inventing a missing occurrence time or command correlation. The dual-database retained-row migration test verified all pre-existing column values unchanged, deterministic version-0 fields, UTC-aware ORM reads and refusal to downgrade while retained envelopes exist. New version-1 events were independently checked through real migrated columns and persisted HTTP-generated rows. Model/metadata alignment, empty roundtrip and retained-assessment downgrade refusal passed with the new migration head. The existing fault-injection test still verified business, audit, outbox and receipt rollback together.
+
+### Commands and results
+
+Set `SPESPED_TEST_POSTGRES_URL` to the assigned isolated synthetic database URL:
+
+```sh
+# Working directory: /Users/lauritz/Programming/SpesPed/var/review-j10/repair-7443e4e
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j10/repair-7443e4e/backend:/Users/lauritz/Programming/SpesPed/var/review-j10/repair-7443e4e/backend/tests \
+  /Users/lauritz/Programming/SpesPed/backend/.venv/bin/python -m pytest \
+  backend/tests/test_assessment.py backend/tests/test_assessment_contracts.py \
+  backend/tests/test_assessment_migrations.py backend/tests/test_assessment_repairs.py \
+  backend/tests/test_bc09_application_composition.py -q
+
+# Working directory: /Users/lauritz/Programming/SpesPed
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j10/repair-7443e4e/backend:/Users/lauritz/Programming/SpesPed/var/review-j10/repair-7443e4e/backend/tests \
+  backend/.venv/bin/python -m pytest var/review-j10/test_recheck.py -q -s
+```
+
+- Frozen repaired assessment, contract, migration, repair and fresh-application suites: **57 passed, 1 skipped**, 95.77 seconds. The skip is the SQLite instance of the PostgreSQL-only concurrency proof; the PostgreSQL case ran.
+- Independently authored recheck: **12 passed**, 20.52 seconds. All six scenarios ran on SQLite and PostgreSQL. Both original defect probes now assert corrected behavior, three earlier adverse checks remain green, and the added contribution-only history/replay/communication check passes.
+- Logs/source: `var/review-j10/recheck-baseline.log`, `var/review-j10/recheck-independent.log`, `var/review-j10/recheck-pin.log`, `var/review-j10/test_recheck.py`.
+- The same two nonfatal Starlette/httpx and BC06 Pydantic field-name warnings remain.
+
+All reviewer-owned execution sessions completed; unique synthetic PostgreSQL fixture schemas were cleaned up by their own teardown. No production edits, commits, pushes, subagents, external messages, demo database access or unrelated process interference occurred. Synthetic authority fixtures remain contract evidence only. The fresh actual application continues to fail closed where native J19 authority is unavailable, and manual drafts still declare typed AI generation unintegrated.

@@ -950,6 +950,12 @@
           "type": "implementation_candidate",
           "revision": "0b726b8ebc4231d29118535b114bb0acd1023251",
           "result": "Root source replacement/reprocessing UI pinned. Native authorized source metadata now includes stable import identity. Frozen134webtests/build,4SQLite/PostgreSQL API cases and6actual-App browser workflows passed, including Unicode replacement/old original preservation, exact lost-response retry, concurrent revision comparison, failed read retry, unknown inspection outcome and390px layout. Independent review assigned /root/review_composition; source maintenance acceptance pending."
+        },
+        {
+          "type": "independent_review",
+          "revision": "0b726b8ebc4231d29118535b114bb0acd1023251",
+          "path": "docs/reviews/source-maintenance-ui-review.md",
+          "result": "Source replacement/reinspection accepted with no findings. Exact frozen134webtests/build,10SQLite/PostgreSQL API tests,6actual-App author browser workflows and7independent adverse browser checks passed. Includes current authorization revocation, same/cross-school delayed replies, stable identity, repeated-hour microseconds, immutable retry, unchanged inspection uncertainty and processing-unavailable state. Full F03/F04/J07 remain incomplete."
         }
       ],
       "findings": [
@@ -1075,10 +1081,9 @@
         }
       ],
       "remainingWork": [
-        "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Independently review source maintenance, then complete intake AI creation/application, timeline/history, clarification reassignment and remaining full-workflow gaps."
+        "Complete intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment. Source maintenance now has bounded independent acceptance."
       ]
     },
     {
@@ -1362,6 +1367,12 @@
           "type": "repair_candidate",
           "revision": "7443e4e1b4e0c3a9a6dfdd2b6cedd6bc53d3d09e",
           "result": "R1 late/source-availability review markers now propagate through nested progress/statements/contributions while historic human judgements remain immutable. R2 additive j10_assessment_events migration supplies full event envelope: new v1 events and explicit legacy v0 backfill without rewriting original migration. Author57passed1SQLite-onlyskip plus6positive independent probes; exact recheck assigned original reviewer /root/review_j09. Findings remain open pending verification."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "7443e4e1b4e0c3a9a6dfdd2b6cedd6bc53d3d09e",
+          "path": "docs/reviews/J10-review.md",
+          "result": "J10-R1/R2 independently closed; bounded BC09 backend/application scope accepted. Frozen57passed1intentionalSQLite skip and12independent dual-DB checks passed. Late evidence propagates through nested progress/statements/contributions, historical finalizations remain immutable, communication with unresolved basis blocked. Forward legacy-v0/new-v1 event migration verified. Native J19, typed AI, UI and dispatch remain required."
         }
       ],
       "findings": [
@@ -1369,18 +1380,18 @@
           "id": "J10-R1",
           "priority": "P2",
           "description": "Late contradictory evidence on a confirmed progress review is lost when used downstream, leaving statements current and finalizable.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J10-R2",
           "priority": "P2",
           "description": "Persisted assessment outbox omits required occurrence/recording timestamps, correlation identity and schema version.",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
-        "Implement and independently review the native BC09 backend and real source/assessment-scheme composition.",
-        "Integrate typed AI summaries, native finalization/qualification/exemption authority, J20 UI and real normal/adverse browser workflows."
+        "Integrate and independently verify native professional qualification/finalization/exemption authority through J19.",
+        "Integrate typed AI summaries, J20 assessment UI and real normal/adverse browser workflows; complete required dispatch/authoritative-system boundaries."
       ]
     },
     {
@@ -1397,12 +1408,17 @@
         "J10",
         "J08"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Correct periods/goals, late evidence, cadence deduplication, no auto-send",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j11_documents",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "BC10 native reports, reviewed templates, evidence snapshots, section contributions/exact content approval, selected-interval guardian drafts and opt-in schedules assigned to /root/j11_documents (Sol high). Typed gateway integration coordinated with root. No automatic send, no unresolved configuration presented as statutory completion. Independent review required; J20/J21 UI and J12 disclosure remain required."
+        }
+      ],
       "findings": []
     },
     {
@@ -3508,6 +3524,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Previous turn pinned native assessment candidate673a0eb, completed four fresh-application composition checks, accepted native assessment inputs and pushed saved work through adb76e9. Current independent review closed teaching history R5 at033fb8f and reproduced two assessment findings for repair. Recovery UI repairs continue. All 40 features/86 acceptance examples/28 delivery jobs retained; no whole feature promoted."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Previous turn verified catalog regeneration and remote bfaa0a0. Current turn accepted source maintenance0b726b8 and BC09 repairs7443e4e after independent review, integrated candidate native professional adapters into create_app with pending-change guards, and dispatched J11 complete document backend work. Four fresh-application SQLite/PostgreSQL checks passed with native unresolved authority. All40features/86examples/28jobs retained; no whole feature promoted."
     }
   ]
 }
