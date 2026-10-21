@@ -1,5 +1,7 @@
 from datetime import datetime
+import re
 from typing import Literal
+from urllib.parse import unquote_to_bytes
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
@@ -93,7 +95,9 @@ async def upload_content(request):
 
 
 def metadata_header(value):
-    if len(value) > 4000:
+    # ASCII JSON escaping permits Norwegian and supplementary Unicode text in
+    # browser headers. Keep a transport bound in addition to the typed limits.
+    if len(value) > 16384:
         raise DomainError("intake_metadata", "Invalid intake metadata.", 422)
     try:
         return IntakeMetadata.model_validate_json(value)
@@ -101,21 +105,34 @@ def metadata_header(value):
         raise DomainError("intake_metadata", "Supply valid typed intake metadata in X-Evidence-Metadata.", 422) from None
 
 
+def filename_header(value, encoding):
+    if encoding is None:
+        return value
+    if encoding != "percent" or len(value) > 2400 or not value.isascii() or re.search(r"%(?![0-9a-fA-F]{2})", value):
+        raise DomainError("filename", "Supply a valid percent-encoded UTF-8 filename.", 422)
+    try:
+        return unquote_to_bytes(value).decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        raise DomainError("filename", "Supply a valid percent-encoded UTF-8 filename.", 422) from None
+
+
 @router.post("/intake/files", status_code=201)
-async def upload(school_id: UUID, request: Request, filename: str = Header(alias="X-Evidence-Filename"), metadata: str = Header(alias="X-Evidence-Metadata"), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+async def upload(school_id: UUID, request: Request, filename: str = Header(alias="X-Evidence-Filename"), metadata: str = Header(alias="X-Evidence-Metadata"), filename_encoding: str | None = Header(None, alias="X-Evidence-Filename-Encoding"), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
     service.intake_access(db, actor, str(school_id))
     storage, scanner, ocr = adapters(request)
     command = metadata_header(metadata)
+    filename = filename_header(filename, filename_encoding)
     content = await upload_content(request)
     row, revision = mutate(db, lambda: service.submit(db, actor, str(school_id), command, content, filename, storage, scanner, ocr))
     return source_view(db, row, revision)
 
 
 @router.post("/intake/{source_id}/revisions", status_code=201)
-async def revise(school_id: UUID, source_id: UUID, request: Request, expected_version: int = Header(alias="X-Expected-Version", ge=1), filename: str = Header(alias="X-Evidence-Filename"), metadata: str = Header(alias="X-Evidence-Metadata"), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+async def revise(school_id: UUID, source_id: UUID, request: Request, expected_version: int = Header(alias="X-Expected-Version", ge=1), filename: str = Header(alias="X-Evidence-Filename"), metadata: str = Header(alias="X-Evidence-Metadata"), filename_encoding: str | None = Header(None, alias="X-Evidence-Filename-Encoding"), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
     service.source(db, actor, str(school_id), str(source_id))
     storage, scanner, ocr = adapters(request)
     command = metadata_header(metadata)
+    filename = filename_header(filename, filename_encoding)
     content = await upload_content(request)
     row, revision = mutate(db, lambda: service.submit(db, actor, str(school_id), command, content, filename, storage, scanner, ocr, replace_id=str(source_id), expected_version=expected_version))
     return source_view(db, row, revision)
@@ -132,6 +149,14 @@ def inbox(school_id: UUID, state: str | None = Query(None, max_length=30), offse
     record_audit(db, actor, str(school_id), "source.inbox_read", "school", str(school_id))
     commit(db)
     return {"items": [source_view(db, row) for row in rows], "total": total}
+
+
+@router.get("/intake/assignees")
+def assignees(school_id: UUID, query: str | None = Query(None, max_length=100), offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    result = service.intake_assignees(db, actor, str(school_id), query=query, offset=offset, limit=limit)
+    record_audit(db, actor, str(school_id), "source.assignees_read", "school", str(school_id))
+    commit(db)
+    return result
 
 
 @router.get("/intake/{source_id}")

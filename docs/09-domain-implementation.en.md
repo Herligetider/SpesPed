@@ -199,6 +199,17 @@ safe `details` list. Access errors must not disclose hidden resource existence.
 | `PATCH /api/v1/schools/{id}/learners/{learner_id}` | Allowed changed fields and `expected_version`; 409 on stale version |
 
 Subsequent modules add typed commands rather than a universal unvalidated PATCH.
+For raw intake file uploads and replacement revisions, browser clients percent
+encode the UTF-8 filename in `X-Evidence-Filename` and set
+`X-Evidence-Filename-Encoding: percent`. The server decodes once and validates the
+plain filename; the absent encoding header retains legacy literal filenames.
+`X-Evidence-Metadata` uses ASCII-escaped JSON with the same typed field limits and
+a 16 KiB transport bound. Invalid encodings must fail before source persistence.
+`GET .../intake/assignees` accepts `query` (up to 100 characters), `offset` and
+`limit` (1–100), returning `{items: [{id, display_name}], total}` for currently
+authorized school-wide intake staff. Reading the list requires intake authority;
+assignment commands recheck the chosen person's current authority.
+
 The client sends `X-CSRF-Token` on writes, uses credentials on same-origin requests
 and never logs in by selecting a role from a dropdown. The Vite development proxy
 forwards `/api` to the local backend. UI integration tests use the real API.

@@ -8,7 +8,8 @@ from uuid import uuid4
 from sqlalchemy import func, select
 
 from spesped.audit import record_audit
-from spesped.auth import require_authority, require_learner_access
+from spesped.auth import active_at, require_authority, require_learner_access, school_today
+from spesped.contexts.identity.models import AuthorityGrant, School, SchoolMembership, UserAccount
 from spesped.db import utcnow
 from spesped.errors import DomainError, access_denied
 from .models import CorrectionImpact, Derivative, EvidenceEvent, EvidenceItem, EvidenceRevision, ExtractionProposal, Inspection, IntakeCommand, SourceItem, SourceRevision, SourceSubjectLink
@@ -22,6 +23,30 @@ def conflict(message="The item changed. Refresh before retrying."):
 
 def intake_access(db, actor, school_id):
     return require_authority(db, actor, school_id, "evidence.intake")
+
+
+def intake_assignees(db, actor, school_id, *, query=None, offset=0, limit=50):
+    """Named choices with the same school-wide permission required at assignment.
+
+    Return no contact details or role/grant information. Assignment commands
+    independently recheck current authority; this list does not grant access.
+    """
+    intake_access(db, actor, school_id)
+    today = school_today(db.get(School, school_id))
+    eligible = select(AuthorityGrant.id).where(
+        AuthorityGrant.school_id == school_id, AuthorityGrant.user_id == UserAccount.id,
+        AuthorityGrant.action == "evidence.intake", AuthorityGrant.learner_id.is_(None),
+        AuthorityGrant.case_id.is_(None), *active_at(AuthorityGrant, today),
+    ).exists()
+    statement = select(UserAccount.id, UserAccount.display_name).join(
+        SchoolMembership, SchoolMembership.user_id == UserAccount.id,
+    ).where(UserAccount.state == "active", SchoolMembership.school_id == school_id,
+            *active_at(SchoolMembership, today), eligible)
+    if query and query.strip():
+        statement = statement.where(func.lower(UserAccount.display_name).contains(query.strip().lower(), autoescape=True))
+    total = db.scalar(select(func.count()).select_from(statement.subquery()))
+    rows = db.execute(statement.order_by(UserAccount.display_name, UserAccount.id).offset(offset).limit(limit)).mappings().all()
+    return {"items": [dict(row) for row in rows], "total": total}
 
 
 def event(db, actor, school_id, action, row, **payload):
@@ -63,9 +88,9 @@ def fingerprint(metadata, content, filename, replace_id=None, expected_version=N
 
 def submit(db, actor, school_id, metadata, content, filename, storage, scanner=None, ocr=None, *, note=False, replace_id=None, expected_version=None):
     intake_access(db, actor, school_id)
-    extension, media_type = inspect_type(filename, content)
-    if len(filename) > 200 or Path(filename).name != filename:
+    if len(filename) > 200 or Path(filename).name != filename or "\\" in filename or any(ord(c) < 32 or 127 <= ord(c) <= 159 for c in filename):
         raise DomainError("filename", "Supply a plain filename of at most 200 characters.", 422)
+    extension, media_type = inspect_type(filename, content)
     digest = hashlib.sha256(content).hexdigest()
     command_digest = fingerprint(metadata, content, filename, replace_id, expected_version)
     prior = db.scalar(select(IntakeCommand).where(IntakeCommand.school_id == school_id, IntakeCommand.request_key == metadata.request_key))
