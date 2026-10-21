@@ -848,6 +848,12 @@
           "type": "implementation_candidate",
           "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
           "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
+        },
+        {
+          "type": "independent_review",
+          "revision": "2e3c85184f08f8ac294a0bc2e778eb32f57070ed",
+          "path": "docs/reviews/J07-planning-review.md",
+          "result": "Bounded planning component accepted. Both original findings independently closed:27unit/transporttests,typecheck,actualRootApp native precision submission/draft recovery,originalrecall/dateprobes,delayedstalesuccess/headvsfreshredactedhistoryrace,normalworkflowand409/rebasepassed. No newfinding. Fullteaching/App integration and remainingJ07scope are separate."
         }
       ],
       "findings": [
@@ -921,13 +927,13 @@
           "id": "J07-PL-R1",
           "priority": "P2",
           "description": "Existing repeated local time with original microsecond precision does not match millisecond-only select options, blocking unchanged plan/goal submission.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-PL-R2",
           "priority": "P1",
           "description": "History comparison renders retained generated current-plan prose after model recall when current refresh fails but revision-history refresh succeeds.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-TE-R1",
@@ -946,13 +952,19 @@
           "priority": "P2",
           "description": "Switching internal teaching tabs unmounts the editor and discards an unsaved session draft.",
           "status": "open"
+        },
+        {
+          "id": "J07-TE-R4",
+          "priority": "P2",
+          "description": "Root App formatting discards corrective messages from locally validated teaching dates and ITO input, leaving only a generic failure.",
+          "status": "open"
         }
       ],
       "remainingWork": [
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Close and independently recheck J07-PL-R1/R2 and J07-TE-R1/R2/R3, finish independent teaching/App integration acceptance, and implement durable pending-generation retrieval/resume UI plus remaining complete-workflow gaps."
+        "Close and independently recheck J07-TE-R1/R2/R3/R4, finish teaching/App integration acceptance, and implement durable pending-generation retrieval/resume UI plus remaining complete-workflow gaps."
       ]
     },
     {
