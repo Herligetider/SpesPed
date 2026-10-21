@@ -179,6 +179,17 @@ was independently accepted at `8d82b74`; see
 [the IEP gateway review](reviews/iep-gateway-review.md). The plans consumer at
 `2ccc30e` and the combined teaching workflow require separate independent review.
 
+Teaching routes obtain the configured optional `QualificationReadPort` from
+`app.state.teaching_qualification_port`. Each request binds school, learner,
+staff member, exact decision revision and provision digest, and actual occurrence.
+A `reviewed_current` result includes effective dates, responsible teaching status,
+an identified reviewer and versioned source references. Missing configuration
+returns `unavailable`; caller role labels and permissions cannot establish
+qualification. Actual work can still be recorded as unassessed with a cause and
+owned follow-up, separately from assessed support and entitlement comparisons.
+The production qualification source belongs to the remaining J19 work. This
+teaching repair contract at `f5c7e88` is awaiting independent review.
+
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
 requires governance case authority, the owning context's live case resolver and
