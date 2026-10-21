@@ -84,6 +84,9 @@ command with the same key; use a fresh key for a deliberately new request. Its
 application must include additional semantic command fields (purpose, topic selection,
 language and recipient scope where relevant) in its durable request fingerprint.
 Schedule-bound `DraftRequest` instead deduplicates schedule/revision/subject/period.
+Automatic selection skips a run whose calendar summary contains no real instants
+and advances within the unchanged cadence and end-date bounds. Manual empty
+periods and all other validation errors remain explicit errors.
 Neither request type authorizes sending. Durable uniqueness, current authorization
 and duplicate-payload conflict handling belong to the application service.
 

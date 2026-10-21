@@ -38,7 +38,7 @@ Git checkpoints, integration verification and final requirement-by-requirement a
 | J02 | Framework-independent domain primitives, period/quantity/provenance/approval policies | Cross-cutting | Contracts | Boundary and adverse domain examples, especially DST, revision and unsupported evidence |
 | J03 | Accessible Norwegian web shell, real login, school/learner selection and API client | F01 F02 F31 | HTTP contract | Production build, typed client, keyboard flow, real API integration after J01 |
 | J04 | Intake, file/OCR parsing, source confirmation, timeline and correction impact | F03 F04 F05 | J01 J02 | Multi-pupil source separation, file rejection, provenance, derivative correction |
-| J05 | Referrals, decisions, imported/created IEPs, goal versions and contributions | F07 F08 | J01 J02 J04 | Scope validation, dated authority, original approval, historical goals preserved |
+| J05 | Source-backed support profiles, referrals, decisions, imported/created IEPs, goal versions and contributions | F02 F07 F08 | J01 J02 J04 | Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved |
 | J06 | Session planning, exact approval, assistant briefs, actual delivery and notes | F12 F13 F15 F16 F39 | J01 J02 J04 J05 | Complete teaching cycle; no scheduled-as-delivered; assistant scope; stale brief |
 | J07 | Teaching-cycle UI from intake to next observation | F02–F05 F07 F08 F12 F13 F15 F16 F39 | J03 J04 J05 J06 | Browser journey against persistent API with negative paths and usable review |
 | J08 | AI capability gateway, local/remote development adapters, OCR/speech ports, model evaluation | F33 | J01 J02 | Real local protocol tests, no production remote fallback, injection/source limits |
@@ -52,7 +52,7 @@ Git checkpoints, integration verification and final requirement-by-requirement a
 | J16 | Protected school environment, intervention and concern workflows | F24 F25 F26 | J01 J02 J13 | Case isolation, alternative routes, no headteacher gate on personal/urgent duty |
 | J17 | Rights requests, retention/holds, disposal, archive and school transfer | F27 F28 F35 | J04 J11 J12 J13 | Third-party masking, held records, derivative disposal, selective transfer receipts |
 | J18 | Versioned scoped identity/mail/calendar/school/archive integration adapters | F32 | J01 J04 J12 J17 | Actual adapter contracts with local servers, revoked scope, retries and reconciliation |
-| J19 | Public extracts, conditional administrative case types, exemptions and appeals | F30 F37 F38 | J05 J10 J13 J17 J18 | Source reconciliation, type-specific authority/deadlines, working named administrative flows |
+| J19 | Full school/account administration, public extracts, conditional administrative case types, exemptions and appeals | F01 F30 F37 F38 | J05 J10 J13 J17 J18 | Account/enrollment lifecycle and revocation, school profile revisions, source reconciliation, type-specific authority/deadlines, working named administrative flows |
 | J20 | Curriculum/resource/assessment/reporting UI | F09 F10 F11 F17 F18 F19 | J03 J09 J10 J11 | Browser journeys, revisions and source review; public/Montessori fixtures |
 | J21 | Period-email, recipient portal and collaboration UI | F20 F21 F22 | J03 J11 J12 J14 | Chosen dates, paused draft plan, explicit send, recipient-specific view |
 | J22 | Scheduling/capacity/attendance UI | F14 F23 F36 | J03 J14 J15 | Interactive conflict explanation, locks, publication and real attendance follow-up |
@@ -67,6 +67,13 @@ Some dependency loops in product use are resolved through narrow contracts: J04
 supports manual text/import before J08 AI extraction; J06 supports manual plans
 before model generation; J13 starts with reviewed configuration independent of
 formal reports. This orders work without removing the later required capability.
+
+J01 and J03 provide foundation slices only. J05 supplies confirmed pedagogical
+profile fields with sources and correction history; J07 exposes those fields in
+the teaching workspace. J19 completes school profiles, staff/account lifecycle,
+qualifications, membership/enrollment administration and credential/session
+revocation. J24 supplies their editable administrative UI. Passing the foundation
+reviews must not be interpreted as completion of F01 or F02.
 
 ## Delivery order
 

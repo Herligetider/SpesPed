@@ -1,5 +1,124 @@
 # J02 independent review
 
+## Final targeted recheck — accepted within J02 scope
+
+On 21 October 2026, independently rechecked exact candidate **e1588794f63eaaa725875060bf1a602c512bc686**. **No outstanding findings remain in the reviewed J02 scope.** The original three findings and the subsequent empty-period integration finding are verified fixed across the two repair rounds below. This accepts the shared domain-core job, not completion of downstream features or production readiness.
+
+The final repair introduces `EmptySummaryPeriodError`, a `ValueError` subclass raised only for a calendar-label range with no real instants. `DraftRecurrence.next_request()` now catches that specific condition and continues through the existing cadence and end-date policy. The valid Apia 2011-12-31 candidate that would summarize nonexistent December 30 no longer leaves the schedule stuck: the daily request advances to January 1 and summarizes December 31. The monthly day-31 schedule with `MonthEndPolicy.SKIP` also advances correctly through missing November 31 and the empty December summary to January 31, without shifting the anchor. Schedules ending before the next valid draft return `None`; retries return the same logical draft identity. Ordinary validation/type failures continue to propagate. One-day nonexistent manual summaries remain rejected, and draft requests still confer no dispatch authority.
+
+Exact candidate and regression verification commands:
+
+```sh
+git rev-parse e158879
+git diff --exit-code e158879 -- backend/spesped/domain backend/tests/test_domain_core.py
+git diff 65eae8b..e158879 -- backend/spesped/domain backend/tests/test_domain_core.py
+PYTHONPATH=backend /opt/homebrew/bin/python3.12 -m unittest discover -s backend/tests -p test_domain_core.py -v
+```
+
+Result: working-tree J02 files match the pinned candidate, and **35/35 tests pass independently**. The final diff only changes empty-period signaling/handling and adds three focused regressions. The following additional exact transient command also passed:
+
+```sh
+PYTHONPATH=backend /opt/homebrew/bin/python3.12 - <<'PY'
+from dataclasses import replace
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
+from unittest.mock import patch
+from spesped.domain import *
+from spesped.domain.primitives import EmptySummaryPeriodError
+UTC=timezone.utc
+zone=ZoneInfo('Pacific/Apia')
+scope=SubjectScope(SchoolId.new(),LearnerId.new())
+r=DraftRecurrence(ScheduleId.new(),RevisionId.new(),scope,DraftCadence.DAYS,date(2011,12,29),zone.key,DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS,1)).activate()
+first=r.next_request(datetime(2011,12,28,tzinfo=UTC))
+last=r.next_request(first.requested_for)
+assert last.requested_for.astimezone(zone).date()==date(2012,1,1)
+assert last.period.start==last.period.end==date(2011,12,31)
+assert r.next_request(r.next_run(first.requested_for)).idempotency.key==last.idempotency.key
+assert not last.authorizes_dispatch
+for end in (date(2011,12,30),date(2011,12,31)):
+    assert replace(r,end_date=end).next_request(first.requested_for) is None
+assert replace(r,end_date=date(2012,1,1)).next_request(first.requested_for)==last
+assert replace(r,end_date=date(2012,1,1)).next_request(last.requested_for) is None
+monthly=replace(r,cadence=DraftCadence.MONTHS,anchor=date(2011,10,31),month_end_policy=MonthEndPolicy.SKIP)
+month_first=monthly.next_request(datetime(2011,10,30,tzinfo=UTC))
+month_next=monthly.next_request(month_first.requested_for)
+assert month_next.requested_for.astimezone(zone).date()==date(2012,1,31)
+assert month_next.period.start==date(2012,1,30)
+assert replace(monthly,end_date=date(2011,12,31)).next_request(month_first.requested_for) is None
+for error in (ValueError('ordinary validation'),TypeError('unexpected type')):
+    with patch.object(DraftPeriodSelection,'resolve',side_effect=error):
+        try:r.next_request(first.requested_for)
+        except Exception as caught:assert caught is error
+        else:raise AssertionError('Nonempty-period failure was swallowed')
+try:SummaryPeriod(date(2011,12,30),date(2011,12,30),zone.key)
+except EmptySummaryPeriodError:pass
+else:raise AssertionError('Nonexistent manual period accepted')
+print('PASS: daily/retry/end, monthly skip/end, nonempty-error propagation, manual rejection; no dispatch authority')
+PY
+```
+
+Final verification limits: this targeted round exercises only the outstanding empty-calendar issue and its regressions; preceding rounds below cover the original fixes and unchanged primitives. Existing limits on live authorization, authoritative decision/reference lookup, durable idempotency, missed-run reporting, application integration, legal configuration, database/PostgreSQL behavior and real dispatch remain. No implementation files or tests were edited, and no commits, pushes or agents were created by this reviewer.
+
+## Recheck of fixes — 21 October 2026
+
+Rechecked exact candidate **65eae8b6f0748a0839592620be38a41fa490bb77** against the three original findings. `git diff --exit-code` confirmed that the shared working-tree domain and domain-test files matched this pin. The updated shared contracts in `docs/09-domain-implementation.en.md` and `docs/04-domain-model.en.md` now describe exact decision/provision identity, first-real-instant boundaries and independent manual requests.
+
+**Current disposition: changes requested for one residual calendar issue.** The decision-identity and one-off manual-request findings are verified fixed. Santiago midnight gaps and Havana repeated midnight are fixed; automatic period selection still fails immediately after a wholly skipped calendar date.
+
+Verified fixes:
+
+- `calendar_date_boundary()` resolves Santiago 2026-09-06 to 04:00 UTC, selects the earlier repeated Havana midnight, and preserves contiguous half-open summary boundaries. Explicit nonexistent occurrence/recorded wall times remain invalid. Entirely nonexistent one-day manually supplied summaries are rejected at construction. The recurrence skips nonexistent run dates.
+- `DecisionProvisionReference(scope, DecisionId, RevisionId, DecisionProvisionId)` is required on each `EntitlementQuantity`. Addition now rejects differing school, learner, protected case, decision, decision revision or provision, including identical text labels and matching periods. Compatible hours/minutes still convert correctly. Services must resolve the supplied reference against an authoritative decision; the value object does not establish its existence or access rights.
+- `ManualDraftRequest(scope, period, requested_at, logical_request_key)` creates an ordinary request without schedule identity or activation. Retried attempt times preserve identity and fingerprint; changed periods retain command identity but change `request_digest` for conflict detection; a new deliberate command key produces a new identity. It grants no dispatch authority. Application persistence must actually enforce uniqueness and reject fingerprint conflicts, and the future full document command must bind its other semantic inputs as well.
+
+### [P2] Automatic period selection fails after an entirely skipped date
+
+Location at this pin: `backend/spesped/domain/recurrence.py:242-247` (period resolution at line 246).
+
+For an accepted active daily recurrence in `Pacific/Apia`, with `PREVIOUS_DAYS=1` and anchor 2011-12-29, `next_run()` correctly skips nonexistent 2011-12-30 and returns the valid 2011-12-31 run. However, `next_request()` then attempts to construct a summary consisting solely of skipped 2011-12-30. The new `SummaryPeriod` validation raises `ValueError("Summary period contains no real instants")`. Repeatedly asking for the next draft after the preceding completed run therefore remains stuck on this candidate rather than returning a valid next request or explicit non-draft outcome. This is a residual integration issue in the calendar fix, not a request to accept nonexistent manual one-day summaries.
+
+Define and implement an explicit automatic empty-period policy: for example, skip candidates whose resolved calendar window has no instants while respecting the end condition, or return a typed skipped-run outcome for the application to record. Preserve normal nonempty summaries and manual validation. Add a regression exercising `next_request()` rather than only `next_run()` across a wholly skipped date, and verify end-boundary behavior after such a skipped candidate.
+
+Exact recheck verification commands:
+
+```sh
+git rev-parse 65eae8b
+git diff --exit-code 65eae8b6f0748a0839592620be38a41fa490bb77 -- backend/spesped/domain backend/tests/test_domain_core.py
+PYTHONPATH=backend /opt/homebrew/bin/python3.12 -m unittest discover -s backend/tests -p test_domain_core.py -v
+```
+
+Result: **32/32 tests pass** independently. A separate transient inline unittest run passed **3/3** additional checks for Santiago start/end membership and contiguity; all six decision/provision identity dimensions plus compatible conversion; and manual command retry, conflicting-period fingerprint, deliberate new order, and absence of dispatch permission. No implementation or test files were edited.
+
+Exact residual reproduction command:
+
+```sh
+PYTHONPATH=backend /opt/homebrew/bin/python3.12 - <<'PY'
+from datetime import date, datetime, timezone
+from spesped.domain import *
+from zoneinfo import ZoneInfo
+r=DraftRecurrence(ScheduleId.new(),RevisionId.new(),SubjectScope(SchoolId.new(),LearnerId.new()),DraftCadence.DAYS,date(2011,12,29),'Pacific/Apia',DraftPeriodSelection(PeriodRule.PREVIOUS_DAYS,1)).activate()
+first=r.next_request(datetime(2011,12,28,tzinfo=timezone.utc))
+print('first',first.requested_for,first.period)
+print('next_run',r.next_run(first.requested_for))
+try:
+    print('next_request',r.next_request(first.requested_for))
+except Exception as error:
+    print(type(error).__name__,error)
+PY
+```
+
+Observed output:
+
+```text
+first 2011-12-29 10:00:00+00:00 SummaryPeriod(start=datetime.date(2011, 12, 28), end=datetime.date(2011, 12, 28), timezone='Pacific/Apia')
+next_run 2011-12-30 10:00:00+00:00
+ValueError Summary period contains no real instants
+```
+
+Recheck limits: calendar examples cover Oslo, Santiago, Havana and Apia, not every historical timezone transition or datetime-range extreme. No durable uniqueness enforcement, authorization, document-service integration, delivery, database/browser or PostgreSQL behavior was exercised. Prior non-calendar domain evidence below remains applicable to unchanged files; the original findings are retained as review history, not three outstanding findings at this pin.
+
+## Original review — retained history
+
 Reviewed on 21 October 2026. Final candidate: **35c613a765f6dfe43e839b3876278068535cf31f**, cumulative J02 diff from `7f3d652`. Initial candidate `bd207c8c3422a0bf56c742953444ca96a1c5be21` was superseded during review by the implementer's additional nonexistent-wall-time guard and regression. The final candidate includes that guard; it is not an outstanding missing-input finding.
 
 Scope: `backend/spesped/domain/**` and `backend/tests/test_domain_core.py`. Read `AGENTS.md`, `docs/09-domain-implementation.en.md`, relevant `docs/04-domain-model.en.md` semantics, and `docs/features.json`, especially F07/F15/F17/F20/F21. No implementation files or test files were changed by this reviewer. Other backend/web work in the shared checkout was excluded.

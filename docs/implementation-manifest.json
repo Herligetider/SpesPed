@@ -24,7 +24,8 @@
       "implementationAgent": "/root/j01_foundation",
       "reviewAgent": "/root/review_j01",
       "commits": [
-        "da754c695bdadf4f031eb2f00ab15b364afd5fda"
+        "da754c695bdadf4f031eb2f00ab15b364afd5fda",
+        "f38b06142252fea78b7f20c0b094227fade3a230"
       ],
       "evidence": [
         {
@@ -32,9 +33,41 @@
           "command": "SPESPED_TEST_POSTGRES_URL=<isolated-synthetic-development-db> uv run --project backend pytest backend/tests/test_foundation.py -q",
           "result": "25 foundation tests passed across SQLite and PostgreSQL; independent review pending",
           "revision": "da754c695bdadf4f031eb2f00ab15b364afd5fda"
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J01-review.md",
+          "revision": "da754c695bdadf4f031eb2f00ab15b364afd5fda",
+          "result": "25 tests plus adversarial verification; four reproducible findings require repair"
+        },
+        {
+          "type": "implementer_report",
+          "revision": "f38b06142252fea78b7f20c0b094227fade3a230",
+          "result": "Full backend:73 passed,1 intentional SQLite concurrency skip,90 subtests; PostgreSQL first-login concurrency passed; independent recheck pending"
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "J01-R1",
+          "summary": "Case-scoped delegation cannot be bootstrapped through API",
+          "status": "open"
+        },
+        {
+          "id": "J01-R2",
+          "summary": "Scoped managers cannot list/revoke their authorized assignments",
+          "status": "open"
+        },
+        {
+          "id": "J01-R3",
+          "summary": "Concurrent first login failures lose throttle counts",
+          "status": "open"
+        },
+        {
+          "id": "J01-R4",
+          "summary": "Delegation validity ignores actor membership end",
+          "status": "open"
+        }
+      ]
     },
     {
       "id": "J02",
@@ -82,14 +115,15 @@
         "F40"
       ],
       "dependsOn": [],
-      "status": "awaiting_review",
+      "status": "verified",
       "requiredEvidence": "Boundary and adverse domain examples, especially DST, revision and unsupported evidence",
       "implementationAgent": "/root/j02_domain_core",
       "reviewAgent": "/root/review_j02",
       "commits": [
         "bd207c8c3422a0bf56c742953444ca96a1c5be21",
         "35c613a765f6dfe43e839b3876278068535cf31f",
-        "65eae8b6f0748a0839592620be38a41fa490bb77"
+        "65eae8b6f0748a0839592620be38a41fa490bb77",
+        "e1588794f63eaaa725875060bf1a602c512bc686"
       ],
       "evidence": [
         {
@@ -108,23 +142,40 @@
           "type": "test_run",
           "result": "32 domain tests passed after all three repairs; independent recheck pending",
           "revision": "65eae8b6f0748a0839592620be38a41fa490bb77"
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J02-review.md",
+          "revision": "65eae8b6f0748a0839592620be38a41fa490bb77",
+          "result": "32 required tests and 3 additional checks; decision binding and manual drafts verified fixed, one residual automatic-period finding"
+        },
+        {
+          "type": "implementer_report",
+          "revision": "e158879",
+          "result": "35 domain tests passed after targeted automatic-period repair; independent final recheck pending"
+        },
+        {
+          "type": "independent_review",
+          "revision": "e1588794f63eaaa725875060bf1a602c512bc686",
+          "path": "docs/reviews/J02-review.md",
+          "result": "Accepted J02 slice;35 required tests and additional targeted checks passed; no outstanding findings"
         }
       ],
       "findings": [
         {
           "id": "J02-R01",
-          "summary": "Calendar boundaries fail at midnight DST gaps",
-          "status": "open"
+          "summary": "Automatic period selection fails after an entirely skipped calendar date; midnight gaps/overlaps repaired",
+          "status": "verified_fixed"
         },
         {
           "id": "J02-R02",
           "summary": "Entitlement aggregation lacks subject and decision revision identity",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J02-R03",
           "summary": "Ordinary manual draft request requires activating a schedule",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ]
     },
@@ -144,7 +195,8 @@
       "commits": [
         "7f3d652a20af3465f65fd57cf86c96dd317582d1",
         "afa7247",
-        "9ac02a2"
+        "9ac02a2",
+        "b8ccfa2"
       ],
       "evidence": [
         {
@@ -168,6 +220,11 @@
           "type": "test_run",
           "result": "15 web tests and typecheck passed; seven repairs and explicit loopback proxy pending independent recheck and live browser gate",
           "revision": "9ac02a2"
+        },
+        {
+          "type": "integration_finding",
+          "revision": "9ac02a2",
+          "result": "Real Chromium found illegal native-fetch receiver, preventing all UI requests; root repair b8ccfa2 under independent browser recheck"
         }
       ],
       "findings": [
@@ -205,6 +262,11 @@
           "id": "J03-R07",
           "summary": "Error messages ignore selected language",
           "status": "open"
+        },
+        {
+          "id": "J03-R08",
+          "summary": "Default API transport invokes native fetch with an invalid receiver in real browser",
+          "status": "open"
         }
       ]
     },
@@ -230,8 +292,9 @@
     },
     {
       "id": "J05",
-      "scope": "Referrals, decisions, imported/created IEPs, goal versions and contributions",
+      "scope": "Source-backed support profiles, referrals, decisions, imported/created IEPs, goal versions and contributions",
       "featureIds": [
+        "F02",
         "F07",
         "F08"
       ],
@@ -241,7 +304,7 @@
         "J04"
       ],
       "status": "queued",
-      "requiredEvidence": "Scope validation, dated authority, original approval, historical goals preserved",
+      "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": null,
       "reviewAgent": null,
       "commits": [],
@@ -528,8 +591,9 @@
     },
     {
       "id": "J19",
-      "scope": "Public extracts, conditional administrative case types, exemptions and appeals",
+      "scope": "Full school/account administration, public extracts, conditional administrative case types, exemptions and appeals",
       "featureIds": [
+        "F01",
         "F30",
         "F37",
         "F38"
@@ -542,7 +606,7 @@
         "J18"
       ],
       "status": "queued",
-      "requiredEvidence": "Source reconciliation, type-specific authority/deadlines, working named administrative flows",
+      "requiredEvidence": "Account/enrollment lifecycle and revocation, school profile revisions, source reconciliation, type-specific authority/deadlines, working named administrative flows",
       "implementationAgent": null,
       "reviewAgent": null,
       "commits": [],
@@ -900,6 +964,7 @@
         "J01",
         "J02",
         "J03",
+        "J19",
         "J24",
         "J27",
         "J28"
@@ -931,6 +996,7 @@
         "J01",
         "J02",
         "J03",
+        "J05",
         "J07",
         "J27",
         "J28"
