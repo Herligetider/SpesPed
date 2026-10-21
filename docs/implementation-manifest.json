@@ -636,13 +636,14 @@
         "J05",
         "J06"
       ],
-      "status": "awaiting_review",
+      "status": "implementing",
       "requiredEvidence": "Browser journey against persistent API with negative paths and usable review",
       "implementationAgent": "/root/j07_intake_ui",
       "reviewAgent": "/root/review_j07_intake",
       "commits": [
         "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8",
-        "29bcbc0bf5d03afe0ea250bd8acfc6f119171328"
+        "29bcbc0bf5d03afe0ea250bd8acfc6f119171328",
+        "278613efb0fdbef7e93b88d86b542c204a75d671"
       ],
       "evidence": [
         {
@@ -655,6 +656,12 @@
           "type": "implementer_report",
           "revision": "29bcbc0bf5d03afe0ea250bd8acfc6f119171328",
           "result": "All nine intake findings addressed; 32 web tests and production build passed. Real Chromium/PostgreSQL checks exercised exact reviewed values, explicit local occurrence, named clarifications, Unicode transport/spans, same-command retry after committed-response loss, retained409 edits, model recall manual recovery and delayed source/page/write races. Independent recheck assigned; no full J07 acceptance."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "278613efb0fdbef7e93b88d86b542c204a75d671",
+          "path": "docs/reviews/J07-intake-review.md",
+          "result": "Bounded intake UI accepted; all eleven findings closed. 38 tests and build passed. Independent Chromium/PostgreSQL checks cover original nine workflow/race defects, native file retry clearing without duplicate import, exact File identity, newer draft preservation, pending attribution controls and 100-plus pagination. Full J07 remains incomplete."
         }
       ],
       "findings": [
@@ -662,62 +669,73 @@
           "id": "J07-R1",
           "priority": "P1",
           "description": "School change retains source content and drafts from prior school.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R2",
           "priority": "P1",
           "description": "Late source/page responses and unbound drafts replace current scope.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R3",
           "priority": "P1",
           "description": "Confirmation displays proposed value instead of persisted reviewed value.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R4",
           "priority": "P1",
           "description": "Model recall hides independent manual recovery through unfiltered proposal list.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R5",
           "priority": "P1",
           "description": "Ambiguous note-save retry creates duplicate source identity.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R6",
           "priority": "P2",
           "description": "Stale-review409 erases notice and hides unsaved human edit.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R7",
           "priority": "P2",
           "description": "Unicode filename/metadata cannot be sent as raw browser headers.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R8",
           "priority": "P2",
           "description": "UTF16 default spans do not match backend Unicode character offsets.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-R9",
           "priority": "P2",
           "description": "Occurrence date silently defaults to now with incorrect local/UTC conversion.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J07-R10",
+          "priority": "P2",
+          "description": "Successful explicit file retry leaves the file selected and permits duplicate import.",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J07-R11",
+          "priority": "P2",
+          "description": "A response clears a newer review edit or import draft entered while saving.",
+          "status": "verified_fixed"
         }
       ],
-      "activeImplementationAgent": "/root/j07_intake_repairs",
       "remainingWork": [
-        "Repair all9 intake findings and independently recheck exact combined UI/backend revision with real browser and persistence.",
-        "Provide usable source selection, named assignees and pagination; recheck normal and adverse review/recovery paths.",
-        "Implement the remaining complete teaching-cycle UI:timeline/correction history/impact,plan/profile/IOP,AI requests and application,session/assistant/delivery/observation flows."
+        "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
+        "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
+        "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness."
       ]
     },
     {
@@ -741,7 +759,8 @@
         "5e9afe15094c71de65d5bef3ce08839777c1c6c1",
         "381b0120c1ab5fa0b70d0049c86a76c3b660036c",
         "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d",
-        "ac555498c0f8741d77d567075913b2e75a173779"
+        "ac555498c0f8741d77d567075913b2e75a173779",
+        "5a76a69923c55ecd2410e1d8599686960ad5e204"
       ],
       "evidence": [
         {
@@ -794,6 +813,11 @@
           "revision": "ac555498c0f8741d77d567075913b2e75a173779",
           "path": "docs/reviews/teaching-gateway-review.md",
           "result": "Accepted bounded typed gateway and consumer metadata ports; all three findings closed. 104 distinct relevant cases verified on SQLite/PostgreSQL, including unchanged pending-recall probes, explicit flush/commit, deletion preservation and SELECT-only reads. Later actual teaching consumption remains outside this review."
+        },
+        {
+          "type": "integration_candidate",
+          "revision": "5a76a69923c55ecd2410e1d8599686960ad5e204",
+          "result": "Typed iep_drafting purpose, distinct evaluated schema and plan_basis resolver boundary added. Root tests exercise real local wire output, persistence/replay/recall, forbidden rights/date/approval fields, source/purpose limits and purpose-specific reviewed evaluation. Independent review assigned; real plans consumer requires separate acceptance."
         }
       ],
       "findings": [

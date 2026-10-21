@@ -1,8 +1,63 @@
 # J07 intake UI independent review
 
-Reviewed candidate: `53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8` (2026-10-21).
+Current candidate: `278613efb0fdbef7e93b88d86b542c204a75d671` (2026-10-21), including UI repair `29bcbc0bf5d03afe0ea250bd8acfc6f119171328` and the separately reviewed backend transport/assignee contract.
 
-Decision: **changes required**. The intake subset supports a real persisted normal path, but the findings below prevent accepting it. This review does not accept all J07 or F03–F05.
+Current decision: **accepted for the bounded document-intake and source-review UI; no remaining blocking findings in this reviewed subset**. All nine original findings and the two follow-up save/retry findings below were independently rechecked. This is not acceptance of whole J07, complete F03–F05, the teaching workflow or production deployment.
+
+## Current recheck and evidence
+
+The exact candidates were archived separately at `var/review-j07-recheck` (`29bcbc0`) and `var/review-j07-final` (`278613e`). Shared uncommitted IEP, gateway, plans and teaching work was excluded. Backend imports used only each archive's absolute `backend` / `backend/tests` paths. These rechecks changed no production source and made no commits or pushes.
+
+| Finding | Verified final behavior |
+|---|---|
+| R1: school scope | Selecting another school removes original blobs, text, fields, tasks and drafts. A delayed A source response cannot replace the loaded B source. |
+| R2: navigation/page/write races | Actual delayed source, page and committed-write responses do not replace the later source/page, disturb its new draft, refresh it or add a stale success notice. |
+| R3: reviewed content | The corrected value is the current displayed and confirmed value; the original proposal is separately labelled, and the literal source excerpt is visible. |
+| R4: model recall | With the model list still returning 503, an independent same-span manual field can be created, reviewed, confirmed and reopened after browser reload. Recalled generated prose remains unavailable. |
+| R5: unknown note save | A committed response can be dropped and retried with exactly the same JSON, request key and source identity. Only one matching source is stored; a newer draft is preserved. |
+| R6: stale edit | The actual 409 stays visible. Explicit refresh retains the attempted replacement next to the competing current value, and can carry it deliberately into a clarification. |
+| R7: Unicode transport | A real upload named `independent–東京😀.txt` with Japanese/emoji sender metadata succeeds and retains its explicit original date. |
+| R8: Unicode excerpts | Keyboard source selection produces the displayed literal excerpt and backend code-point offsets, including supplementary Unicode. Manual submission succeeds. |
+| R9: dates | Occurrence starts blank; explicit Europe/Oslo local input is stored as the correct UTC instant, separately from recording time. Original document dates are entered, persisted and shown. |
+| R10: resolved file retry | Explicit successful retry clears an unchanged file. Native required-file validation blocks an additional import click; there are two HTTP attempts and one durable source. |
+| R11: edits while saving | A newer note, file, file metadata or review edit survives the earlier response. Confirmation's seven attribution controls are disabled while the exact confirmation is pending. |
+
+The `29bcbc0` recheck independently passed the original nine checks, 32 web tests/build and actual pagination, but found two additional P2 problems. These were passed to the root author before the final repair:
+
+- **R10, historical P2, now fixed:** `retryFile()` at `29bcbc0` lines 308–313 retained the unchanged selected file after resolving an ambiguous save. Clicking Import again created a second source. `var/review-j07-recheck/independent-races.json` records `fileStillSelected:1` and `duplicateCount:2`. The final native-browser repeat records selection zero, one source, two requests and a required-field validation block.
+- **R11, historical P2, now fixed:** `review()` at `29bcbc0` line 318 unconditionally deleted a replacement typed while the first correction response was delayed. `independent-pagination-edits.json` in that archive records an enabled input followed by no visible newer edit or comparison control. The final pin retains the newer value in “Din beholdte retting” beside the saved value. Its conditional reset also preserves changed note/file drafts; attribution writes prevent concurrent control edits.
+
+On the final pin, independent real-browser checks additionally replaced an upload's selected File with a different File having **the same name, size and lastModified**, while the original normal save and explicit retry responses were held. The new `BBBB` bytes remained selected and natively valid; authorized original downloads proved the server had saved the submitted `AAAA` bytes. Changed sender metadata with the same File was also retained. This validates actual Chromium File identity and form validity in addition to jsdom tests.
+
+Named authorized assignees now replace the UUID input. Source and learner excerpt selection replace numeric offset entry; “Vis kildeutsnitt” also presents the chosen literal excerpt. An isolated PostgreSQL fixture added 101 synthetic sources, learners and eligible colleagues. The browser reached **all 117 final sources** through “Vis flere kilder”, and loaded **102 actual learners and 102 actual eligible assignees** (103 options each including the empty choice), including the last named entries. The intermediate recheck independently reached 111 sources with the same people pagination. Fixture rows were restricted to the reviewer's unique schema.
+
+Final verification commands/artifacts, all under ignored `var/review-j07-final`:
+
+- `git archive 278613efb0fdbef7e93b88d86b542c204a75d671 | tar -x -C var/review-j07-final`.
+- Pinned `web`: `npm test -- --reporter=verbose` → **38 passed**, and `npm run build` → TypeScript/Vite passed (`web-tests.log`, `web-build.log`).
+- `PYTHONPATH=<absolute final archive>/backend:<absolute final archive>/backend/tests <repo>/backend/.venv/bin/python reviewer_server.py`: actual FastAPI HTTP and production-built pinned web on isolated port **18877**, with a unique synthetic PostgreSQL schema, private original storage, synthetic scanner and recalled local-protocol model fixture. The independent intermediate server used 18867.
+- `node reviewer_browser.mjs` → all original workflow, Unicode, date, confirmation, named-assignee, stale-edit, identical retry and recalled-manual persistence assertions completed (`independent-browser.json`).
+- `node reviewer_races.mjs` → delayed source/school/page/committed-write guards and native unchanged-file retry clearing completed (`independent-races.json`).
+- `node reviewer_pending_saves.mjs` → newer note/file metadata/replacement File/review preservation and locked pending attribution completed (`independent-pending-saves.json`).
+- Absolute pinned-backend `reviewer_seed_pagination.py`, followed by `node reviewer_pagination_edits.mjs` → actual 100-plus pagination and repeated delayed-edit preservation completed (`pagination-seed.log`, `independent-pagination-edits.json`).
+
+These are independently written reviewer probes retained from the first review and expanded for the repairs; the author's browser result files were context, not the acceptance evidence. Browser: installed Chromium **156.0.8078.4**, bundled Playwright core, Europe/Oslo timezone. One final normal-flow probe initially used a global inbox-total difference while another independent probe was creating its own source; that harness assertion was corrected to count its unique sender, and the rerun completed. One intermediate pagination wait originally waited for a closed select's option to be visible; waiting for its attachment corrected that harness issue. Neither required an application change.
+
+Review servers 18867/18877 were stopped and their synthetic schemas removed; existing services on 8000/5173 were left alone. Original probes and evidence remain under `var/review-j07-intake`. No real pupil data or external model/mail/message service was used.
+
+## Acceptance boundary and remaining scope
+
+Accepted behavior covers manual notes/file intake, original/text review, typed manual fields, individual proposal review, explicit learner excerpt/attribution confirmation, named clarification creation/resolution/reopening, recall-safe manual recovery, pagination and the tested error/retry/race paths. Backend transport/assignee acceptance is separately documented in `docs/reviews/intake-transport-review.md`.
+
+There is still no intake UI for AI job creation/application, a learner evidence timeline and its filters, correction/source revision history, correction commands and derivative impact review, source replacement/reprocessing, or clarification reassignment. The later teaching, assistant and post-session workflow screens are outside this subset. The baseline “remaining product scope” below is historical; source selection, named assignees and bounded list reachability have since been addressed as described above. None of these improvements establishes whole-J07/F03–F05 completion.
+
+No deployed ClamAV/OCR-quality, external integration, assistive-technology, full mobile or complete PDF/Word/.eml attachment usability acceptance is made. Real browser file clearing, a synthetic two-page Word extraction, source selection and actual PostgreSQL persistence were exercised; the synthetic scanner remains a test adapter. These limits do not block this bounded intake repair, and remain separate delivery work.
+
+## Historical baseline review — 53e79b9
+
+Historical candidate: `53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8` (2026-10-21).
+
+Historical decision: **changes required**. The intake subset supports a real persisted normal path, but the findings below prevent accepting it. This review does not accept all J07 or F03–F05.
 
 ## Scope and independence
 
