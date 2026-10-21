@@ -1495,12 +1495,17 @@
         "J02",
         "J11"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Rights recheck, invalidation, unknown outcome reconciliation, secure recipient view",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j12_communication",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "Native BC11 recipient-specific disclosure packages, reviewed channel/recipient policy, explicit secure dispatch/receipts/reconciliation, controlled export and guardian portal backend assigned to /root/j12_communication (Sol high), disjoint communication module/migration/tests. Integrate native approved BC10 frozen revisions and supply exact confirmed-period history adapter. Native portal publication is distinct from external notification/read receipt; no external message or provider deployment authorized. Root owns application registration; independent review required before bounded acceptance, J21 UI/J18 deployed integrations/J26 worker wiring remain required."
+        }
+      ],
       "findings": []
     },
     {
