@@ -104,6 +104,14 @@ content. Case grants are independent of learner-team access. Signing authority i
 explicit and dated. An assistant sees the assigned brief and necessary observation
 input, not the whole evidence dossier. Guardians receive only approved packages.
 
+Curated projections can call
+`evidence.projections.confirmed_binding_is_current(db, school_id, learner_id,
+evidence_id, evidence_revision, link_id)` after authorizing their own projection.
+The port returns only a boolean for the exact confirmed evidence/link/original
+revision. It cannot authorize source prose, review reasons, history or original
+documents; those still require the evidence service's actor-aware access checks.
+Contexts must not replace full source authorization with this metadata check.
+
 Foundation public Python contracts:
 
 - `spesped.db.Base`, `get_db()` and `make_session_factory(database_url)`.
