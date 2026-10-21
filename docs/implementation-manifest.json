@@ -789,13 +789,26 @@
         "J02",
         "J13"
       ],
-      "status": "implementing",
+      "status": "awaiting_review",
       "requiredEvidence": "Case isolation, alternative routes, no headteacher gate on personal/urgent duty",
       "implementationAgent": "/root/j16_safeguarding",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "reviewAgent": "/root/review_j16",
+      "commits": [
+        "e4c295d66b47cd34f5ab2a0f20314af4021994fb"
+      ],
+      "evidence": [
+        {
+          "type": "implementer_report",
+          "revision": "e4c295d66b47cd34f5ab2a0f20314af4021994fb",
+          "result": "Protected workflow backend candidate:41passed/1SQLite concurrency skip across SQLite/PostgreSQL;19tables,42routes and migration roundtrips reported. Independent reviewer assigned exact archive; no feature completion."
+        }
+      ],
+      "findings": [],
+      "remainingWork": [
+        "Independent adverse review and repairs of protected case workflows, access projections, actual actions and source snapshots.",
+        "Root router/model registration and real governance case, source and reviewed-rule adapters, with independent integration review.",
+        "J23 UI, reviewed school configuration and full feature acceptance remain required."
+      ]
     },
     {
       "id": "J17",
