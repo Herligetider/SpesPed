@@ -75,8 +75,32 @@ describe('ApiClient', () => {
     expect(fetcher.mock.calls[0][0]).toBe('/api/v1/schools/school-1/intake/files');
     expect(fetcher.mock.calls[0][1]?.body).toBe(file);
     expect(headers.get('X-Evidence-Filename')).toBe('synthetic.txt');
+    expect(headers.get('X-Evidence-Filename-Encoding')).toBe('percent');
     expect(headers.get('X-Evidence-Metadata')).toBe(JSON.stringify(metadata));
     expect(headers.has('Content-Type')).toBe(false);
+  });
+
+  it('preserves Unicode filenames and metadata in ASCII header transport for upload and revision', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async()=>response(201, {id:'source-1'}));
+    const client = new ApiClient(fetcher), file = new File(['Synthetic 😀'], 'synthetic–東京😀.txt', {type:'text/plain'});
+    const metadata = {sender:'東京 😀',document_type:'notat',external_id:'synthetic'};
+    await client.uploadIntake('school-1',file,metadata);
+    await client.reviseIntake('school-1','source-1',1,file,metadata);
+    for (const call of fetcher.mock.calls) {
+      const headers = new Headers(call[1]?.headers);
+      expect(headers.get('X-Evidence-Filename-Encoding')).toBe('percent');
+      expect(decodeURIComponent(headers.get('X-Evidence-Filename')!)).toBe(file.name);
+      expect(JSON.parse(headers.get('X-Evidence-Metadata')!)).toEqual(metadata);
+      expect([...headers.get('X-Evidence-Metadata')!].every(c=>c.charCodeAt(0)<128)).toBe(true);
+    }
+  });
+
+  it('loads manual proposals independently and paginates authorized intake people', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async()=>response(200, {items:[],total:0})), client = new ApiClient(fetcher);
+    await client.intakeProposals('school-1','source-1',2,'manual',100);
+    await client.intakeAssignees('school-1',100);
+    expect(fetcher.mock.calls[0][0]).toContain('revision=2&limit=100&origin=manual&offset=100');
+    expect(fetcher.mock.calls[1][0]).toBe('/api/v1/schools/school-1/intake/assignees?offset=100&limit=100');
   });
 
   it('sends source and aggregate revisions for manual recovery and surfaces stale revision conflicts', async () => {
