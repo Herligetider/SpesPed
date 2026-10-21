@@ -105,15 +105,31 @@ def _load(db, actor, school_id, job_id, *, lock=False):
     return job
 
 
-def _configuration(db, runtime, job):
-    policy = db.scalar(select(ProcessingPolicy).where(ProcessingPolicy.school_id == job.school_id, ProcessingPolicy.id == job.policy_id).execution_options(populate_existing=True))
-    release = db.scalar(select(ModelRelease).where(ModelRelease.school_id == job.school_id, ModelRelease.id == job.release_id).execution_options(populate_existing=True))
+def _pending_binding_change(db, model, identity):
+    return any(isinstance(row, model) and row.id == identity for row in (*db.new, *db.dirty, *db.deleted))
+
+
+def _configuration_record(db, model, identity, school_id, *, metadata_only):
+    conditions = (model.id == identity, model.school_id == school_id)
+    if not metadata_only:
+        return db.scalar(select(model).where(*conditions).execution_options(populate_existing=True))
+    # A read-only predicate must neither flush nor overwrite caller changes.
+    # Pending edits need the caller's explicit flush/rollback before validation.
+    if _pending_binding_change(db, model, identity):
+        raise ProviderFailure('pending_processing_changes')
+    row = db.execute(select(*model.__table__.c).where(*conditions)).mappings().first()
+    return SimpleNamespace(**row) if row is not None else None
+
+
+def _configuration(db, runtime, job, *, metadata_only=False):
+    policy = _configuration_record(db, ProcessingPolicy, job.policy_id, job.school_id, metadata_only=metadata_only)
+    release = _configuration_record(db, ModelRelease, job.release_id, job.school_id, metadata_only=metadata_only)
     if policy is None or policy.state != 'active' or policy.version != job.policy_version:
         raise ProviderFailure('processing_policy_unavailable')
     if (release is None or release.state != 'reviewed' or release.configuration_digest != job.release_digest
             or (release.template_version, release.output_schema_version) != release_versions(job.purpose)):
         raise ProviderFailure('reviewed_release_required')
-    evaluation = db.scalar(select(ModelEvaluation).where(ModelEvaluation.id == release.evaluation_id).execution_options(populate_existing=True))
+    evaluation = _configuration_record(db, ModelEvaluation, release.evaluation_id, job.school_id, metadata_only=metadata_only)
     if (evaluation is None or evaluation.school_id != job.school_id or evaluation.release_id != release.id
             or evaluation.state != 'passed' or evaluation.release_digest != release.configuration_digest
             or not release.reviewed_by or not release.reviewed_at
@@ -375,6 +391,8 @@ def job_binding_is_current(db, school_id, job_id, runtime):
     its exact learner/source/goal dependencies. This is never source permission.
     Remote fixture attestations are rechecked without retrieving source prose.
     This port does not commit, audit or mutate the caller's transaction.
+    Pending edits/deletions to a binding return false until explicitly flushed
+    or rolled back by the owner; they are never discarded by a metadata read.
     """
     if runtime is None:
         return False
@@ -383,6 +401,8 @@ def job_binding_is_current(db, school_id, job_id, runtime):
     except (ValueError, TypeError, AttributeError):
         return False
     with db.no_autoflush:
+        if _pending_binding_change(db, GenerationJob, job_id):
+            return False
         row = db.execute(select(
             GenerationJob.school_id, GenerationJob.learner_id, GenerationJob.purpose,
             GenerationJob.policy_id, GenerationJob.policy_version, GenerationJob.release_id,
@@ -393,7 +413,7 @@ def job_binding_is_current(db, school_id, job_id, runtime):
             return False
         job = SimpleNamespace(**row)
         try:
-            _, _, provider = _configuration(db, runtime, job)
+            _, _, provider = _configuration(db, runtime, job, metadata_only=True)
             manifests = job.source_manifest
             if not isinstance(manifests, list) or not manifests:
                 return False

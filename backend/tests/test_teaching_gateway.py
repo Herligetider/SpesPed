@@ -260,6 +260,41 @@ def test_consumer_ports_preserve_transaction_and_metadata_does_not_select_job_ou
         assert not service.job_binding_is_current(db, typed.ids['school'], result.id, replace(typed.runtime, providers={}))
 
 
+@pytest.mark.parametrize('kind', ['policy', 'release', 'evaluation', 'job'])
+@pytest.mark.parametrize('mutation', ['edit', 'delete'])
+def test_metadata_binding_preserves_pending_changes_without_flushing(typed, kind, mutation):
+    result, _ = finished(typed)
+    model, identity = {
+        'policy': (ProcessingPolicy, typed.ids['policy']),
+        'release': (ModelRelease, typed.ids['session_release']),
+        'evaluation': (ModelEvaluation, typed.ids['session_evaluation']),
+        'job': (GenerationJob, result.id),
+    }[kind]
+    statements = []
+    engine = typed.factory.kw['bind']
+    def observe(conn, cursor, statement, parameters, context, executemany):
+        statements.append(statement)
+    with typed.factory() as db:
+        row = db.get(model, identity)
+        before = row.state
+        if mutation == 'delete':
+            db.delete(row)
+        else:
+            row.state = 'revoked' if kind != 'job' else 'cancelled'
+        event.listen(engine, 'before_cursor_execute', observe)
+        try:
+            assert not service.job_binding_is_current(db, typed.ids['school'], result.id, typed.runtime)
+        finally:
+            event.remove(engine, 'before_cursor_execute', observe)
+        assert all(sql.lstrip().upper().startswith('SELECT') for sql in statements)
+        if mutation == 'delete':
+            assert row in db.deleted and row.state == before
+        else:
+            assert row in db.dirty and row.state == ('revoked' if kind != 'job' else 'cancelled')
+        db.rollback()
+        assert service.job_binding_is_current(db, typed.ids['school'], result.id, typed.runtime)
+
+
 @pytest.mark.parametrize('kind', ['user', 'school'])
 def test_current_job_denies_cached_identity_after_deactivation(typed, kind):
     result, command = finished(typed)
