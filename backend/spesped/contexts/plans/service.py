@@ -1,5 +1,5 @@
 """BC05 application service. Never changes previously recorded pedagogical content."""
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
 from sqlalchemy import select
@@ -137,6 +137,15 @@ def content_row(row, names):
     return {name:json_value(getattr(row,name)) for name in names}
 
 
+def new_content_values(command, *, exclude):
+    # UTCDateTime normalizes storage, but flush leaves an attached object's
+    # original offset intact. Hash new content in the same representation that
+    # subsequent requests load, without changing existing snapshots or JSON
+    # provenance (including original approvals) and their recorded digests.
+    return {name:value.astimezone(timezone.utc) if isinstance(value,datetime) else value
+            for name,value in command.model_dump(exclude=exclude).items()}
+
+
 GOAL_FIELDS = ('id','goal_id','parent_goal_id','status','title','expected_action','arena','support','responsibility','evaluation_method','curriculum_reference','effective_from','effective_until')
 REVISION_FIELDS = ('id','plan_id','revision','title','rationale','organization','responsibility','evaluation_method','participation_record','decision_id','decision_revision_id','effective_from','effective_until','origin','sources','original_approval')
 
@@ -225,7 +234,7 @@ def save_plan(db, actor, school_id, learner_id, command, plan_id=None, *, genera
     if generation_lineage: lineage.update(generation_lineage)
     binding_values = sources(db,actor,school_id,learner_id,command.sources)
     if command.original_approval: source_binding(db,actor,school_id,learner_id,command.original_approval.source)
-    values = command.model_dump(exclude={'request_key','expected_version','kind','sources','original_approval','goals','adaptations','contributions','allocations','decision_id','decision_revision_id','sever_generation_fields'})
+    values = new_content_values(command,exclude={'request_key','expected_version','kind','sources','original_approval','goals','adaptations','contributions','allocations','decision_id','decision_revision_id','sever_generation_fields'})
     revision = PlanRevision(school_id=school_id,plan_id=row.id,revision=row.current_revision,**values,generation_lineage=lineage,decision_id=str(command.decision_id) if command.decision_id else None,decision_revision_id=str(command.decision_revision_id) if command.decision_revision_id else None,sources=binding_values,original_approval=command.original_approval.model_dump(mode='json') if command.original_approval else None,created_by=actor.user_id,content_digest='pending',state='draft')
     db.add(revision); db.flush()
     goal_ids=set()
@@ -240,7 +249,7 @@ def save_plan(db, actor, school_id, learner_id, command, plan_id=None, *, genera
             goal = LearningGoal(school_id=school_id,plan_id=row.id)
             db.add(goal);db.flush()
         goal_ids.add(goal.id)
-        db.add(GoalRevision(school_id=school_id,goal_id=goal.id,plan_revision_id=revision.id,**value.model_dump(exclude={'goal_id','parent_goal_id'}),parent_goal_id=str(value.parent_goal_id) if value.parent_goal_id else None))
+        db.add(GoalRevision(school_id=school_id,goal_id=goal.id,plan_revision_id=revision.id,**new_content_values(value,exclude={'goal_id','parent_goal_id'}),parent_goal_id=str(value.parent_goal_id) if value.parent_goal_id else None))
     db.flush()
     for goal in children(db,GoalRevision,revision):
         if goal.parent_goal_id:
@@ -259,10 +268,10 @@ def save_plan(db, actor, school_id, learner_id, command, plan_id=None, *, genera
         if value.goal_id and str(value.goal_id) not in goal_ids: raise DomainError('goal_scope','Contribution refers to a goal outside this revision.',422)
         if value.occurred_at > utcnow(): raise DomainError('contribution_future','Record an actual contribution or explain missing participation.',422)
         binding=source_binding(db,actor,school_id,learner_id,value.source)
-        db.add(PlanContribution(school_id=school_id,plan_revision_id=revision.id,**value.model_dump(exclude={'goal_id','source'}),goal_id=str(value.goal_id) if value.goal_id else None,source=binding))
+        db.add(PlanContribution(school_id=school_id,plan_revision_id=revision.id,**new_content_values(value,exclude={'goal_id','source'}),goal_id=str(value.goal_id) if value.goal_id else None,source=binding))
     for value in command.allocations:
         entitlements.resolve_provision(db,actor,school_id,learner_id,str(value.decision_id),str(value.decision_revision_id),str(value.provision_id))
-        db.add(ProvisionAllocation(school_id=school_id,plan_revision_id=revision.id,**value.model_dump(exclude={'decision_id','decision_revision_id','provision_id'}),decision_id=str(value.decision_id),decision_revision_id=str(value.decision_revision_id),provision_id=str(value.provision_id)))
+        db.add(ProvisionAllocation(school_id=school_id,plan_revision_id=revision.id,**new_content_values(value,exclude={'decision_id','decision_revision_id','provision_id'}),decision_id=str(value.decision_id),decision_revision_id=str(value.decision_revision_id),provision_id=str(value.provision_id)))
     db.flush()
     revision.content_digest=canonical_content_digest(snapshot(db,revision))
     validate_plan_basis(db,actor,row,revision,bounds=False)
