@@ -417,12 +417,13 @@
         "J02",
         "J04"
       ],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
       "commits": [
-        "ac4eea27bdbb38421fe48465269d950f4d37d634"
+        "ac4eea27bdbb38421fe48465269d950f4d37d634",
+        "7088d2bd5dd64a78dd44237606c10e83e914d101"
       ],
       "evidence": [
         {
@@ -440,6 +441,11 @@
           "type": "integration_candidate",
           "revision": "b67bb741c0c8449bca93b3c434812e55415c605e",
           "result": "Root metadata-only evidence binding port:6SQLite/PostgreSQL tests passed. Helper/use await independent review with J05 repairs; no source-prose permission granted."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "7088d2bd5dd64a78dd44237606c10e83e914d101",
+          "result": "Source projection, specialized replay authority and lock-order repairs; shared-tree80passed/4SQLite skips including unchanged reviewer probes and actual PostgreSQL deadlock rollback. Exact pin uses committed j04_structuring; original independent reviewer rechecking pin and root metadata helper. Findings remain open until verified."
         }
       ],
       "findings": [
@@ -789,7 +795,7 @@
         "J02",
         "J13"
       ],
-      "status": "awaiting_review",
+      "status": "changes_requested",
       "requiredEvidence": "Case isolation, alternative routes, no headteacher gate on personal/urgent duty",
       "implementationAgent": "/root/j16_safeguarding",
       "reviewAgent": "/root/review_j16",
@@ -801,9 +807,46 @@
           "type": "implementer_report",
           "revision": "e4c295d66b47cd34f5ab2a0f20314af4021994fb",
           "result": "Protected workflow backend candidate:41passed/1SQLite concurrency skip across SQLite/PostgreSQL;19tables,42routes and migration roundtrips reported. Independent reviewer assigned exact archive; no feature completion."
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J16-review.md",
+          "revision": "e4c295d66b47cd34f5ab2a0f20314af4021994fb",
+          "result": "41passed1skip baseline;27passed1skip independent probes reproduce5findings. Original implementer repairing. Root rule-context contract/composition and UI remain explicit required follow-on."
         }
       ],
-      "findings": [],
+      "findings": [
+        {
+          "id": "J16-R1",
+          "priority": "P1",
+          "description": "Cached contributor replay exposes followup after reassignment removed current access",
+          "status": "open"
+        },
+        {
+          "id": "J16-R2",
+          "priority": "P2",
+          "description": "Contact reconciliation and notification summary retain or conflate failed/unknown execution",
+          "status": "open"
+        },
+        {
+          "id": "J16-R3",
+          "priority": "P2",
+          "description": "Assigned missing pupil-perspective followup is invisible to limited owner",
+          "status": "open"
+        },
+        {
+          "id": "J16-R4",
+          "priority": "P2",
+          "description": "Accepted API string lengths exceed PostgreSQL storage limits",
+          "status": "open"
+        },
+        {
+          "id": "J16-R5",
+          "priority": "P2",
+          "description": "Incident followup completion accepts impossible pre-incident occurrence",
+          "status": "open"
+        }
+      ],
       "remainingWork": [
         "Independent adverse review and repairs of protected case workflows, access projections, actual actions and source snapshots.",
         "Root router/model registration and real governance case, source and reviewed-rule adapters, with independent integration review.",
