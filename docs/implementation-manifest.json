@@ -1231,13 +1231,22 @@
         "J06",
         "J09"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Scale/condition validity, evidence gaps, human-only grades, scheme differences",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j10_assessment",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
-      "findings": []
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "Native BC09 instruments, administrations, source-backed progress snapshots and human assessment statements assigned to /root/j10_assessment (gpt-6.1-sol high). Must use real BC02/BC05/BC06/BC07 owners, explicit scale/context/license rules, immutable corrections, human-only grades and separate communication records. Root provides pure source projections and actualApp registration; typed AI and native finalization/qualification authority remain required integrations, not assumed from roles or prose."
+        }
+      ],
+      "findings": [],
+      "remainingWork": [
+        "Implement and independently review the native BC09 backend and real source/assessment-scheme composition.",
+        "Integrate typed AI summaries, native finalization/qualification/exemption authority, J20 UI and real normal/adverse browser workflows."
+      ]
     },
     {
       "id": "J11",
@@ -1798,7 +1807,14 @@
       "implementationAgent": null,
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "independent_review",
+          "revision": "76f8171aed95a3942dfa993b230bf34271afdebe",
+          "path": "docs/reviews/missing-adapter-test-review.md",
+          "result": "Two legacy unavailable-provider test scenarios now explicitly remove only their own installed native adapter. Independent 14 focused/context checks and 4 real native goal/case authorization probes passed on SQLite/PostgreSQL. Production code and shared fixtures unchanged; no whole-suite or whole-feature acceptance inferred."
+        }
+      ],
       "findings": []
     },
     {
