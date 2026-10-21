@@ -7,6 +7,7 @@ import type {
   ReadResult,
   RecoveryConfig,
   SavedPage,
+  SavedProposal,
   VerifiedProposal,
 } from "./types";
 const clients = new WeakMap<object, number>();
@@ -104,6 +105,74 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
       alive.current = false;
     };
   }, []);
+  type Stamped = { epoch: number; summary: SavedProposal };
+  type Projection = VerifiedProposal<D> & { metadataStartedAt: number };
+  const observations = useRef({
+    scope,
+    clock: 0,
+    boundary: 0,
+    jobs: new Map<
+      string,
+      { denial?: Stamped; version: Stamped; bases: Map<string, Stamped> }
+    >(),
+  });
+  if (observations.current.scope !== scope)
+    observations.current = { scope, clock: 0, boundary: 0, jobs: new Map() };
+  function remember(page: SavedPage) {
+    const seen = observations.current,
+      epoch = ++seen.clock;
+    if (
+      (page.plan_revision_id ?? page.session_revision_id) !== config.revisionId
+    )
+      seen.boundary = epoch;
+    for (const summary of page.items) {
+      const stamp = { epoch, summary },
+        prior = seen.jobs.get(summary.id);
+      const row = prior ?? {
+        version: stamp,
+        bases: new Map<string, Stamped>(),
+      };
+      if (summary.version >= row.version.summary.version) row.version = stamp;
+      row.bases.set(summary.basis_id, stamp);
+      if (
+        summary.availability !== "current" ||
+        summary.review_outcome ||
+        summary.state === "cancelled"
+      )
+        row.denial = stamp;
+      seen.jobs.set(summary.id, row);
+    }
+  }
+  function project(value: Projection): Projection {
+    const seen = observations.current;
+    if (seen.boundary > value.metadataStartedAt)
+      throw invalid(
+        "Den lagrede planrevisjonen er endret. Hent gjeldende plan før du vurderer forslaget.",
+      );
+    const row = seen.jobs.get(value.summary.id);
+    const contradiction =
+      row &&
+      ((row.denial && row.denial.epoch > value.metadataStartedAt
+        ? row.denial
+        : undefined) ??
+        (row.version.summary.version >
+        (value.job?.version ?? value.summary.version)
+          ? row.version
+          : undefined) ??
+        [...row.bases.values()].find(
+          (stamp) =>
+            stamp.epoch > value.metadataStartedAt &&
+            stamp.summary.basis_id !== value.summary.basis_id,
+        ));
+    // Exact positive metadata can refute an earlier projection. Missing rows on
+    // another pagination page say nothing about this selected job.
+    return contradiction
+      ? {
+          summary: contradiction.summary,
+          metadataStartedAt: value.metadataStartedAt,
+        }
+      : value;
+  }
   const listPath = [...ownerPath(config), "suggestions"];
   function assertPage(page: SavedPage, allowChanged = false) {
     if (
@@ -117,6 +186,7 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
       throw invalid(
         "Listen over lagrede forslag kunne ikke bekreftes. Fortsett manuelt og hent listen på nytt.",
       );
+    remember(page);
     if (
       !allowChanged &&
       (page.plan_revision_id ?? page.session_revision_id) !== config.revisionId
@@ -157,7 +227,8 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
         throw invalid("Listen ble avbrutt. Hent forslagene på nytt.");
     }
   }
-  async function verify(id: string): Promise<VerifiedProposal<D>> {
+  async function verify(id: string): Promise<Projection> {
+    const metadataStartedAt = observations.current.clock;
     const summary = await find(id);
     if (!summary)
       throw invalid(
@@ -168,7 +239,9 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
       summary.review_outcome ||
       summary.state === "cancelled"
     )
-      return { summary };
+      return { summary, metadataStartedAt };
+    const beforeJob = project({ summary, metadataStartedAt });
+    if (beforeJob.summary !== summary) return beforeJob;
     const raw = await config.client.schoolGet<JobStatus>(config.schoolId, [
       "ai",
       "jobs",
@@ -183,7 +256,9 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
       attempts: raw.attempts ?? summary.attempts,
       error_code: raw.error_code ?? null,
     };
-    if (job.state !== "succeeded") return { summary, job };
+    const beforeDiff = project({ summary, job, metadataStartedAt });
+    if (beforeDiff.summary !== summary || job.state !== "succeeded")
+      return beforeDiff;
     const diff = await config.client.schoolGet<D>(
       config.schoolId,
       config.kind === "plan"
@@ -208,17 +283,25 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
       throw invalid(
         "Forslaget gjelder ikke den viste revisjonen. Hent gjeldende plan før videre vurdering.",
       );
-    return { summary, job, diff };
+    return project({ summary, job, diff, metadataStartedAt });
   }
   const page = useRecoveryRead(
     () => pageAt(offset),
     [scope, config.refresh, reload, offset],
   );
-  const verified = useRecoveryRead(
+  const selectedRead = useRecoveryRead(
     () => verify(selectedId),
     [scope, config.refresh, reload, selectedId],
     Boolean(selectedId),
   );
+  let verified: ReadResult<VerifiedProposal<D>> = selectedRead;
+  if (selectedRead.value) {
+    try {
+      verified = { ...selectedRead, value: project(selectedRead.value) };
+    } catch (cause) {
+      verified = { loading: false, error: cause };
+    }
+  }
   function refresh() {
     setReload((n) => n + 1);
   }
@@ -256,7 +339,7 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
       // processing binding must never require re-exposing its proposal output.
       return;
     }
-    const fresh = await verify(operation.jobId!);
+    const fresh = project(await verify(operation.jobId!));
     if (
       fresh.summary.availability !== "current" ||
       fresh.summary.review_outcome
@@ -426,12 +509,20 @@ export function useProposalRecovery<D>(config: RecoveryConfig) {
           "Forslaget tilhører ikke lenger gjeldende grunnlag. Fortsett manuelt og kontroller gjeldende revisjon.",
         );
       if (
-        operation.kind === "expire" &&
-        summary.state !== "running" &&
-        summary.version !== operation.body.expected_version
+        summary.version > Number(operation.body.expected_version) &&
+        ((operation.kind === "run" &&
+          [
+            "running",
+            "succeeded",
+            "failed",
+            "unavailable",
+            "cancelled",
+          ].includes(summary.state)) ||
+          (operation.kind === "cancel" && summary.state === "cancelled") ||
+          (operation.kind === "expire" && summary.state !== "running"))
       ) {
         forgetPending(
-          `Registrert jobbstatus: ${stateLabel(summary.state)}. Ingen ny kjøring er startet.`,
+          `Registrert jobbstatus: ${stateLabel(summary.state)}. Dette viser lagret status og beviser ikke hvem som utløste endringen. Ingen ny kjøring er startet.`,
         );
         return;
       }

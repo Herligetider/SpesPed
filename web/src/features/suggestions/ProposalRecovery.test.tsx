@@ -1067,3 +1067,172 @@ it("keeps a retry from an already failed job uncertain when persisted version ha
     ),
   ).toHaveLength(1);
 });
+
+describe.each(["plan", "teaching"] as const)(
+  "%s combined recovery reads",
+  (kind) => {
+    it("keeps exact recall metadata authoritative over a successful diff computed before recall", async () => {
+      let refreshing = false;
+      let releasePage!: (value: Response) => void;
+      let releaseDiff!: (value: Response) => void;
+      const e = setup(kind, (call) => {
+        if (
+          call.url.pathname.endsWith("/suggestions") &&
+          call.method === "GET"
+        ) {
+          if (refreshing && call.url.searchParams.get("limit") === "50")
+            return new Promise<Response>((resolve) => {
+              releasePage = resolve;
+            });
+          return response(page(kind, [job()]));
+        }
+        if (
+          refreshing &&
+          ((kind === "plan" &&
+            call.url.pathname.endsWith("/suggestions/job-1")) ||
+            (kind === "teaching" &&
+              call.url.pathname.endsWith("/suggestions/job-1/diff")))
+        )
+          return new Promise<Response>((resolve) => {
+            releaseDiff = resolve;
+          });
+      });
+      render(<Screen kind={kind} client={e.client} />);
+      const user = await openFirst();
+      await screen.findByText("Syntetisk forslag som må vurderes");
+      refreshing = true;
+      await user.click(
+        screen.getByRole("button", {
+          name: "Kontroller jobbstatus og forslag på nytt",
+        }),
+      );
+      await waitFor(() => {
+        expect(releasePage).toBeTypeOf("function");
+        expect(releaseDiff).toBeTypeOf("function");
+      });
+      await act(async () =>
+        releasePage(
+          response(
+            page(kind, [job("job-1", { availability: "review_required" })]),
+          ),
+        ),
+      );
+      expect(
+        await screen.findByText(
+          /Grunnlaget eller modellvalget må vurderes på nytt/,
+        ),
+      ).toBeVisible();
+      await act(async () => releaseDiff(response(diff(kind))));
+      expect(
+        screen.queryByText("Syntetisk forslag som må vurderes"),
+      ).not.toBeVisible();
+      expect(
+        screen.queryByRole("button", {
+          name:
+            kind === "plan"
+              ? "Lagre vurdering av forslaget"
+              : "Bruk valgte felt i ny øktrevisjon",
+        }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByText(/Tidligere forslagstekst er skjult/),
+      ).toBeVisible();
+    });
+
+    it("does not deny a selected proposal merely because another pagination page omits it", async () => {
+      const rows = Array.from({ length: 101 }, (_, index) =>
+        job(index ? `other-${index}` : "job-1"),
+      );
+      const e = setup(kind, (call) => {
+        if (call.url.pathname.endsWith("/suggestions")) {
+          const offset = Number(call.url.searchParams.get("offset")),
+            limit = Number(call.url.searchParams.get("limit"));
+          return response(
+            page(kind, rows.slice(offset, offset + limit), rows.length),
+          );
+        }
+      });
+      render(<Screen kind={kind} client={e.client} />);
+      const user = await openFirst();
+      await screen.findByText("Syntetisk forslag som må vurderes");
+      await user.click(
+        screen.getByRole("button", { name: "Neste forslagsside" }),
+      );
+      await screen.findByRole("button", { name: "Åpne lagret forslag 51" });
+      expect(
+        screen.getByText("Syntetisk forslag som må vurderes"),
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", {
+          name:
+            kind === "plan"
+              ? "Lagre vurdering av forslaget"
+              : "Bruk valgte felt i ny øktrevisjon",
+        }),
+      ).toBeVisible();
+    });
+
+    it("resolves a lost run reply after recall from exact changed metadata without opening output or rerunning", async () => {
+      let recalled = false,
+        runs = 0;
+      const e = setup(kind, (call) => {
+        if (call.url.pathname.endsWith("/suggestions"))
+          return response(
+            page(kind, [
+              job(
+                "job-1",
+                recalled
+                  ? {
+                      state: "succeeded",
+                      version: 3,
+                      availability: "review_required",
+                    }
+                  : { state: "queued", version: 1, attempts: 0 },
+              ),
+            ]),
+          );
+        if (call.url.pathname.endsWith("/run")) {
+          recalled = true;
+          runs++;
+          throw new TypeError("committed run reply lost before recall");
+        }
+        if (call.url.pathname.endsWith("/ai/jobs/job-1")) {
+          if (recalled)
+            throw new Error("recalled job output must never be read");
+          return response(
+            job("job-1", { state: "queued", version: 1, attempts: 0 }),
+          );
+        }
+      });
+      render(<Screen kind={kind} client={e.client} />);
+      const user = await openFirst();
+      await user.click(
+        await screen.findByRole("button", { name: "Kjør lagret modelljobb" }),
+      );
+      await screen.findByText("Uavklart svar på lagringsforsøket");
+      const readsBefore = e.calls.filter(
+        (call) =>
+          call.method === "GET" && call.url.pathname.includes("/ai/jobs/"),
+      ).length;
+      await user.click(
+        screen.getByRole("button", { name: "Avklar mot lagret status" }),
+      );
+      await screen.findByText(
+        /Registrert jobbstatus: Kjøring fullført.*beviser ikke hvem/,
+      );
+      expect(
+        screen.queryByText("Uavklart svar på lagringsforsøket"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Syntetisk forslag som må vurderes"),
+      ).not.toBeInTheDocument();
+      expect(
+        e.calls.filter(
+          (call) =>
+            call.method === "GET" && call.url.pathname.includes("/ai/jobs/"),
+        ),
+      ).toHaveLength(readsBefore);
+      expect(runs).toBe(1);
+    });
+  },
+);
