@@ -19,7 +19,7 @@
         "F34"
       ],
       "dependsOn": [],
-      "status": "awaiting_review",
+      "status": "verified",
       "requiredEvidence": "Login/logout, expiry, cross-school/learner denial, authority and persistence tests",
       "implementationAgent": "/root/j01_foundation",
       "reviewAgent": "/root/review_j01",
@@ -56,6 +56,17 @@
           "type": "implementer_report",
           "revision": "1895d8876a15ce9a05a4e7c5f2667244a203e6df",
           "result": "40 foundation tests passed,3 intentional SQLite concurrency skips;PostgreSQL competing-success regressions pass;final independent recheck pending"
+        },
+        {
+          "type": "independent_review",
+          "revision": "1895d8876a15ce9a05a4e7c5f2667244a203e6df",
+          "path": "docs/reviews/J01-review.md",
+          "result": "Accepted scoped foundation.40 tests and6 supplemental checks passed;3+2 intentional SQLite-only concurrency skips;actual PostgreSQL concurrency verified. All five findings closed. Full features remain partial."
+        },
+        {
+          "type": "integration_run",
+          "revision": "df8c5d2",
+          "result": "Root restarted current backend and verified real Chromium login, learner detail, refresh restoration and logout/me401 through Vite proxy against isolated synthetic PostgreSQL demo. Zero page exceptions. Broader live browser evidence remains in J03-review.md."
         }
       ],
       "findings": [
@@ -82,7 +93,7 @@
         {
           "id": "J01-R5",
           "summary": "Concurrent successful login deletes a throttle row another request claimed",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ]
     },
@@ -249,6 +260,11 @@
           "revision": "a46aef1f6eeafdfcc661be02b72c2cf6e77091ff",
           "path": "docs/reviews/J03-review.md",
           "result": "Accepted scoped web shell;16 tests,typecheck,build and real Chromium/API checks passed including login,CSRF,session revoke,stale responses,52-learner paging,keyboard,mobile320/760 and nb/nn errors. Full features remain partial."
+        },
+        {
+          "type": "integration_run",
+          "revision": "df8c5d2",
+          "result": "Root restarted current backend and verified real Chromium login, learner detail, refresh restoration and logout/me401 through Vite proxy against isolated synthetic PostgreSQL demo. Zero page exceptions. Broader live browser evidence remains in J03-review.md."
         }
       ],
       "findings": [
