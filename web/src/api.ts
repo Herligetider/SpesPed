@@ -19,7 +19,7 @@ export class ApiClient {
   private authGeneration = 0;
 
   constructor(
-    private readonly fetcher: typeof fetch = fetch,
+    private readonly fetcher: typeof fetch = (input, init) => globalThis.fetch(input, init),
     private readonly baseUrl = '/api/v1',
   ) {}
 

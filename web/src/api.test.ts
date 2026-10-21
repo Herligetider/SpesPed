@@ -10,6 +10,21 @@ function response(status: number, body?: unknown): Response {
 }
 
 describe('ApiClient', () => {
+  it('preserves the global receiver required by the default browser transport', async () => {
+    const session = { user: { id: 'u1', email: 'a@b.no', display_name: 'A' }, csrf_token: 'csrf', schools: [] };
+    const nativeLikeFetch = vi.fn(function (this: unknown) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation');
+      return Promise.resolve(response(200, session));
+    });
+    vi.stubGlobal('fetch', nativeLikeFetch);
+    try {
+      await expect(new ApiClient().me()).resolves.toEqual(session);
+      expect(nativeLikeFetch).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('keeps the CSRF token from login and sends it with writes and cookies', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(response(200, { user: { id: 'u1', email: 'a@b.no', display_name: 'A' }, csrf_token: 'secret-csrf', schools: [] }))
