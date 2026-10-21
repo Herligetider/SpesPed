@@ -667,6 +667,12 @@
           "revision": "3df0a501d66ddc263dc180833eade5f90e5094ee",
           "path": "docs/reviews/teaching-profile-selection-review.md",
           "result": "Exact selected-profile teaching basis repair accepted. 127 pinned plan/profile/teaching tests passed with five expected SQLite skips; 14 independent SQLite/PostgreSQL probes passed. Selected statements beyond page100 and normalized timestamps work; replacements, source/permission recalls and warm identity-map changes fail closed. Full UI and feature acceptance remain separate."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "b553a5a306c1149adb075157ebc1e95f00d1bb37",
+          "path": "docs/reviews/teaching-author-label-review.md",
+          "result": "Additive observation/assistant-input author-name projections accepted: eight focused regressions and six independent SQLite/PostgreSQL cases passed. Name queries follow scope gates; each revision retains actual author attribution, draft privacy and source-review redaction. No full UI acceptance."
         }
       ],
       "findings": [
@@ -747,7 +753,8 @@
       "commits": [
         "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8",
         "29bcbc0bf5d03afe0ea250bd8acfc6f119171328",
-        "278613efb0fdbef7e93b88d86b542c204a75d671"
+        "278613efb0fdbef7e93b88d86b542c204a75d671",
+        "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814"
       ],
       "evidence": [
         {
@@ -789,6 +796,17 @@
           "revision": "3df0a501d66ddc263dc180833eade5f90e5094ee",
           "path": "docs/reviews/teaching-profile-selection-review.md",
           "result": "Exact selected-profile teaching basis repair accepted. 127 pinned plan/profile/teaching tests passed with five expected SQLite skips; 14 independent SQLite/PostgreSQL probes passed. Selected statements beyond page100 and normalized timestamps work; replacements, source/permission recalls and warm identity-map changes fail closed. Full UI and feature acceptance remain separate."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "b553a5a306c1149adb075157ebc1e95f00d1bb37",
+          "path": "docs/reviews/teaching-author-label-review.md",
+          "result": "Additive observation/assistant-input author-name projections accepted: eight focused regressions and six independent SQLite/PostgreSQL cases passed. Name queries follow scope gates; each revision retains actual author attribution, draft privacy and source-review redaction. No full UI acceptance."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "1bf5ecefcf0d68fe5ade2b16d2d402892cba4814",
+          "result": "Planning UI candidate frozen; independent reviewer /root/review_j05 assigned. Author13planningtests,67sharedwebtests andbuildpass. ActualApp Chromium/PostgreSQL profile/assessment/decision/IEPgeneration/lifecycle/retry/import/history/recall and390px checks completed. Preserves exact original fractional timestamps and explicitDSTfold choice. RootApp integration and teaching module still uncommitted/in progress; no UI acceptance yet."
         }
       ],
       "findings": [
@@ -1016,12 +1034,17 @@
         "J04",
         "J05"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Published revisions, authorized reuse, license restrictions, change impact",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j09_curriculum",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "Native BC06 curriculum/class-plan/resource/material backend assigned to /root/j09_curriculum with source/license/scope/version gates, actual owner ports, PostgreSQL and independent review. Root owns shared teaching/gateway integration and registration. No feature completion claimed."
+        }
+      ],
       "findings": []
     },
     {
