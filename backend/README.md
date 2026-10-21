@@ -1,4 +1,4 @@
-# Backend foundation
+# Backend and context integration
 
 Requires Python 3.12 and `uv`. Install the exact locked environment with
 `uv sync --project backend --locked`. Production uses PostgreSQL with psycopg;
@@ -107,3 +107,115 @@ PostgreSQL cases are explicitly skipped. This subset does not complete F01,
 F02, F27 or F34; production operations, restoration, encryption/key management,
 full school administration and downstream case/record/disclosure workflows
 remain separate jobs.
+
+## Evidence, AI and governance configuration
+
+The assembled application registers identity, evidence, AI and governance routes.
+`b1_integrate_contexts` joins their separate migrations into one head. Apply all
+migrations before starting the application. Context review results and remaining
+findings are tracked in `docs/reviews/`; registration does not establish complete
+features or production readiness.
+
+Evidence originals require `SPESPED_EVIDENCE_STORAGE_ROOT`, a private filesystem
+directory outside web/static roots. The local adapter creates private directories
+and files. `SPESPED_EVIDENCE_CLAMD_SOCKET` selects the local ClamAV Unix socket.
+Without a scanner, file uploads remain quarantined. Text entered as a note does
+not require malware scanning, but still requires explicit intake authority and
+source review. OCR additionally requires `SPESPED_EVIDENCE_OCR_ENABLED=true`,
+Tesseract, Poppler's `pdftoppm`, and the configured language data. The root
+`.env.example` lists all paths. Missing OCR remains an explicit clarification
+state; after configuring local processing the original can be retried.
+
+Intake requires `evidence.intake` authority. Controlled learner information uses
+the exact `evidence.read` / `evidence.write` actions. Source originals are never
+returned through the ordinary excerpt or AI teaching path. Uploaded files use a
+bounded raw request body, `X-Evidence-Filename`, and JSON `X-Evidence-Metadata`;
+pupil prose is not placed in the request URL. Typed fields are reviewed before
+confirmation, and corrections retain source versions and revoke old excerpt links.
+Goal references also require a scoped goal validator from the planning context;
+until that adapter is present, a non-null goal reference fails explicitly.
+
+AI providers are operator-configured JSON, for example this local-only setting:
+
+```dotenv
+SPESPED_AI_PROVIDERS=[{"key":"local","endpoint":"http://127.0.0.1:8080/v1","capabilities":["generation","embeddings"],"kind":"local_openai"}]
+```
+
+This example selects an endpoint; it neither starts a model nor approves its
+quality. Additional private addresses must be explicitly included in
+`SPESPED_AI_PRIVATE_NETWORKS`. The boundary also rejects public, link-local,
+mapped-address and hostname endpoints. Per-provider `api_key` may be supplied in
+the private JSON environment setting when the local service requires it; keys
+are not returned through the API. Model policies/releases and evaluations require
+`platform.manage`. Generation needs current learner access and the exact
+`ai.<purpose>` assignment/authority, with purpose matching the staff assignment.
+
+The evidence resolver reads exact current confirmed revisions and their active
+controlled excerpts. The model input preserves report/observation type, certainty,
+author, occurrence time and recorded time. Changing a source invalidates access
+to an old generated result. Raw source IDs cannot be substituted for evidence IDs.
+Original-image AI OCR additionally requires intake authority, a current confirmed
+learner link and a clean scan; pre-attribution OCR currently uses the local
+Tesseract path. Protected case sources and dictated audio need their later owning
+context adapters; the generic evidence path does not expose them.
+
+## Synthetic model evaluation and development
+
+Set `SPESPED_AI_EVALUATION_SUITES` to deployment-owned JSON. A minimal example is:
+
+```json
+{
+  "version": 1,
+  "suites": {
+    "teaching-norwegian-v1": [
+      {
+        "name": "synthetic-supported-reading",
+        "purpose": "teaching_suggestion",
+        "text": "Syntetisk eksempel: eleven leste tre ord med støtte.",
+        "required_substrings": [],
+        "forbidden_substrings": []
+      }
+    ]
+  }
+}
+```
+
+This demonstrates the format, not an adequate production evaluation. School-approved
+fixtures need representative tasks, uncertainty, conflicting evidence and adverse
+instructions. Text fixtures support teaching, document and embedding purposes.
+OCR or transcription fixtures use `file` instead of `text`, with `media_type` such
+as `image/png` or `audio/wav`. Assets must remain inside the configuration directory,
+be at most 2 MB, and contain synthetic material only. Configuration and assets must
+not be writable by other users. Each suite must use purposes compatible with the
+release being evaluated, with at most 20 cases. The gateway separately limits the
+whole evaluation's serialized input and output evidence to 2 MB each, including
+binary encoding overhead. Exact model releases require a passing evaluation and
+explicit professional quality review before generation is available. Authorized
+operators inspect the persisted case inputs and actual outputs through
+`GET /api/v1/schools/{school_id}/ai/evaluations/{evaluation_id}`; the review binds
+that evidence to the exact release. The paginated evaluation list contains metadata.
+
+External development APIs are disabled by default. Enabling them requires
+development mode, `ai_remote_synthetic_development=true`, and a `remote_openai`
+provider at the permitted API endpoint. It additionally requires exact source
+attestations from an operator-controlled synthetic fixture manifest. Each entry
+binds `fixture_name`, `school_id`, `learner_id`, `reference` (kind/id/revision),
+allowed `purposes`, and `content_digest` of the canonical resolved model input.
+The JSON envelope is `{"version":1,"entries":[...]}`. A trusted fixture loader
+must produce these entries only from known synthetic fixtures. There is no upload
+flag or HTTP command that turns school data into synthetic data. Changed content
+or revision loses the attestation. Changing these startup files requires an app
+restart. Production rejects the remote-development and source-attestation settings.
+
+Governance imports the bundled legal register only as unreviewed candidates.
+Configured, reviewed school rules create obligations; document uploads do not
+prove that an action was performed. The assembled evidence adapter freezes exact
+current learner evidence bindings and checks them again at fulfillment. Protected
+case identity and case evidence remain unavailable until their owning context
+provides a resolver. No local legal interpretation is automatically activated.
+
+The integration suite `backend/tests/test_context_integration.py` exercises actual
+HTTP intake → field review → confirmed excerpt → reviewed local-protocol AI job →
+source correction, including sibling separation and result invalidation on both
+SQLite and isolated PostgreSQL. Synthetic protocol responses verify orchestration,
+not the quality of a real deployed model.

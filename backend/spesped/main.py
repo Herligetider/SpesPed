@@ -7,6 +7,10 @@ from spesped.config import Settings, get_settings
 from spesped.db import make_session_factory
 from spesped.errors import install_error_handlers
 from spesped.contexts.identity.router import router as identity_router
+from spesped.contexts.evidence.router import router as evidence_router
+from spesped.contexts.platform.router import router as platform_router
+from spesped.contexts.governance.router import router as governance_router
+from spesped.assembly import configure_contexts
 
 
 class PrivateResponseMiddleware(BaseHTTPMiddleware):
@@ -37,6 +41,7 @@ def create_app(settings: Settings | None = None, session_factory=None) -> FastAP
     app = FastAPI(title="SpesPed", docs_url=None if settings.environment == "production" else "/docs", redoc_url=None)
     app.state.settings = settings
     app.state.session_factory = session_factory or make_session_factory(settings.database_url)
+    configure_contexts(app, settings)
     install_error_handlers(app)
     app.add_middleware(PrivateResponseMiddleware)
 
@@ -45,6 +50,9 @@ def create_app(settings: Settings | None = None, session_factory=None) -> FastAP
         return {"status": "ok"}
 
     app.include_router(identity_router)
+    app.include_router(evidence_router)
+    app.include_router(platform_router)
+    app.include_router(governance_router)
     return app
 
 

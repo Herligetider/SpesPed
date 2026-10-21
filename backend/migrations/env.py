@@ -4,6 +4,9 @@ from sqlalchemy import create_engine, pool
 from spesped.config import get_settings
 from spesped.db import Base
 from spesped.contexts.identity import models  # noqa: F401
+from spesped.contexts.evidence import models as evidence_models  # noqa: F401
+from spesped.contexts.platform import models as platform_models  # noqa: F401
+from spesped.contexts.governance import models as governance_models  # noqa: F401
 
 config = context.config
 target_metadata = Base.metadata
