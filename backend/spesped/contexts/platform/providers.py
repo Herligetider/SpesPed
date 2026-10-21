@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 from .contracts import GatewayRuntime, ProviderSpec, SourceInput, Suggestion, SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS, IntakeStructure, TeachingSessionSuggestion, IEPDraftSuggestion, release_schema, release_versions
+from .contracts import DOCUMENT_PURPOSES, DocumentDraftSuggestion
 
 
 class ProviderFailure(Exception):
@@ -224,6 +225,21 @@ def validate_iep_draft(value, sources):
         raise ProviderFailure('invalid_output', 'failed') from None
 
 
+def validate_document_draft(value, sources):
+    try:
+        result = DocumentDraftSuggestion.model_validate(value)
+        allowed = {source.reference.key for source in sources}
+        unknown = sum(ref not in allowed for section in result.sections for ref in section.source_refs)
+        if unknown:
+            raise ProviderFailure('unsupported_source_reference', 'failed', unknown)
+        # Section membership and claims within the frozen basis remain the
+        # document consumer's responsibility; a citation is never confirmation.
+        return result.model_dump(mode='json') | {'unconfirmed': True, 'requires_human_review': True,
+                                                 'schema_version': 'document-draft.v1'}
+    except (ValidationError, ValueError, TypeError):
+        raise ProviderFailure('invalid_output', 'failed') from None
+
+
 def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dict, sources: list[SourceInput]) -> dict:
     validate_provider(runtime, provider, sources)
     capability = release.capability
@@ -262,6 +278,12 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
         except (KeyError, TypeError, ValueError, IndexError):
             raise ProviderFailure('invalid_output', 'failed') from None
     purpose = sources[0].purpose if sources else None
+    if purpose in DOCUMENT_PURPOSES:
+        if (len(sources) != 1 or sources[0].reference.kind != 'document_basis'
+                or sources[0].reference.revision != 1 or sources[0].learner_id is None):
+            raise ProviderFailure('invalid_document_basis', 'failed')
+    elif any(source.reference.kind == 'document_basis' for source in sources):
+        raise ProviderFailure('purpose_not_supported', 'failed')
     if purpose not in PURPOSE_INSTRUCTIONS or any(s.purpose != purpose for s in sources):
         raise ProviderFailure('purpose_not_supported')
     if (release.template_version, release.output_schema_version) != release_versions(purpose):
@@ -278,14 +300,14 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
             content.append({'type': 'text', 'text': json.dumps({'source_ref': source.reference.key, 'untrusted_source_data': source.content}, ensure_ascii=False)})
         else:
             raise ProviderFailure('capability_unavailable')
-    schema_name = {'intake_structuring': 'intake_structure', 'session_planning': 'teaching_session', 'iep_drafting': 'iep_draft'}.get(purpose, 'suggestion')
+    schema_name = {'intake_structuring': 'intake_structure', 'session_planning': 'teaching_session', 'iep_drafting': 'iep_draft', 'report_drafting': 'document_draft', 'guardian_email_drafting': 'document_draft'}.get(purpose, 'suggestion')
     payload = {'model': release.model_version, 'messages': [{'role': 'system', 'content': SYSTEM_PROMPT}, {'role': 'user', 'content': content}], 'max_tokens': policy['max_output_tokens'], 'stream': False, 'response_format': {'type': 'json_schema', 'json_schema': {'name': schema_name, 'strict': True, 'schema': release_schema(release.output_schema_version).model_json_schema()}}}
     result = _post(provider, '/chat/completions', **common, json=payload)
     try:
         if result.get('model') != release.model_version:
             raise ValueError()
         choice = result['choices'][0]
-        if choice['finish_reason'] != 'stop' or choice['message'].get('tool_calls') or choice['message'].get('refusal'):
+        if choice['finish_reason'] != 'stop' or choice['message'].get('tool_calls') or choice['message'].get('function_call') or choice['message'].get('refusal'):
             raise ValueError()
         output = json.loads(choice['message']['content'])
     except (KeyError, IndexError, ValueError, TypeError):
@@ -296,4 +318,6 @@ def invoke(runtime: GatewayRuntime, provider: ProviderSpec, release, policy: dic
         return validate_session(output, sources)
     if purpose == 'iep_drafting':
         return validate_iep_draft(output, sources)
+    if purpose in DOCUMENT_PURPOSES:
+        return validate_document_draft(output, sources)
     return validate_suggestion(output, sources)

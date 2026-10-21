@@ -17,7 +17,7 @@ from spesped.db import utcnow
 from spesped.errors import DomainError, access_denied
 from .contracts import (GatewayRuntime, GenerationRequest, PolicyCommand, ReleaseCommand,
                         ReviewCommand, SourceInput, SourceRef, PURPOSE_CAPABILITIES,
-                        TEMPLATE_VERSION, SCHEMA_VERSION, release_versions, release_schema)
+                        TEMPLATE_VERSION, SCHEMA_VERSION, DOCUMENT_PURPOSES, release_versions, release_schema)
 from .models import GenerationAttempt, GenerationJob, ModelEvaluation, ModelRelease, PlatformEvent, ProcessingPolicy
 from .providers import ProviderFailure, invoke, validate_provider
 
@@ -76,6 +76,11 @@ def _resolve(db, runtime, actor, school_id, learner_id, purpose, references):
         if learner_id is None or len(references) != 1 or references[0].kind != 'plan_basis' or references[0].revision != 1:
             raise access_denied()
     elif any(r.kind == 'plan_basis' for r in references):
+        raise access_denied()
+    if purpose in DOCUMENT_PURPOSES:
+        if learner_id is None or len(references) != 1 or references[0].kind != 'document_basis' or references[0].revision != 1:
+            raise access_denied()
+    elif any(r.kind == 'document_basis' for r in references):
         raise access_denied()
     # Workers open fresh sessions. Nested plan/session lineage must validate
     # against this trusted runtime, including during completion rechecks.
@@ -153,7 +158,7 @@ def _configuration(db, runtime, job, *, metadata_only=False):
             or release.reviewed_evaluation_digest != evaluation.artifact_digest
             or digest(evaluation.evidence) != evaluation.artifact_digest):
         raise ProviderFailure('reviewed_release_required')
-    if job.purpose in {'intake_structuring', 'session_planning', 'iep_drafting'} and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
+    if job.purpose in {'intake_structuring', 'session_planning', 'iep_drafting', *DOCUMENT_PURPOSES} and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
         raise ProviderFailure('purpose_evaluation_required')
     if job.purpose not in policy.configuration['purposes'] or PURPOSE_CAPABILITIES[job.purpose] != release.capability or policy.provider_key != release.provider_key:
         raise ProviderFailure('purpose_not_supported')
@@ -254,6 +259,8 @@ def release_configuration_digest(command, provider):
     purpose = distinct.get(command.template_version)
     instructions = ({purpose: PURPOSE_INSTRUCTIONS[purpose]} if purpose
                     else {name: PURPOSE_INSTRUCTIONS[name] for name in legacy_purposes})
+    if command.template_version == 'document-draft.v1':
+        instructions = {name: PURPOSE_INSTRUCTIONS[name] for name in sorted(DOCUMENT_PURPOSES)}
     return digest({'release': command.model_dump(), 'provider_digest': provider_digest(provider), 'template': SYSTEM_PROMPT, 'purpose_instructions': instructions, 'schema': release_schema(command.output_schema_version).model_json_schema()})
 
 
@@ -320,6 +327,10 @@ def evaluate_release(db, actor, school_id, release_id, expected_version, policy_
     for case, case_evidence in zip(suite, evidence):
         started = time.monotonic()
         try:
+            if (case.purpose in DOCUMENT_PURPOSES or any(s.purpose in DOCUMENT_PURPOSES or s.reference.kind == 'document_basis' for s in case.sources)) and (
+                    case.purpose not in DOCUMENT_PURPOSES or any(s.purpose != case.purpose for s in case.sources)
+                    or case.purpose not in policy.configuration['purposes']):
+                raise ProviderFailure('purpose_not_supported', 'failed')
             if PURPOSE_CAPABILITIES.get(case.purpose) != release.capability:
                 raise ProviderFailure('purpose_not_supported')
             output = invoke(runtime, provider, release, policy.configuration, list(case.sources))
@@ -450,7 +461,8 @@ def source_job_summaries(db, actor, school_id, learner_id, purpose, source_ids,
     use the existing commands, which recheck all rights and source bindings.
     """
     _authorize(db, actor, school_id, learner_id, purpose)
-    kind = {'iep_drafting': 'plan_basis', 'session_planning': 'teaching_basis'}.get(purpose)
+    kind = {'iep_drafting': 'plan_basis', 'session_planning': 'teaching_basis',
+            'report_drafting': 'document_basis', 'guardian_email_drafting': 'document_basis'}.get(purpose)
     if kind is None:
         raise access_denied()
     source_ids = [str(UUID(str(identity))) for identity in source_ids]

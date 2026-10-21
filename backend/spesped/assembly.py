@@ -14,7 +14,7 @@ from spesped.contexts.evidence import service as evidence
 from spesped.contexts.evidence.models import SourceSubjectLink
 from spesped.contexts.evidence.processing import ClamdScanner, LocalStorage, TesseractOCR
 from spesped.contexts.platform.contracts import (
-    EvaluationCase, GatewayRuntime, ProviderSpec, SourceInput, SourceRef,
+    DOCUMENT_PURPOSES, EvaluationCase, GatewayRuntime, ProviderSpec, Purpose, SourceInput, SourceRef,
 )
 from spesped.contexts.platform.providers import ProviderFailure, validate_provider
 from spesped.errors import DomainError, access_denied
@@ -29,8 +29,18 @@ class SyntheticAttestation(ConfigurationModel):
     school_id: UUID
     learner_id: UUID | None = None
     reference: SourceRef
-    purposes: list[Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "intake_structuring", "session_planning", "iep_drafting"]] = Field(min_length=1)
+    purposes: list[Purpose] = Field(min_length=1, max_length=10)
     content_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def document_basis_scope(self):
+        if self.reference.kind == "document_basis":
+            if (self.learner_id is None or self.reference.revision != 1
+                    or any(purpose not in DOCUMENT_PURPOSES for purpose in self.purposes)):
+                raise ValueError("Document basis attestations require a learner, revision 1 and document purposes")
+        elif any(purpose in DOCUMENT_PURPOSES for purpose in self.purposes):
+            raise ValueError("Document drafting attestations require document basis")
+        return self
 
 
 class SyntheticManifest(ConfigurationModel):
@@ -40,7 +50,7 @@ class SyntheticManifest(ConfigurationModel):
 
 class EvaluationFixture(ConfigurationModel):
     name: str = Field(min_length=1, max_length=100)
-    purpose: Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "transcription", "intake_structuring", "session_planning", "iep_drafting"]
+    purpose: Purpose
     text: str | None = Field(default=None, min_length=1, max_length=20000)
     file: Path | None = None
     media_type: Literal["text/plain", "image/png", "image/jpeg", "audio/wav", "audio/mpeg", "audio/webm"] = "text/plain"
@@ -51,7 +61,7 @@ class EvaluationFixture(ConfigurationModel):
     def compatible_fixture(self):
         if (self.text is None) == (self.file is None):
             raise ValueError("An evaluation case requires either text or a synthetic media file")
-        if self.purpose in {"teaching_suggestion", "document_draft", "embedding", "intake_structuring", "session_planning", "iep_drafting"}:
+        if self.purpose in {"teaching_suggestion", "document_draft", "embedding", "intake_structuring", "session_planning", "iep_drafting", *DOCUMENT_PURPOSES}:
             if self.text is None or self.media_type != "text/plain":
                 raise ValueError("This evaluation purpose requires plain text")
         elif self.file is None or not self.media_type.startswith("image/" if self.purpose == "evidence_extraction" else "audio/"):
@@ -90,6 +100,19 @@ class EvidenceSourceResolver:
         self.attestations = tuple(attestations)
 
     def resolve(self, db, actor, school_id, learner_id, purpose, references):
+        if purpose in DOCUMENT_PURPOSES:
+            if learner_id is None or len(references) != 1 or references[0].kind != "document_basis" or references[0].revision != 1:
+                raise access_denied()
+            require_learner_access(db, actor, school_id, learner_id)
+            try:
+                from spesped.contexts.documents.generation import resolve_generation_source
+            except ModuleNotFoundError as exc:
+                if exc.name not in {"spesped.contexts.documents", "spesped.contexts.documents.generation"}:
+                    raise
+                raise DomainError("document_generation_unavailable", "Document source validation is not installed.", 503) from None
+            return [self._attest(resolve_generation_source(db, actor, school_id, learner_id, purpose, references[0]))]
+        if any(reference.kind == "document_basis" for reference in references):
+            raise access_denied()
         if purpose == "iep_drafting":
             if learner_id is None or len(references) != 1 or references[0].kind != "plan_basis" or references[0].revision != 1:
                 raise access_denied()
@@ -225,7 +248,7 @@ def load_evaluation_suites(path):
             raise ValueError("Evaluation case names must be unique within a suite")
         cases = []
         for index, fixture in enumerate(fixtures, 1):
-            source_kind = {"intake_structuring": "intake", "session_planning": "teaching_basis", "iep_drafting": "plan_basis"}.get(fixture.purpose, "evidence")
+            source_kind = {"intake_structuring": "intake", "session_planning": "teaching_basis", "iep_drafting": "plan_basis", "report_drafting": "document_basis", "guardian_email_drafting": "document_basis"}.get(fixture.purpose, "evidence")
             ref = SourceRef(kind=source_kind, source_id=UUID(int=index), revision=1)
             content = fixture.text
             if fixture.file is not None:
