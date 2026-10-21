@@ -56,3 +56,35 @@ environment, avoiding live editable-package imports.
 This checkpoint does not exercise practitioner disclosure screens, external
 delivery connectors, arbitrary uploaded attachments, PDF rendering, a deployed
 worker, complete accessibility, or production legal/model configuration.
+
+## Document repair checkpoint
+
+Root repeated native browser verification at
+`d00c118665e6d9acaf1a94c2d173328b1bb3ca31` in a second isolated PostgreSQL schema,
+serving the exact archived build on port 18971. Evidence and scripts are in
+`var/document-guardian-repair/`; this instance also includes two synthetic,
+confirmed evidence records created through the native intake workflow.
+
+The first run confirmed correct initial editor hydration and creation/editing
+separation. It then reproduced lost gap explanations: a teacher filled an
+explanation before the template inventory finished, but the submitted revision
+stored an empty `handled_gaps` object. The response was 201, so schema acceptance
+alone did not establish correct behavior. That failure is preserved in
+`initial-repair-evidence.json` and independently reproduced by the UI reviewer.
+
+A second run deliberately waited for inventory loading to settle before typing.
+It successfully created a chosen-interval guardian draft, saved a manual revision
+with explicit gap explanations, reviewed and approved the exact revision, and
+retained `not_requested` dispatch with automatic sending false. A new browser login
+reopened that persisted document and explicitly recalled its content approval.
+The recall used a corrected accessible-role selector after the initial exact-label
+selector could not match the populated reason field. Native request/response
+bodies and terminal steps are preserved in `evidence.json`; `browser.mjs` and
+`recall.mjs` reproduce the sequence. There were no browser JavaScript errors.
+
+Waiting before typing is a verification limitation, not an acceptable product
+requirement. The independent recheck still requires fixes for asynchronous editor
+overwrites, document-specific rebuild state, empty-basis recovery and obsolete
+typed/AI bindings. Those repairs and the narrow recovery metadata read are assigned
+separately. This checkpoint does not close those findings or accept the whole
+document workflow.

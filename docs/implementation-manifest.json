@@ -3950,11 +3950,12 @@
     {
       "date": "2026-10-21",
       "classification": "progress",
-      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 is still running. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted. The document UI recheck reopened editor/gap loss and identified unsafe rebuild state; implementation escalated to Sol with a separately assigned metadata recovery contract. Plan timestamp repair5c676a8 is pinned for independent review.",
+      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 completed: 1,138 passed, 26 skipped and 90 subtests passed; later changes retain separate verification requirements. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted. The document UI recheck reopened editor/gap loss and identified unsafe rebuild state; implementation escalated to Sol with a separately assigned metadata recovery contract. Plan timestamp repair 5c676a8 is pinned for independent review.",
       "verification": {
         "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
-        "backend": "Running: root exec session74710, output var/integration-91558b2/tests.log. Not a passing result."
+        "backend": "Completed: 1,138 passed, 26 skipped, 90 subtests passed, 21,122 warnings, exit code 0 in 2,230.75 seconds. Actual PostgreSQL URL configured. Root session 74710 terminated; archive source/import proof and tests.log retained. This frozen baseline excludes later UI, choice, timestamp and recovery changes.",
+        "path": "docs/reviews/backend-integration-91558b2.md"
       }
     }
   ]
