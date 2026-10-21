@@ -26,7 +26,7 @@ export type Revision = {
   id: string;
   digest: string;
   number: number;
-  configuration?: { purpose?: string; language?: string; length?: string; recipient_relationship_ids?: string[]; template_revision_id?: string | null; obligation_id?: string | null; selection?: Record<string, unknown> };
+  configuration?: { purpose?: string; language?: string; length?: string; starts_on?: string; ends_on?: string; topics?: string[]; recipient_relationship_ids?: string[]; template_revision_id?: string | null; obligation_id?: string | null; selection?: Record<string, unknown> };
   content: { subject: string | null; sections: Section[]; handled_gaps: Record<string, string> } | null;
   source_status: string;
   source_changes: { state: string; late_sources?: Source[]; recalled_sources?: Source[]; content_withheld?: boolean };
