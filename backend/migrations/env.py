@@ -15,6 +15,7 @@ from spesped.contexts.curriculum import models as curriculum_models  # noqa: F40
 from spesped.contexts.assessment import models as assessment_models  # noqa: F401
 from spesped.contexts.administration import models as administration_models  # noqa: F401
 from spesped.contexts.documents import models as document_models  # noqa: F401
+from spesped.contexts.communication import models as communication_models  # noqa: F401
 
 config = context.config
 target_metadata = Base.metadata

@@ -338,3 +338,7 @@ def configure_contexts(app, settings):
     )
     app.state.teaching_qualification_port = NativeQualificationReadPort()
     app.state.assessment_authority_port = NativeAssessmentAuthorityPort()
+    from spesped.contexts.communication.adapters import NativeDispatchHistoryPort
+    from spesped.contexts.communication.transports import TransportRegistry
+    app.state.document_dispatch_history_port = NativeDispatchHistoryPort()
+    app.state.communication_transport_registry = TransportRegistry()

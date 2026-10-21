@@ -18,6 +18,7 @@ from spesped.contexts.curriculum.router import router as curriculum_router
 from spesped.contexts.assessment.router import router as assessment_router
 from spesped.contexts.administration.router import router as administration_router
 from spesped.contexts.documents.router import router as documents_router
+from spesped.contexts.communication.router import router as communication_router
 from spesped.assembly import configure_contexts
 
 
@@ -69,6 +70,7 @@ def create_app(settings: Settings | None = None, session_factory=None) -> FastAP
     app.include_router(assessment_router)
     app.include_router(administration_router)
     app.include_router(documents_router)
+    app.include_router(communication_router)
     return app
 
 
