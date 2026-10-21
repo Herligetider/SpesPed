@@ -3,7 +3,9 @@
 Reviewed commit: `25ac24e2d1440c9000ea41e3f0c2ca4c2d3c253f` (`codex/implement-spesped`).
 Review date: 21 October 2026. Reviewer: `/root/review_j19`, independent of the native authority author and root application-integration author.
 
-**Disposition: changes required. J19-R1 and J19-R2 remain open.** This is a bounded review of the professional-authority persistence, native BC07/BC09 adapters, application composition, migration and pending-dependency guards in the 23-file commit. It does not accept the whole J19 job or F01/F11/F19.
+**Current disposition: J19-R1 and J19-R2 are closed at repair commit `862958527d0616e0a37ba7e5231f7ea86719794d`; bounded professional-authority backend scope accepted.** See the repair recheck appendix. This does not accept the whole J19 job or F01/F11/F19.
+
+**Initial disposition at `25ac24e`: changes required; both findings were open.** The original findings and evidence below are retained. This is a bounded review of the professional-authority persistence, native BC07/BC09 adapters, application composition, migration and pending-dependency guards in the 23-file original commit.
 
 ## J19-R1 — P2: withdrawn negative determinations remain asserted as current ineligibility
 
@@ -84,3 +86,32 @@ Committed PostgreSQL concurrency cases exercised same-key duplicates, conflictin
 Only the new review document and ignored `var/review-j19` evidence were written. No product code, existing test, source commit, branch, worktree state, unrelated author file or shared dependency was changed; no commit/push/reset/stash/spawn was performed.
 
 Return J19-R1/R2 to the original author and re-review a newly pinned repair. The current candidate is not accepted while they remain open. Passing bounded tests do not establish complete school/account/enrollment administration, other administrative workflows, appeals, UI, real external HR reconciliation, dispatch, the whole J19 scope or complete features. Legal sources researched in September 2026 were not newly verified in this review.
+
+## Repair recheck — 21 October 2026
+
+Exact repair pin: **`862958527d0616e0a37ba7e5231f7ea86719794d`**. Original reviewer `/root/review_j19` independently inspected the three-file repair (`administration/adapters.py`, `administration/service.py`, new `test_professional_authority_repairs.py`) and reran the original independent probes unchanged. The initial report was already committed at `5e0c6fb`; its original finding descriptions and evidence remain above.
+
+**J19-R1: closed.** Native resolution now validates the current review using `eligible=False`, then rechecks the exact referenced sources, reviewer authority, person assignment and target before mapping the immutable outcome to a current state. The HTTP metadata view uses the same distinction and maps failed current validation to `unresolved`. A still-valid negative review remains `ineligible`; source revision/revocation, reviewer grant withdrawal or subject-person assignment withdrawal makes current eligibility `unresolved`. The original negative `ProfessionalCheck` remains unchanged. Both original source/reviewer/person withdrawal reproductions and new BC07/BC09 source-revision/reviewer regressions passed on SQLite and PostgreSQL.
+
+**J19-R2: closed.** Before inspecting a receipt, review authorization now loads the command's original immutable revision scoped by school and record, verifies its content digest and selects its original review purpose. Replaying the original `statement_finalize` review after that purpose's grant is revoked now returns 403 even when the record's newer purpose is `grade_set`. Conversely, revoking only the newer purpose's signing grant still allows the original authorized replay to return the current draft projection. The receipt path still calls the ordinary `view()` permission check; receipt possession does not substitute for current school/pupil/metadata visibility. Regression assertions confirm neither successful nor denied replay adds another successful professional audit, check, revision, command or event, and the original check preserves its original authority action.
+
+A new archive, `/Users/lauritz/Programming/SpesPed/var/review-j19-recheck-8629585`, was created directly with `git archive 862958527d0616e0a37ba7e5231f7ea86719794d`. The original 20-case independent probe was copied byte-for-byte from `var/review-j19/test_review_j19.py`; it was not adjusted to accommodate the repair. Python remained **3.12.13** from the root venv. Every test used this absolute `PYTHONPATH`:
+
+```text
+/Users/lauritz/Programming/SpesPed/var/review-j19-recheck-8629585/backend:/Users/lauritz/Programming/SpesPed/var/review-j19-recheck-8629585/backend/tests
+```
+
+Imported application, administration and fixture modules were verified to resolve inside the new archive. All original 23 bounded candidate files plus the new regression file were compared byte-for-byte with the exact repair commit. [Recheck hash manifest](/Users/lauritz/Programming/SpesPed/var/review-j19-recheck-8629585/hash-manifest.json) records the 24 SHA-256 values, Python/import origins and unchanged original probe digest. Uncommitted J11 work was excluded. Intervening committed gateway/plans work present at this pin was not independently accepted by this professional-authority review.
+
+Both terminal commands used the root absolute interpreter, the new absolute `PYTHONPATH`, the new archive as working directory, and only the provided synthetic PostgreSQL URL via `SPESPED_TEST_POSTGRES_URL`:
+
+| Pytest command suffix | Terminal result | Evidence |
+|---|---|---|
+| `-m pytest test_review_j19.py backend/tests/test_professional_authority_repairs.py backend/tests/test_professional_authority_native.py backend/tests/test_professional_authority_adverse.py backend/tests/test_professional_authority_consumers.py backend/tests/test_professional_authority_migrations.py backend/tests/test_professional_application_composition.py backend/tests/test_bc09_application_composition.py -q` | **72 passed, 2 skipped**, exit 0, 116.12 s | [recheck-tests.log](/Users/lauritz/Programming/SpesPed/var/review-j19-recheck-8629585/recheck-tests.log) |
+| `-m pytest backend/tests/test_assessment_contracts.py backend/tests/test_assessment_repairs.py backend/tests/test_owned_learning_projections.py backend/tests/test_curriculum_composition.py -q` | **37 passed, 1 skipped**, exit 0, 69.12 s | [affected-recheck-tests.log](/Users/lauritz/Programming/SpesPed/var/review-j19-recheck-8629585/affected-recheck-tests.log) |
+
+Combined recheck: **109 passed, 3 deliberate SQLite concurrency skips, no failures.** Real PostgreSQL tenant-lock replay/key/version concurrency and the independent simultaneous source revision-versus-revocation case ran. The unchanged independent late-commit failure probe again verified atomic rollback of business rows, audit, full outbox and receipt, followed by a successful same-command retry. Native production-app restart/recall and pending-caller isolation checks, full-period consumer checks, static migration/retention checks and affected BC07/BC09 owner contracts all passed. Only the pre-existing curriculum-field and Starlette/httpx warnings were reported.
+
+All test processes completed and fixture schema teardown reported no errors. No listener, demo service, 18878 harness, unrelated schema or product file was modified. This recheck changed only this review's current disposition/appendix and new ignored evidence. No commit, push, reset, stash or delegation was performed by the reviewer.
+
+No additional actionable defect was found in this bounded repair review. J19-R1/R2 are closed, and the reviewed professional-authority backend integration is accepted within the stated scope. Full school/account/enrollment administration, other administrative workflows, appeals, UI, real external reconciliation/HR synchronization and complete J19/F01/F11/F19 acceptance remain outstanding. The September 2026 legal-source registry was not newly verified.

@@ -1216,6 +1216,12 @@
           "type": "implementation_candidate",
           "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
           "result": "Root added public validate_generation_configuration for atomic document request enqueue. Fresh non-mutating owner reads return only current policy version and reviewed release digest; caller audit/document transaction remains owned by caller. 52 dual-database checks passed; independent review assigned to /root/review_composition. Configuration validation alone neither authorizes source processing nor invokes a provider."
+        },
+        {
+          "type": "independent_review",
+          "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
+          "path": "docs/reviews/generation-configuration-port-review.md",
+          "result": "Accepted configuration read port with no actionable finding: 101 candidate/document gateway regressions and 20 independent checks passed on SQLite and actual PostgreSQL. Caller transaction preservation, all nine dependency model types with pending new/dirty/deleted rows, stale cached authority/configuration, purpose-specific evaluation and source-processing separation verified. Scheduled request consumer, its retry/atomicity, UI and full features remain outside this acceptance."
         }
       ],
       "findings": [
@@ -1468,6 +1474,12 @@
           "type": "implementation_candidate",
           "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
           "result": "Root added public validate_generation_configuration for atomic document request enqueue. Fresh non-mutating owner reads return only current policy version and reviewed release digest; caller audit/document transaction remains owned by caller. 52 dual-database checks passed; independent review assigned to /root/review_composition. Configuration validation alone neither authorizes source processing nor invokes a provider."
+        },
+        {
+          "type": "independent_review",
+          "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
+          "path": "docs/reviews/generation-configuration-port-review.md",
+          "result": "Accepted configuration read port with no actionable finding: 101 candidate/document gateway regressions and 20 independent checks passed on SQLite and actual PostgreSQL. Caller transaction preservation, all nine dependency model types with pending new/dirty/deleted rows, stale cached authority/configuration, purpose-specific evaluation and source-processing separation verified. Scheduled request consumer, its retry/atomicity, UI and full features remain outside this acceptance."
         }
       ],
       "findings": []
@@ -1779,6 +1791,12 @@
           "type": "repair_candidate",
           "revision": "862958527d0616e0a37ba7e5231f7ea86719794d",
           "result": "Original author repaired J19-R1/R2 across two production files and a new regression file. Root verified all three frozen hashes before pinning. Author frozen archive plus only exact repair files: 72 passed, 2 SQLite concurrency skips, including original reviewer probes and actual PostgreSQL races. Original reviewer /root/review_j19 assigned exact repair commit for recheck; findings remain open until verified."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "862958527d0616e0a37ba7e5231f7ea86719794d",
+          "path": "docs/reviews/J19-professional-authority-review.md",
+          "result": "Original reviewer verified J19-R1/R2 fixed; bounded native professional authority accepted. Exact original probes unchanged, 72 candidate/repair/probe tests plus 37 affected regressions passed, 3 SQLite-only concurrency skips. Actual PostgreSQL same-key/conflicting-key/version and source revise-versus-revoke races, late atomic rollback, historical negative reviews and original-purpose replay verified. No whole J19 or feature acceptance."
         }
       ],
       "findings": [
@@ -1786,17 +1804,17 @@
           "id": "J19-R1",
           "priority": "P2",
           "description": "Current negative professional determinations bypass reviewer, source and person checks after dependencies are withdrawn. Historical outcome must remain distinct from current unresolved status.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J19-R2",
           "priority": "P2",
           "description": "Review replay derives authorization from the newer current revision purpose, allowing replay after authority for the original command purpose is revoked.",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
-        "Independently review and repair native professional-authority candidate, including actual consumer composition and current source/permission checks.",
+        "Integrate accepted native professional-authority workflows into J24 practitioner/admin screens and verify each complete consumer journey; future changes can reopen the bounded acceptance.",
         "Complete school/account/membership/enrollment administration, current-session revocation, public extracts, conditional administrative types, exemptions/appeals and other specified J19 workflows.",
         "Deliver J24 user interfaces and required authoritative-system integration; human-reference-only professional sources do not establish automated HR synchronization."
       ]
@@ -3632,6 +3650,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Reconfirmed catalog 0.3 deterministic regeneration: 40 features, 90 requirements and 71 source entries; chosen-interval guardian drafts remain optional and outside the first pilot. Verified GitHub branch at e614152. Accepted bounded typed document gateway review; recorded two J19 findings and ongoing repairs. Native document implementation, reporting goal projection review and non-mutating generation configuration port remain active. No whole feature promoted."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Accepted independent configuration-port review ca3279b (121 final tests) and J19 repair recheck8629585 (109 tests,3SQLite-only concurrency skips). Native optional scheduled document AI handoff is under author verification before its own independent review. Four bounded jobs remain verified; no whole feature promoted, all40 features and28 jobs retained."
     }
   ]
 }

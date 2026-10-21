@@ -121,8 +121,10 @@ evidence use separate permissions. A later withdrawal makes current eligibility
 unresolved while retaining the original human review and actual-work history.
 Native owner readers recheck authority and source revisions, and refuse pending
 dependency edits without flushing, committing, rolling back or replacing the
-caller's staged data. These contracts need their own implementation review;
-they do not establish complete school administration or legal compliance.
+caller's staged data. The native adapters are composed by `create_app` and were
+independently accepted after repairs at `8629585`; see the
+[professional authority review](reviews/J19-professional-authority-review.md).
+This does not establish complete school administration or legal compliance.
 
 Curated projections can call
 `evidence.projections.confirmed_binding_is_current(db, school_id, learner_id,
@@ -213,10 +215,11 @@ Missing configuration
 returns `unavailable`; caller role labels and permissions cannot establish
 qualification. Actual work can still be recorded as unassessed with a cause and
 owned follow-up, separately from assessed support and entitlement comparisons.
-The production qualification source belongs to the remaining J19 work. This
-teaching repair contract at `da503e1` is independently accepted in the bounded
-[J06 backend review](reviews/J06-review.md); the complete UI and real adapter
-remain unfinished.
+The production qualification source now uses J19's persisted, human-reviewed
+professional records through its native adapter. Live external HR reconciliation
+remains separate required work. This teaching repair contract at `da503e1` is
+independently accepted in the bounded [J06 backend review](reviews/J06-review.md);
+complete teaching UI acceptance remains separate.
 
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
@@ -316,6 +319,8 @@ Practitioner choice ports support the planning and teaching screens without
 administrative configuration access. `GET /ai/choices` takes an authorized
 `learner_id`, `purpose=iep_drafting|session_planning`, offset and limit, and returns
 only current reviewed policy/release pairs with model labels and review dates.
+The typed document gateway also supports `report_drafting` and
+`guardian_email_drafting`, each requiring its own successful reviewed evaluation.
 It neither resolves pupil sources nor contacts a provider; generation still
 rechecks exact sources and processing boundaries. `GET
 /learners/{learner_id}/teaching-staff` takes
@@ -330,6 +335,27 @@ existing dependency gate; learner-scoped reads never expose that group prose.
 These read ports at `3c4d823` are independently accepted in the bounded
 [practitioner choice review](reviews/practitioner-choice-ports-review.md).
 Complete UI workflow acceptance remains separate.
+
+Atomic document scheduling uses
+`platform.service.validate_generation_configuration(db, actor, school_id,
+learner_id, purpose, policy_id, release_id, runtime)`. This returns only the
+current policy version and reviewed release digest. It reads through a fresh
+identity map on the caller transaction, rejects pending permission/configuration
+changes and never flushes, commits, rolls back, audits or invokes a provider.
+It does not authorize source processing. A durable consumer records the exact
+binding with its request and rechecks it before using the existing generation
+gateway, which still authorizes current sources and processing boundaries.
+
+Historical report goals use
+`plans.projections.reporting_goal_basis(db, actor, school_id, learner_id,
+goal_revision_id, at=aware_instant)`. The returned `effective_period` intersects
+the exact goal and plan validity and clips the end at supersession. Its upper
+bound is exclusive; `activation_recorded_at` remains separate provenance and
+does not replace an imported plan's declared start. Current source and actor
+authorization still apply to historical reads. The existing teaching projection
+and its digests are unchanged. This bounded port was independently accepted at
+`e614152`; annual report selection, text review and disclosure remain the
+document consumer's responsibility.
 
 Durable proposal recovery uses `GET /education-plans/{plan_id}/suggestions` and
 `GET /teaching/sessions/{session_id}/suggestions`, with offset/limit pagination.
@@ -421,10 +447,11 @@ professional finalization authority or proves learning progress from attendance.
 
 ## Assessment records and human review
 
-Candidate `673a0eb` registers BC09 in the actual application with a static
-`j10_assessment` migration after `j09_curriculum`. Its independent review is
-assigned to `/root/review_j09`; the following describes implemented contracts
-awaiting that review, not complete F11/F17/F19 delivery.
+BC09 is registered in the actual application with a static `j10_assessment`
+migration after `j09_curriculum`, followed by its event-envelope migration.
+The bounded backend and repairs were independently reviewed in the
+[J10 review](reviews/J10-review.md). Complete F11/F17/F19 delivery remains
+separate from these accepted contracts.
 
 `/api/v1/schools/{school_id}/assessment` provides versioned instruments,
 administrations and factual results; source-backed progress reviews; and subject
@@ -443,7 +470,8 @@ communication records remain distinct.
 
 The trusted `AssessmentAuthorityPort.resolve(db, actor, AuthorityRequest)` binds
 school, pupil, person, purpose, exact revision/digest, full period and relevant
-subject/scheme. The native J19 authority implementation remains required.
+subject/scheme. The application composes the reviewed native J19 implementation;
+its configuration must still resolve the exact professional authority requested.
 Missing authority blocks instrument administration, professional result review
 and formal finalization; a role or textual curriculum rule cannot substitute for
 it. Grade setting has a separate human authority check. Synthetic authority exists
