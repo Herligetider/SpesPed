@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiClient, ApiError, api } from './api';
 import IntakeWorkspace from './IntakeWorkspace';
+import PlanningWorkspace from './features/planning/PlanningWorkspace';
+import TeachingWorkspace from './features/teaching/TeachingWorkspace';
 import { localizeApiError, translate } from './i18n';
 import type { Language, MessageKey } from './i18n';
 import type { Learner, LearnerProfile, Session } from './types';
@@ -9,8 +11,15 @@ import type { Learner, LearnerProfile, Session } from './types';
 type LoadState<T> = { status: 'loading' } | { status: 'error'; error: unknown } | { status: 'ready'; value: T };
 type LearnerPage = { items: Learner[]; total: number; offset: number; limit: number };
 const pageSize = 50;
+const clientKeys = new WeakMap<ApiClient, number>();
+let nextClientKey = 0;
 
 export default function App({ client = api }: { client?: ApiClient }) {
+  if (!clientKeys.has(client)) clientKeys.set(client, ++nextClientKey);
+  return <AuthenticatedApp key={clientKeys.get(client)} client={client} />;
+}
+
+function AuthenticatedApp({ client }: { client: ApiClient }) {
   const [language, setLanguage] = useState<Language>(() => localStorage.getItem('spesped-language') === 'nn' ? 'nn' : 'nb');
   const [session, setSession] = useState<Session | null>(null);
   const [booting, setBooting] = useState(true);
@@ -22,7 +31,7 @@ export default function App({ client = api }: { client?: ApiClient }) {
   const [profile, setProfile] = useState<LoadState<LearnerProfile> | null>(null);
   const [selectedLearner, setSelectedLearner] = useState<Learner | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [workspace, setWorkspace] = useState<'learners' | 'intake'>('learners');
+  const [workspace, setWorkspace] = useState<'learners' | 'intake' | 'assistant'>('learners');
   const authGeneration = useRef(0);
   const profileGeneration = useRef(0);
   const languageRef = useRef(language);
@@ -59,6 +68,7 @@ export default function App({ client = api }: { client?: ApiClient }) {
       profileGeneration.current += 1;
       setSession(current);
       setSelectedSchoolId(current.schools.length === 1 ? current.schools[0].id : '');
+      setWorkspace(current.schools.length === 1 && current.schools[0].role === 'assistant' ? 'assistant' : 'learners');
       setLearnerOffset(0);
     }).catch((error) => {
       if (active && generation === authGeneration.current && !(error instanceof ApiError && error.status === 401)) setNotice(displayError(error));
@@ -73,7 +83,7 @@ export default function App({ client = api }: { client?: ApiClient }) {
   }, [client]);
 
   useEffect(() => {
-    if (!session || !school) {
+    if (!session || !school || school.role === 'assistant') {
       setLearners({ status: 'ready', value: { items: [], total: 0, offset: 0, limit: pageSize } });
       return;
     }
@@ -108,6 +118,7 @@ export default function App({ client = api }: { client?: ApiClient }) {
       if (generation !== authGeneration.current) return;
       setSession(current);
       setSelectedSchoolId(current.schools.length === 1 ? current.schools[0].id : '');
+      setWorkspace(current.schools.length === 1 && current.schools[0].role === 'assistant' ? 'assistant' : 'learners');
       setLearnerOffset(0);
     } catch (error) {
       if (generation === authGeneration.current) setNotice(displayError(error));
@@ -152,6 +163,7 @@ export default function App({ client = api }: { client?: ApiClient }) {
   function changeSchool(value: string) {
     profileGeneration.current += 1;
     setSelectedSchoolId(value);
+    setWorkspace(session?.schools.find(item => item.id === value)?.role === 'assistant' ? 'assistant' : 'learners');
     setLearnerOffset(0);
     setSelectedLearner(null);
     setProfile(null);
@@ -184,6 +196,9 @@ export default function App({ client = api }: { client?: ApiClient }) {
           <button className={`nav-item ${school && workspace === 'intake' ? 'active' : ''}`} aria-current={workspace === 'intake' ? 'page' : undefined} type="button" onClick={() => {setWorkspace('intake');leaveProfile();}}>
             <span className="nav-icon" aria-hidden="true">⇧</span>Dokumentinnboks
           </button>
+          <button className={`nav-item ${school && workspace === 'assistant' ? 'active' : ''}`} aria-current={workspace === 'assistant' ? 'page' : undefined} type="button" onClick={() => {setWorkspace('assistant');leaveProfile();}}>
+            <span className="nav-icon" aria-hidden="true">☷</span>Mine assistentoppdrag
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <div className="signed-in"><span className="avatar" aria-hidden="true">{session.user.display_name.slice(0, 1).toLocaleUpperCase(language)}</span><span className="signed-in-copy"><strong>{session.user.display_name}</strong><span>{session.user.email}</span></span></div>
@@ -195,18 +210,42 @@ export default function App({ client = api }: { client?: ApiClient }) {
         </div>
       </aside>
       <main id="main-content" className="main-panel">
-        <header className="topbar"><div><div className="eyebrow">{school?.name ?? t('appName')}</div><h1>{selectedLearner ? t('profile') : workspace === 'intake' ? 'Dokumentinnboks' : t('learners')}</h1></div><div className="topbar-user" aria-label={session.user.display_name}>{session.user.display_name}</div></header>
+        <header className="topbar"><div><div className="eyebrow">{school?.name ?? t('appName')}</div><h1>{selectedLearner ? t('profile') : workspace === 'intake' ? 'Dokumentinnboks' : workspace === 'assistant' ? 'Mine assistentoppdrag' : t('learners')}</h1></div><div className="topbar-user" aria-label={session.user.display_name}>{session.user.display_name}</div></header>
         <div className="content-wrap">
           {notice && <div className="notice" role="status">{notice}</div>}
           {!session.schools.length ? <EmptyState title={t('schools')} message={t('noSchools')} /> : !school ? <EmptyState title={t('chooseSchool')} message={t('selectSchool')} /> : workspace === 'intake' ? (
             <IntakeWorkspace client={client} schoolId={school.id} formatError={displayError} />
+          ) : workspace === 'assistant' ? (
+            <TeachingWorkspace key={`${session.user.id}:${school.id}:assistant`} client={client} schoolId={school.id} mode="assistant" currentUser={session.user} language={language} formatError={displayError} />
           ) : selectedLearner ? (
-            <ProfilePanel learner={selectedLearner} profile={profile} t={t} formatError={displayError} onBack={leaveProfile} onRetry={() => openProfile(selectedLearner)} />
+            <LearnerWorkspace key={`${session.user.id}:${school.id}:${selectedLearner.id}`} client={client} schoolId={school.id} currentUser={session.user} learner={selectedLearner} profile={profile} language={language} t={t} formatError={displayError} onBack={leaveProfile} onRetry={() => openProfile(selectedLearner)} />
           ) : <LearnerList state={learners} t={t} language={language} formatError={displayError} onOpen={openProfile} onRetry={() => setListReload((value) => value + 1)} onPageChange={setLearnerOffset} />}
         </div>
       </main>
     </div>
   );
+}
+
+function LearnerWorkspace({client, schoolId, currentUser, learner, profile, language, t, formatError, onBack, onRetry}: {
+  client: ApiClient; schoolId: string; currentUser: Session['user']; learner: Learner;
+  profile: LoadState<LearnerProfile> | null; language: Language;
+  t: (key: Exclude<MessageKey, 'learnerCount' | 'pageSummary'>) => string;
+  formatError: (error: unknown) => string; onBack: () => void; onRetry: () => void;
+}) {
+  const [tab, setTab] = useState('overview');
+  const [opened, setOpened] = useState<string[]>(['overview']);
+  const labels = {overview: t('overview'), planning: language === 'nn' ? 'Grunnlag og planar' : 'Grunnlag og planer', teaching: 'Undervisning'};
+  function choose(value: string) {setTab(value);setOpened(previous => previous.includes(value) ? previous : [...previous, value]);}
+  const shared = {client, schoolId, learnerId: learner.id, learnerName: learner.display_name, currentUser, language, formatError};
+  return <section aria-label={learner.display_name}>
+    <button className="back-link" onClick={onBack} type="button"><span aria-hidden="true">←</span> {t('backToLearners')}</button>
+    <nav aria-label="Arbeid med eleven" className="learner-workspace-nav">
+      {Object.entries(labels).map(([id, label]) => <button key={id} type="button" className={tab === id ? 'primary-button' : 'secondary-button'} aria-current={tab === id ? 'page' : undefined} onClick={() => choose(id)}>{label}</button>)}
+    </nav>
+    <div hidden={tab !== 'overview'}><ProfilePanel learner={learner} profile={profile} t={t} formatError={formatError} onBack={onBack} onRetry={onRetry} showBack={false} /></div>
+    {opened.includes('planning') && <div hidden={tab !== 'planning'}><PlanningWorkspace {...shared} /></div>}
+    {opened.includes('teaching') && <div hidden={tab !== 'teaching'}><TeachingWorkspace {...shared} mode="teaching" /></div>}
+  </section>;
 }
 
 function Login({ t, language, changeLanguage, onSubmit, notice }: { t: (key: Exclude<MessageKey, 'learnerCount' | 'pageSummary'>) => string; language: Language; changeLanguage: (value: Language) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>; notice: string }) {
@@ -245,9 +284,9 @@ function LearnerList({ state, t, language, formatError, onOpen, onRetry, onPageC
   </section>;
 }
 
-function ProfilePanel({ learner, profile, t, formatError, onBack, onRetry }: { learner: Learner; profile: LoadState<LearnerProfile> | null; t: (key: Exclude<MessageKey, 'learnerCount' | 'pageSummary'>) => string; formatError: (error: unknown) => string; onBack: () => void; onRetry: () => void }) {
+function ProfilePanel({ learner, profile, t, formatError, onBack, onRetry, showBack = true }: { learner: Learner; profile: LoadState<LearnerProfile> | null; t: (key: Exclude<MessageKey, 'learnerCount' | 'pageSummary'>) => string; formatError: (error: unknown) => string; onBack: () => void; onRetry: () => void; showBack?: boolean }) {
   return <section className="profile-panel" aria-labelledby="profile-name">
-    <button className="back-link" onClick={onBack} type="button"><span aria-hidden="true">←</span> {t('backToLearners') as string}</button>
+    {showBack && <button className="back-link" onClick={onBack} type="button"><span aria-hidden="true">←</span> {t('backToLearners') as string}</button>}
     {profile?.status === 'loading' && <div className="inline-state" role="status">{t('loading') as string}</div>}
     {profile?.status === 'error' && <div className="error-panel" role="alert"><h2>{t('loadError')}</h2><p>{formatError(profile.error)}</p><button className="secondary-button" onClick={onRetry}>{t('retry')}</button></div>}
     {profile?.status === 'ready' && <>
