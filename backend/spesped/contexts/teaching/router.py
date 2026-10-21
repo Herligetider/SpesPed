@@ -96,6 +96,12 @@ def request_suggestion(school_id:UUID,session_id:UUID,command:RequestSuggestion,
     return job_view(service.request_suggestion(db,actor,str(school_id),str(session_id),command,runtime(request)))
 
 
+@router.get('/teaching/sessions/{session_id}/suggestions')
+def suggestion_history(school_id:UUID,session_id:UUID,request:Request,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor:Actor=Depends(get_actor),db:Session=Depends(context)):
+    value=service.suggestion_history(db,actor,str(school_id),str(session_id),runtime(request),offset=offset,limit=limit)
+    return read(db,actor,str(school_id),'teaching.suggestions_read','teaching_session',str(session_id),value)
+
+
 @router.get('/teaching/sessions/{session_id}/suggestions/{job_id}/diff')
 def suggestion_diff(school_id:UUID,session_id:UUID,job_id:UUID,request:Request,actor:Actor=Depends(get_actor),db:Session=Depends(context)):
     value=service.suggestion_diff(db,actor,str(school_id),str(session_id),str(job_id),runtime(request))

@@ -310,3 +310,25 @@ existing dependency gate; learner-scoped reads never expose that group prose.
 These read ports at `3c4d823` are independently accepted in the bounded
 [practitioner choice review](reviews/practitioner-choice-ports-review.md).
 Complete UI workflow acceptance remains separate.
+
+Durable proposal recovery uses `GET /education-plans/{plan_id}/suggestions` and
+`GET /teaching/sessions/{session_id}/suggestions`, with offset/limit pagination.
+Both require the owning write authority and current purpose-specific AI access.
+The IEP list is restricted to generation bases for the exact current plan
+revision; the session list is restricted to its current immutable teaching basis.
+A teaching job belongs to that basis, so another authorized session using the
+same basis can independently review it. The response explicitly identifies this
+scope and the current consumer revision rather than implying job ownership by
+the session where it happens to be listed.
+
+Each entry carries job ID/version, recorded execution state/attempt count,
+timestamps, basis ID, current availability and the consumer's recorded review
+outcome. It carries no output, source manifest, review reason or model settings.
+Current availability rechecks source authorization, exact source content and the
+reviewed processing/model boundary without invoking a model. A recalled job
+retains its recorded execution state but becomes `review_required`; it cannot
+be treated as usable generated content. Existing job read/run/diff/review commands
+remain the authoritative action gates. A reload must select the persisted job
+and basis instead of silently creating another generation. This backend port
+does not yet complete browser recovery; its UI and independent acceptance remain
+required.

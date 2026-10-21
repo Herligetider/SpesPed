@@ -782,6 +782,25 @@ def suggestion_job(db,actor,school_id,session_id,job_id,runtime):
     return row,revision,basis,job
 
 
+def suggestion_history(db,actor,school_id,identity,runtime,*,offset=0,limit=50):
+    row=session(db,actor,school_id,identity,'teaching.write')
+    revision=current_revision(db,row)
+    basis=load(db,TeachingBasis,school_id,revision.basis_id)
+    if len(basis.learners) != 1:
+        return {'items':[],'total':0,'manual_fallback_available':True,'scope':'current_basis','session_revision_id':revision.id}
+    result=gateway.source_job_summaries(db,actor,school_id,basis.learners[0]['learner_id'],
+        'session_planning',[basis.id],runtime,offset=offset,limit=limit)
+    job_ids=[item['id'] for item in result['items']]
+    reviews=db.execute(select(ProposalReview.job_id,ProposalReview.outcome).where(
+        ProposalReview.school_id == school_id,ProposalReview.session_id == row.id,
+        ProposalReview.job_id.in_(job_ids)).order_by(ProposalReview.created_at,ProposalReview.id)).all()
+    outcomes=dict(reviews)
+    for item in result['items']:item['review_outcome']=outcomes.get(item['id'])
+    # Jobs belong to the immutable basis. Sessions sharing it can independently
+    # review a proposal; never claim that the job originated in this session.
+    return result | {'scope':'current_basis','session_revision_id':revision.id}
+
+
 def request_suggestion(db,actor,school_id,identity,command,runtime):
     row=session(db,actor,school_id,identity,'teaching.write')
     basis=load(db,TeachingBasis,school_id,current_revision(db,row).basis_id)

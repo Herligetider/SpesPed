@@ -181,6 +181,12 @@ def suggest_plan(school_id:UUID,plan_id:UUID,command:PlanSuggestionRequest,runti
     return job_view(generation.request_suggestion(db,actor,str(school_id),str(plan_id),command,runtime))
 
 
+@router.get('/education-plans/{plan_id}/suggestions')
+def plan_suggestions(school_id:UUID,plan_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
+    value=generation.suggestion_history(db,actor,str(school_id),str(plan_id),runtime,offset=offset,limit=limit)
+    record_audit(db,actor,str(school_id),'plan.suggestions_read','education_plan',str(plan_id));commit(db);return value
+
+
 @router.get('/education-plans/{plan_id}/suggestions/{job_id}')
 def plan_suggestion(school_id:UUID,plan_id:UUID,job_id:UUID,basis_id:UUID,runtime=Depends(generation_runtime),actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
     value=generation.diff(db,actor,str(school_id),str(plan_id),str(basis_id),str(job_id),runtime)

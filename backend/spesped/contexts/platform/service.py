@@ -437,6 +437,60 @@ def current_job(db, actor, school_id, job_id, runtime, *, lock=False):
     return _require_visible(db, actor, job, runtime)
 
 
+def source_job_summaries(db, actor, school_id, learner_id, purpose, source_ids,
+                         runtime, *, offset=0, limit=50):
+    """Recover durable jobs for an owner's exact immutable generation bases.
+
+    The owner must authorize its plan/session and supply only its current basis
+    IDs. This is an internal read port, not a caller-selected source search.
+    Output and source prose are never selected from the job table or returned.
+    Recorded execution state is distinct from current availability: a recalled
+    successful job remains recorded, but cannot be presented as usable output.
+    The consumer owns its read audit/transaction. Resuming and reviewing still
+    use the existing commands, which recheck all rights and source bindings.
+    """
+    _authorize(db, actor, school_id, learner_id, purpose)
+    kind = {'iep_drafting': 'plan_basis', 'session_planning': 'teaching_basis'}.get(purpose)
+    if kind is None:
+        raise access_denied()
+    source_ids = [str(UUID(str(identity))) for identity in source_ids]
+    reference = GenerationJob.source_manifest[0]['reference']
+    conditions = (
+        GenerationJob.school_id == school_id,
+        GenerationJob.learner_id == learner_id,
+        GenerationJob.purpose == purpose,
+        func.json_array_length(GenerationJob.source_manifest) == 1,
+        reference['kind'].as_string() == kind,
+        reference['source_id'].as_string().in_(source_ids),
+        reference['revision'].as_integer() == 1,
+    )
+    total = db.scalar(select(func.count()).select_from(GenerationJob).where(*conditions))
+    columns = ('id', 'school_id', 'learner_id', 'purpose', 'version', 'state',
+               'policy_id', 'policy_version', 'release_id', 'release_digest',
+               'source_manifest', 'attempts', 'created_at', 'updated_at')
+    rows = db.execute(select(*(getattr(GenerationJob, name) for name in columns))
+        .where(*conditions).order_by(GenerationJob.created_at.desc(), GenerationJob.id)
+        .offset(offset).limit(limit)).mappings()
+    items = []
+    for row in rows:
+        job = SimpleNamespace(**row)
+        available = False
+        try:
+            if runtime is not None:
+                sources = _current_sources(db, runtime, actor, job)
+                _, _, provider = _configuration(db, runtime, job)
+                validate_provider(runtime, provider, sources)
+                available = True
+        except (DomainError, ProviderFailure, ValueError, TypeError, KeyError):
+            pass
+        items.append({name: getattr(job, name) for name in
+            ('id', 'version', 'state', 'attempts', 'created_at', 'updated_at')} | {
+            'basis_id': job.source_manifest[0]['reference']['source_id'],
+            'availability': 'current' if available else 'review_required',
+        })
+    return {'items': items, 'total': total, 'manual_fallback_available': True}
+
+
 def job_binding_is_current(db, school_id, job_id, runtime):
     """Check only a successful job's current processing/release binding.
 

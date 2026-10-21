@@ -94,6 +94,21 @@ def basis_view(db,actor,school_id,identity):
     return {'id':basis.id,'plan_id':row.id,'plan_revision_id':basis.plan_revision_id,'digest':basis.digest,'content':basis.content,'unconfirmed':True,'curriculum_context':'unavailable','adaptation_generation':'unavailable'}
 
 
+def suggestion_history(db,actor,school_id,identity,runtime,*,offset=0,limit=50):
+    row=service.plan(db,actor,school_id,identity,'plans.write')
+    revision=service.current_revision(db,row)
+    basis_ids=list(db.scalars(select(PlanGenerationBasis.id).where(
+        PlanGenerationBasis.school_id == school_id,PlanGenerationBasis.learner_id == row.learner_id,
+        PlanGenerationBasis.plan_id == row.id,PlanGenerationBasis.plan_revision_id == revision.id)))
+    result=gateway.source_job_summaries(db,actor,school_id,row.learner_id,
+        'iep_drafting',basis_ids,runtime,offset=offset,limit=limit)
+    outcomes=dict(db.execute(select(PlanProposalReview.job_id,PlanProposalReview.outcome).where(
+        PlanProposalReview.school_id == school_id,PlanProposalReview.plan_id == row.id,
+        PlanProposalReview.job_id.in_([item['id'] for item in result['items']]))).all())
+    for item in result['items']:item['review_outcome']=outcomes.get(item['id'])
+    return result | {'scope':'current_plan_revision','plan_revision_id':revision.id}
+
+
 def resolve_generation_source(db,actor,school_id,learner_id,purpose,reference):
     if purpose != 'iep_drafting' or reference.kind != 'plan_basis' or reference.revision != 1:raise access_denied()
     row,basis=load_basis(db,actor,school_id,str(reference.source_id))
