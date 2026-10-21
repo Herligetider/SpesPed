@@ -1508,6 +1508,10 @@
         {
           "type": "work_assignment",
           "result": "After bounded backend acceptance, assigned separate practitioner choice/recovery extension to original /root/j11_documents: native authorized guardian/staff/template/obligation/source/goal/actual/future-plan pickers, persisted suggestion recovery and assigned-contributor inbox as needed. Coordinates fixed typed contracts with Luna UI author; owns new choices.py, router additions and new tests only. Reuse existing /ai/choices for generation configuration. Independent review required; no UI placeholder or raw UUID form counts as completion."
+        },
+        {
+          "type": "scope_coordination",
+          "result": "Practitioner choice extension authorized narrow new owner inventory modules identity/document_choices.py, plans/document_choices.py, teaching/document_choices.py, assessment/document_choices.py and governance/document_choices.py plus dedicated tests; documents/choices.py composes their public reads. Source inventories use native current owner authorization, no committed HTTP/router calls or protected-case discovery. Recovery list requires documents.write plus matching AIpurpose, while ordinary readers/approvers retain accepted R1 scope. Existing ai/choices reused. UI and backend agents coordinate fixed typed category responses; all new owner modules require independent review."
         }
       ],
       "findings": [
@@ -1568,9 +1572,22 @@
           "type": "implementation_candidate",
           "revision": "90c93469399c0f91f3c4dce62e57fc885e799518",
           "result": "Pinned19files after root verified15author hashes plus4rootcomposition paths. Native exact reviewed recipient/channel/packages, separate content/disclosure authorization, explicit export/dispatch/reconciliation/read receipts, guardian portal and accepted-period history; static20tablemigration with safeemptydowngrade. Final50passes1SQLite-onlyconcurrency skip includes native fresh-app restart, actualPostgreSQL race, realverifiedTLS oversize/trickle/emptytrust harddeadline, delayed post-lock replay race, localAI model recall, atomic rollback and portal scope. Distinct /root/review_j12_communication (Sol high) assigned exactarchive independentreview. Attachments limited to UTF8 renders ofapproveddocument revisions; arbitraryuploads/PDF,J21UI,namedJ18providers andJ26deployment remain required. No bounded acceptance yet."
+        },
+        {
+          "type": "independent_review",
+          "revision": "90c93469399c0f91f3c4dce62e57fc885e799518",
+          "path": "docs/reviews/J12-review.md",
+          "result": "Changes required: pending-dependency guard runs inside mutation rollback handler and discards caller-owned pending changes, independently reproduced SQLite/PostgreSQL. Candidate50passes1SQLite-onlyskip,3extra actualTLS adverse deadline/worker-cleanup passes and10priorownerregressionpasses; all19hashes/7archiveimports verified. Originalauthor assigned narrow transaction-precondition repair and representative pending object/replay/atomicity regression checks; independent recheck required."
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "J12-R1",
+          "priority": "P2",
+          "description": "Rejected pending-dependency command rolls back and loses caller staged protective relationship changes",
+          "status": "repair_in_progress"
+        }
+      ]
     },
     {
       "id": "J13",
