@@ -293,3 +293,93 @@ def test_goal_metadata_keeps_unrelated_pending_rows_and_mutations_unflushed(gene
         assert goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding) is True
         assert generation_bindings_are_current(db,e.ids['school'],e.ids['a'],active['content']['generation_lineage'],e.runtime) is True
         assert not flushes and set(db.new) == pending and inspect(unrelated).dict == values
+
+
+@pytest.mark.parametrize('change',['delete','add'])
+def test_generation_metadata_freezes_recommendation_membership_after_explicit_commit(generated_env,change):
+    from spesped.auth import Actor
+    from spesped.contexts.entitlements.models import Recommendation
+    from spesped.contexts.plans.models import PlanGenerationBasis
+    from spesped.contexts.plans.projections import teaching_goal_basis,goal_binding_is_current,generation_bindings_are_current
+    e=generated_env;p=proposal(e,generate(e))
+    active=activate(e.client,e.ids,e.h,post(e.client,path(e)+'/suggestion-reviews',e.h,selection(e,p,selected_fields=[],selected_goal_keys=['reading']),200))
+    with e.factory() as db:
+        db.info['plans_runtime']=e.runtime
+        binding=teaching_goal_basis(db,Actor(e.ids['reviewer']),e.ids['school'],e.ids['a'],active['content']['goals'][0]['id'])
+        original=db.scalar(select(Recommendation).where(Recommendation.assessment_id == e.assessment['id']))
+        dependencies=db.scalar(select(PlanGenerationBasis.dependencies).where(PlanGenerationBasis.id == e.basis['id']))
+        assert dependencies['assessments'][0]['recommendation_ids'] == [original.id]
+        if change == 'delete':db.delete(original)
+        else:
+            fields=('category','subject','content','amount','unit','counting_basis','effective_from','effective_until','source')
+            db.add(Recommendation(school_id=e.ids['school'],assessment_id=e.assessment['id'],**{f:getattr(original,f) for f in fields}))
+        assert not goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding)
+        db.commit()
+    with e.factory() as db:
+        db.info['plans_runtime']=e.runtime
+        assert not goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding)
+        assert not generation_bindings_are_current(db,e.ids['school'],e.ids['a'],active['content']['generation_lineage'],e.runtime)
+    current=e.client.get(path(e));assert current.status_code == 200,current.text
+    assert current.json()['source_status'] == 'review_required' and 'goals' not in current.json()['content']
+
+
+def test_legacy_recommendation_metadata_is_unknown_without_reading_or_reconstructing_prose(generated_env,monkeypatch):
+    from copy import deepcopy
+    from sqlalchemy import update,event
+    from spesped.auth import Actor
+    from spesped.domain import canonical_content_digest
+    from spesped.contexts.plans.models import PlanGenerationBasis
+    from spesped.contexts.plans.projections import teaching_goal_basis,goal_binding_is_current,generation_bindings_are_current
+    e=generated_env;p=proposal(e,generate(e))
+    active=activate(e.client,e.ids,e.h,post(e.client,path(e)+'/suggestion-reviews',e.h,selection(e,p,selected_fields=[],selected_goal_keys=['reading']),200))
+    with e.factory() as db:
+        db.info['plans_runtime']=e.runtime
+        binding=teaching_goal_basis(db,Actor(e.ids['reviewer']),e.ids['school'],e.ids['a'],active['content']['goals'][0]['id'])
+        dependencies=deepcopy(db.scalar(select(PlanGenerationBasis.dependencies).where(PlanGenerationBasis.id == e.basis['id'])))
+        for assessment in dependencies['assessments']:assessment.pop('recommendation_ids')
+        # Simulate the persisted metadata shape of a pre-repair immutable basis.
+        # No migration invents missing historical membership from today's data.
+        db.execute(update(PlanGenerationBasis).where(PlanGenerationBasis.id == e.basis['id']).values(dependencies=dependencies,dependency_digest=canonical_content_digest(dependencies)))
+        db.commit()
+    with e.factory() as db:
+        db.info['plans_runtime']=e.runtime
+        statements=[]
+        def sql(conn,cursor,statement,parameters,context,executemany):statements.append(statement.lower())
+        def forbidden(*_,**__):raise AssertionError('Metadata lookup loaded source prose or refreshed caller state')
+        monkeypatch.setattr(db,'refresh',forbidden);monkeypatch.setattr(e.runtime.source_resolver,'resolve',forbidden)
+        engine=db.get_bind();event.listen(engine,'before_cursor_execute',sql)
+        try:
+            assert not goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding)
+            assert not generation_bindings_are_current(db,e.ids['school'],e.ids['a'],active['content']['generation_lineage'],e.runtime)
+            assert all(statement.lstrip().startswith('select') for statement in statements)
+            assert all(token not in statement for statement in statements for token in ('plans_generation_bases.content','entitlements_recommendations.content','platform_generation_jobs.output'))
+        finally:event.remove(engine,'before_cursor_execute',sql)
+
+
+def test_optional_profile_replacement_none_is_distinct_from_missing_or_changed_former_owner(generated_env):
+    from sqlalchemy import event,inspect
+    from spesped.auth import Actor
+    from spesped.db import utcnow
+    from spesped.contexts.plans.models import ProfileStatement
+    from spesped.contexts.plans.projections import teaching_goal_basis,goal_binding_is_current,generation_bindings_are_current
+    e=generated_env;p=proposal(e,generate(e))
+    active=activate(e.client,e.ids,e.h,post(e.client,path(e)+'/suggestion-reviews',e.h,selection(e,p,selected_fields=[],selected_goal_keys=['reading']),200))
+    proposed=post(e.client,base(e.ids)+f'/learners/{e.ids["a"]}/support-profile/statements',e.h,retry(category='strength',content='Synthetic separately proposed replacement',source=e.basis['content']['profile'][0]['source'],observed_at=utcnow().isoformat(),replaces_id=e.statement['id']))
+    for kind in ('known_none','missing_owner','detached_former_owner','expired_owner'):
+        with e.factory() as db:
+            db.info['plans_runtime']=e.runtime
+            binding=teaching_goal_basis(db,Actor(e.ids['reviewer']),e.ids['school'],e.ids['a'],active['content']['goals'][0]['id'])
+            selected=db.get(ProfileStatement,e.statement['id'])
+            if kind in {'known_none','missing_owner'}:
+                values={'replaces_id':None} if kind == 'known_none' else {}
+                obj=ProfileStatement(id=key(),school_id=e.ids['school'],profile_id=selected.profile_id,category='interest',content='Synthetic unrelated profile proposal',source=selected.source,observed_at=utcnow(),proposed_by=e.ids['reviewer'],state='proposed',**values);db.add(obj)
+            else:
+                obj=db.get(ProfileStatement,proposed['id'])
+                if kind == 'detached_former_owner':obj.replaces_id=None
+                else:db.expire(obj,['replaces_id']);obj.content='Synthetic pending edit with expired ownership'
+            pending=(set(db.new),set(db.dirty),set(db.deleted));values=dict(inspect(obj).dict);flushes=[]
+            event.listen(db,'before_flush',lambda *_:flushes.append(True))
+            wanted=kind == 'known_none'
+            assert goal_binding_is_current(db,e.ids['school'],e.ids['a'],binding) is wanted,kind
+            assert generation_bindings_are_current(db,e.ids['school'],e.ids['a'],active['content']['generation_lineage'],e.runtime) is wanted,kind
+            assert not flushes and (set(db.new),set(db.dirty),set(db.deleted)) == pending and inspect(obj).dict == values

@@ -26,7 +26,7 @@ def teaching_goal_basis(db, actor, school_id, learner_id, goal_revision_id, at=N
 
 
 
-def _pending_metadata(db,model,identities=(),**owners):
+def _pending_metadata(db,model,identities=(),*,known_null_owners=(),**owners):
     """Inspect identity/history only; never load or flush a caller-owned object."""
     identities={str(value) for value in identities if value is not None}
     owners={field:{str(value) for value in values if value is not None} for field,values in owners.items()}
@@ -39,7 +39,8 @@ def _pending_metadata(db,model,identities=(),**owners):
             if not values:continue
             # Unknown ownership cannot establish that a pending row is unrelated.
             # Using the state dictionary/history avoids loading expired prose.
-            if field not in state.dict or state.dict[field] is None:return True
+            if field not in state.dict:return True
+            if state.dict[field] is None and field not in known_null_owners:return True
             history=state.attrs[field].history
             if state.persistent and history.has_changes() and not history.deleted:return True
             candidates=(state.dict[field],*history.added,*history.deleted)
@@ -108,7 +109,7 @@ def profile_bindings_are_current(db,school_id,learner_id,bindings):
         from .models import LearnerSupportProfile,ProfileStatement
         if _pending_sources(db,school_id,[binding['source'] for binding in bindings]):return False
         for binding in bindings:
-            if _pending_metadata(db,ProfileStatement,[binding['id']],replaces_id=[binding['id']]):return False
+            if _pending_metadata(db,ProfileStatement,[binding['id']],known_null_owners=('replaces_id',),replaces_id=[binding['id']]):return False
             row=db.execute(select(ProfileStatement.profile_id,ProfileStatement.id,ProfileStatement.state,ProfileStatement.version,ProfileStatement.confirmed_by,ProfileStatement.source).join(LearnerSupportProfile,ProfileStatement.profile_id == LearnerSupportProfile.id).where(ProfileStatement.school_id == school_id,LearnerSupportProfile.learner_id == learner_id,ProfileStatement.id == binding['id'])).first()
             if row is None or row.state != 'confirmed' or row.version != binding['version'] or row.confirmed_by != binding['confirmed_by']:return False
             if _pending_metadata(db,LearnerSupportProfile,[row.profile_id]):return False
@@ -162,6 +163,12 @@ def generation_bindings_are_current(db,school_id,learner_id,lineage,runtime=None
                 for allocation in data['allocations']:
                     if not provision_binding_is_current(db,school_id,learner_id,allocation,instant):return False
                 for assessment in data['assessments']:
+                    # Older manifests did not preserve membership. Do not infer
+                    # it from stored source prose or the current recommendation set.
+                    members=assessment.get('recommendation_ids')
+                    if not isinstance(members,list) or members != sorted(set(members)):return False
+                    current_members=list(db.scalars(select(Recommendation.id).where(Recommendation.school_id == school_id,Recommendation.assessment_id == assessment['id']).order_by(Recommendation.id)))
+                    if current_members != members:return False
                     current=db.execute(select(ExpertAssessment.version,ExpertAssessment.state,ExpertAssessment.confirmed_by,ExpertAssessment.case_id,ExpertAssessment.valid_until).where(ExpertAssessment.school_id == school_id,ExpertAssessment.learner_id == learner_id,ExpertAssessment.id == assessment['id'])).first()
                     if current is None or current.version != assessment['version'] or current.state != 'confirmed' or current.confirmed_by != assessment['confirmed_by'] or current.case_id != assessment['case_id'] or (current.valid_until and current.valid_until <= instant):return False
                 if not profile_bindings_are_current(db,school_id,learner_id,data['profile']):return False
