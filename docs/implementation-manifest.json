@@ -530,6 +530,12 @@
           "type": "repair_candidate",
           "revision": "2e305db6db62b306ca13a1d1d1265f1b84204257",
           "result": "Entire curated goal metadata check and generated-lineage pending dependency guards repaired. All four independent desired-behavior reproductions pass on SQLite/PostgreSQL. Independent exact-pin recheck assigned; shared broad run was handed over without a retrievable root process handle, so no final result is claimed for that run."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
+          "path": "docs/reviews/generated-teaching-composition-review.md",
+          "result": "Bounded application composition accepted: five pinned integration cases and four independent fresh-application probes passed. SQLite/PostgreSQL single-head, 115-table metadata and empty roundtrip match; splitting/rejoining parents preserves data. Known consumer findings and absent complete UI prevent overall workflow acceptance."
         }
       ],
       "findings": [
@@ -618,6 +624,12 @@
           "type": "repair_candidate",
           "revision": "da503e1b87c038a73d64dca433f38ef90c6e2961",
           "result": "Full actual-event qualification interval and pre-mutation downgrade refusal protect staffing accounting and legacy reconciliation recovery. Author 78 passed and two expected SQLite skips across teaching and independent desired-behavior probes. Independent exact-pin recheck assigned."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
+          "path": "docs/reviews/generated-teaching-composition-review.md",
+          "result": "Bounded application composition accepted: five pinned integration cases and four independent fresh-application probes passed. SQLite/PostgreSQL single-head, 115-table metadata and empty roundtrip match; splitting/rejoining parents preserves data. Known consumer findings and absent complete UI prevent overall workflow acceptance."
         }
       ],
       "findings": [
@@ -722,6 +734,12 @@
           "type": "integration_candidate",
           "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
           "result": "Root registered actual teaching routes and joined migrations into b5_generated_teaching. Fifteen integration checks passed SQLite/PostgreSQL, including generated IEP goal through session, assistant note, unassessed actual record, next session and original source/model recall. Full schema/default comparison and empty downgrade/upgrade passed both databases. Independent composition review pending; this is backend evidence, not UI acceptance."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
+          "path": "docs/reviews/generated-teaching-composition-review.md",
+          "result": "Bounded application composition accepted: five pinned integration cases and four independent fresh-application probes passed. SQLite/PostgreSQL single-head, 115-table metadata and empty roundtrip match; splitting/rejoining parents preserves data. Known consumer findings and absent complete UI prevent overall workflow acceptance."
         }
       ],
       "findings": [
