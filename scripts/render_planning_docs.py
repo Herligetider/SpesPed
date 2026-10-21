@@ -18,12 +18,14 @@ assert len(source_by_id) == len(sources)
 assert len(feature_by_id) == len(features)
 assert len({r["id"] for r in requirements}) == len(requirements)
 for f in features:
-    for key in ("trigger", "example", "deliveryScope", "reviewQuestion"):
+    for key in ("trigger", "example", "deliveryScope", "reviewQuestion",
+                "stateBehavior", "automationBoundary", "recovery"):
         assert isinstance(f.get(key), str) and f[key].strip(), (f["id"], key)
-    for key in ("users", "inputs", "workflow", "outputs", "rules", "acceptanceCriteria"):
+    for key in ("users", "inputs", "workflow", "outputs", "rules", "acceptanceCriteria", "workspace"):
         assert isinstance(f.get(key), list) and f[key], (f["id"], key)
         assert all(isinstance(item, str) and item.strip() for item in f[key]), (f["id"], key)
     assert len(f["workflow"]) >= 3, f["id"]
+    assert len(f["workspace"]) >= 2, f["id"]
     assert len(f["acceptanceCriteria"]) >= 2, f["id"]
     assert isinstance(f.get("dependencyIds"), list), f["id"]
     assert len(set(f["dependencyIds"])) == len(f["dependencyIds"]), f["id"]
@@ -96,19 +98,21 @@ Skoleeier utpeker ansvarlig for juridisk vurdering og regelvedlikehold. Gå gjen
 
 feature_doc = """# Funksjonskatalog
 
-Arbeidsversjon 0.2 · 8. september 2026. Alle 40 funksjonsområder er beholdt og konkretisert for faglig gjennomgang. Beskrivelsene er produktforslag, ikke implementerte funksjoner eller en ny juridisk kontroll. Akseptansekriteriene beskriver observerbar atferd som en leveranse senere skal verifiseres mot.
+Arbeidsversjon 0.3 · 21. oktober 2026. Alle 40 funksjonsområder er beholdt og konkretisert for faglig gjennomgang. Denne revisjonen utdyper arbeidsflater, statusendringer, automatikk og håndtering av mangler. Beskrivelsene er produktkrav, ikke en bekreftelse på implementerte funksjoner eller en ny juridisk kontroll. Akseptansekriteriene beskriver observerbar atferd som en leveranse senere skal verifiseres mot.
 
 Første komplette arbeidsflyt prioriterer innsamling → bekreftet elev-/plangrunnlag → undervisningsøkt → assistentkort → faktisk gjennomføring og kort notat. [Arbeidsflyten for faglig gjennomgang](08-first-workflow-review.no.md) viser et konkret eksempel og avvik som må fungere.
 
 F20 støtter e-postutkast til foresatte for et valgt tidsintervall og valgfri gjentakelse av utkast. En fast ukerytme er ikke prioritert eller aktivert som standard. Foreldre-e-post ligger i P4 og er ikke nødvendig for første pilotflyt. Første versjon av denne kommunikasjonen går bare til foresatte med relevant informasjonsrett. Elevtilpasset mottak inngår senere; lovpålagt informasjon til eleven har egne mottakerregler.
 
-Hver funksjon beskriver brukere, inndata, arbeidssteg, resultat, regler, akseptansekriterier og et eksempel. Avhengigheter viser funksjoner som må bidra med relevant grunnstøtte, ikke at alle deres senere utvidelser må være ferdige først. «Første leveranse» avgrenser hva fasen faktisk skal inneholde; hele beskrivelsen dekker også senere utvidelser.
+Hver funksjon beskriver brukere, inndata, arbeidsflate, arbeidssteg, statusendringer, automatikk og menneskelige valg, håndtering av feil, resultat, regler, akseptansekriterier og et eksempel. Arbeidsflaten beskriver hva brukeren skal se og gjøre; endelig visuell utforming avklares med fagpersonene. Statusbeskrivelsene er faglige begreper, ikke låste tekniske feltnavn. Avhengigheter viser funksjoner som må bidra med relevant grunnstøtte, ikke at alle deres senere utvidelser må være ferdige først. «Første leveranse» avgrenser hva fasen faktisk skal inneholde; hele beskrivelsen dekker også senere utvidelser.
 
 Produktmålet og dokumenttypene finnes i [produktgrunnlaget](00-product-brief.no.md). BC-numrene viser til [domenemodellen](04-domain-model.en.md), og fasene til [implementasjonsplanen](05-implementation-plan.en.md). Generelle krav til tilgang, kilder, menneskelig kontroll og manuell reserve gjelder på tvers av funksjonene.
 
 ## Til den som gjør faglig gjennomgang
 
-Les først arbeidsflyten og funksjonene F03–F08, F12–F16, F33 og F39–F40. Vurder om eksemplene ligner hverdagen, hva som mangler, hvilke felt som skaper merarbeid og hva som må endres i akseptansekriteriene. Spørsmålet på slutten av hver funksjon er et konkret punkt til gjennomgangen, ikke et krav om å avklare alt før dokumentene kan leses.
+Les først arbeidsflyten og funksjonene F03–F08, F12–F16, F33 og F39–F40. Vurder om eksemplene ligner hverdagen, hva som mangler, hvilke felt som skaper merarbeid og hva som må endres i akseptansekriteriene. Prøv også å beskrive hva brukeren gjør når grunnlaget mangler eller noe feiler. Spørsmålet på slutten av hver funksjon er et konkret punkt til gjennomgangen, ikke et krav om å avklare alt før dokumentene kan leses.
+
+Forslag til tilbakemelding: funksjons-ID → konkret situasjon → ønsket endring → hvorfor det sparer arbeid eller gir bedre kvalitet → nødvendig i første flyt eller senere. Detaljene gjelder hele funksjonens omfang og skal følges opp i implementasjonsjobbene; de eksisterende akseptansekriteriene er fortsatt eksempler, ikke hele kravlisten.
 
 ## Funksjonsoversikt
 
@@ -122,10 +126,16 @@ for f in features:
     links = [r["id"] for r in requirements if f["id"] in r["featureIds"]]
     feature_doc += f'<a id="{f["id"].lower()}"></a>\n\n## {f["id"]} {f["title"]}\n\n{f["description"]}\n\n'
     feature_doc += f'**Brukere:** {", ".join(f["users"])}.\n\n**Når brukes den:** {f["trigger"]}\n\n'
-    for label, key in (("Inndata", "inputs"), ("Slik fungerer det", "workflow"),
+    for label, key in (("Inndata", "inputs"), ("Arbeidsflate og handlinger", "workspace"),
+                       ("Slik fungerer det", "workflow"), ("Status og overganger", "stateBehavior"),
+                       ("Automatikk og menneskelige valg", "automationBoundary"),
+                       ("Når noe mangler eller feiler", "recovery"),
                        ("Resultat", "outputs"), ("Regler og avvik", "rules"),
                        ("Akseptansekriterier", "acceptanceCriteria")):
         feature_doc += f"### {label}\n\n"
+        if isinstance(f[key], str):
+            feature_doc += f"{f[key]}\n\n"
+            continue
         for i, item in enumerate(f[key], start=1):
             prefix = f"{i}." if key == "workflow" else "-"
             feature_doc += f"{prefix} {item}\n"

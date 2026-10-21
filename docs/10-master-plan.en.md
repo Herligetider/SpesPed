@@ -14,6 +14,15 @@ An acceptance criterion is not completed by writing its test name in a manifest.
 Evidence must be inspected at the actual source revision, and must include runtime
 behavior at the relevant scope. Production-only gates remain explicit.
 
+The 21 October catalog revision adds `workspace`, `stateBehavior`,
+`automationBoundary` and `recovery` details to all 40 features. These clarify the
+full feature contracts and belong to each feature's existing backend, UI and
+verification jobs. Existing acceptance examples remain unchanged. The accepted
+J01–J03 foundation reviews retain their pinned scope; they do not verify these
+complete user journeys. Feature completion still requires the added behavior,
+including manual recovery and visible unresolved states. F20 remains a later
+period-based parent-email workflow with opt-in draft recurrence and explicit send.
+
 Each implementation job goes through `queued → implementing → awaiting_review →
 changes_requested / verified`. A different reviewer examines every returned job.
 The orchestrator integrates only reviewed work; findings go back to its implementer

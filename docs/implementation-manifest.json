@@ -4,8 +4,10 @@
   "goal": "Implement all current F01–F40 capabilities with independent review of every implementation job.",
   "specification": {
     "path": "docs/features.json",
-    "sha256": "2c904a3bf737b6100971348c282c2be05409cd1506f75171d4bb7c1a0e2a8dde",
-    "legalSourceCheckDate": "2026-09-07"
+    "sha256": "32dd639fa8cf53b5a9d69b9826808ae3c0fe209f7f56e2d19dab468ce6c5d191",
+    "legalSourceCheckDate": "2026-09-07",
+    "productRevision": "0.3",
+    "changeReview": "2026-10-21: all 40 features expanded with workspace, stateBehavior, automationBoundary and recovery. IDs, phases, workflows, rules and all 86 acceptance examples retained. Added details remain required in existing feature jobs. J01–J03 evidence applies only to their pinned foundation scopes; no feature or criterion promoted. See docs/10-master-plan.en.md."
   },
   "completionPolicy": "Specification workflows, rules, extensions and acceptance criteria all require inspected implementation and runtime evidence. A manifest state is not proof.",
   "jobs": [
