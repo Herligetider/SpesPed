@@ -486,3 +486,53 @@ Source adapters use fresh owner-service identities on the same database
 transaction, reject pending dependency edits and leave transaction ownership with
 the caller. Root fresh-application tests exercise persistence across app instances,
 native source recall and unavailable authority without fixture-supplied adapters.
+
+## Reporting-period and communication integration candidates
+
+The following extensions are implementation candidates awaiting their own
+independent reviews; the implementation manifest records the reviewed revisions.
+
+BC03 owns a concrete report obligation's coverage. The public
+`governance.projections.report_obligation_basis(db, actor, school_id, learner_id,
+obligation_id, document_kind, starts_on, ends_on)` reads an exact, inclusive,
+human-reviewed interval for the selected obligation and document kind. An opaque
+`period_key` and submission deadline never establish those dates. Missing,
+mismatched, revoked or stale coverage stays unresolved. The review binds current
+rule/profile/applicability inputs and the reviewer; ordinary assignment or task
+completion does not silently change report coverage. The append-only review
+command checks both the coverage version and the obligation preview digest.
+Recording coverage does not fulfill the obligation or approve a report.
+
+BC10 consumes that projection when preparing an annual ITO report. Its
+`documents.service.frozen_revision(db, actor, school_id, learner_id, revision_id,
+purpose)` exposes only a currently authorized, exactly approved revision and its
+provenance. It explicitly returns `disclosure_authorized=False`. A content reader
+or approver needs the rights for that operation and its sources; permission to
+initiate AI generation is a separate decision. Historical model completion is
+also separate from the current usability of a scheduled proposal.
+
+BC11 prepares a recipient-specific package from that exact approved revision.
+Content review and disclosure authorization bind selected sections, recipient,
+purpose, channel and attachment digests. Export/copy, dispatch acceptance and a
+guardian's read acknowledgment are separate facts. Portal access is scoped to
+the exact guardian and authenticated session; expiration, revocation, source
+currency and current information rights are checked when opening or retrieving
+content. The initial attachment implementation renders selected approved
+document revisions as UTF-8 text; arbitrary uploads and PDF rendering remain
+separate required work.
+
+`communication.adapters.NativeDispatchHistoryPort.confirmed_periods` supplies
+BC10 with only confirmed accepted periods for the exact school, pupil, guardian
+relationship and purpose. Drafts, exports and queued or unknown dispatches do not
+advance “since last sent”. Historical acceptance never grants current content
+access. The application composes this port and the portal transport by default.
+
+The candidate external transport implements `spesped.secure-dispatch.v1` against
+an operator-configured HTTPS endpoint with verified TLS. Persisted school policy
+selects a connection key rather than supplying a URL or secret. The exact
+submission key and package digest bind both submission and reconciliation;
+unknown outcomes require reconciliation before any new attempt. A missing
+connection is visibly unavailable. Local TLS contract verification establishes
+the protocol behavior only; named third-party integrations, practitioner and
+guardian screens, deployed workers and real operational configuration remain
+separate delivery requirements.

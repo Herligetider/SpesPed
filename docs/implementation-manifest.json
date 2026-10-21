@@ -1567,7 +1567,8 @@
       "reviewAgent": "/root/review_j13",
       "commits": [
         "1c3acfa7e65272994f9b0ddba68875a58b525983",
-        "974833166854f74ce89ada5d6c8730fbc08719d8"
+        "974833166854f74ce89ada5d6c8730fbc08719d8",
+        "3be8177dcb38496bf336d92e4fd8ddecd716a38e"
       ],
       "evidence": [
         {
@@ -1590,6 +1591,11 @@
         {
           "type": "work_assignment",
           "result": "Accepted bounded governance baseline remains at 9748331. New report-period coverage extension assigned to /root/j13_report_period (Sol high): immutable human-reviewed exact obligation/report-kind/interval binding with current source/profile/input/authority checks; legacy coverage unresolved; actor-aware non-mutating public projection. Native POST/GET, explicit preview digest, migration, both-database tests and independent review required. This extension addresses J11-R2; prior bounded verification does not accept the new extension."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "3be8177dcb38496bf336d92e4fd8ddecd716a38e",
+          "result": "Pinned six-file exact report-period coverage extension after root verified all author hashes. Author47passed1SQLite-only concurrency skip, actual PostgreSQL race passed. Distinct /root/review_composition assigned archive-isolated independent review, including current preview binding/authority, immutable review history, exact dates, migration and caller transaction preservation. Prior bounded governance acceptance does not accept this extension; J11 consumer remains under separate repair review."
         }
       ],
       "findings": [
