@@ -78,6 +78,10 @@ def choices(school_id:UUID,learner_id:UUID,category:picks.Category,kind:s.Kind,s
 def suggestions(school_id:UUID,identity:UUID,request:Request,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),db:Session=D,actor:Actor=A):
     return picks.suggestions(db,actor,str(school_id),str(identity),request.app.state.ai_gateway,offset,limit)
 
+@router.get('/cases/{identity}/recovery',response_model=picks.RecoveryMetadata)
+def recovery_metadata(school_id:UUID,identity:UUID,db:Session=D,actor:Actor=A):
+    return svc.recovery_metadata(db,actor,str(school_id),str(identity))
+
 @router.get('/learners/{learner_id}/contribution-inbox',response_model=picks.ContributionPage)
 def contribution_inbox(school_id:UUID,learner_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),db:Session=D,actor:Actor=A):
     return picks.contribution_inbox(db,actor,str(school_id),str(learner_id),offset,limit)

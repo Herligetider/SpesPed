@@ -28,6 +28,7 @@ export type Revision = {
   number: number;
   configuration?: { purpose?: string; language?: string; length?: string; starts_on?: string; ends_on?: string; topics?: string[]; recipient_relationship_ids?: string[]; template_revision_id?: string | null; obligation_id?: string | null; selection?: Record<string, unknown> };
   content: { subject: string | null; sections: Section[]; handled_gaps: Record<string, string> } | null;
+  lineage?: Record<string, { job_id: string; basis_id: string; proposal_digest: string }>;
   source_status: string;
   source_changes: { state: string; late_sources?: Source[]; recalled_sources?: Source[]; content_withheld?: boolean };
   snapshot: { manifest: { entries: Source[]; gaps: string[]; period: { starts_on: string; ends_on: string }; template?: { state: string; content?: { title: string; sections: { key: string; label: string }[] } | null }; rule?: { state: string } | null } } | null;

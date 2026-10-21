@@ -137,6 +137,17 @@ class ContributionPage(Value):
     total:int
     offset:int
     limit:int
+class RecoveryMetadata(Value):
+    document_id:str
+    learner_id:str
+    kind:s.Kind
+    state:Literal['draft','waiting_contributions','in_review','approved','discarded']
+    version:int
+    revision_id:str
+    revision:int
+    content_digest:s.Digest
+    section_keys:list[s.Tag]
+    generated_fields:list[s.Tag]
 
 def calendar_bounds(db,school_id,starts_on,ends_on):
     try: return a.period(db,school_id,starts_on,ends_on)

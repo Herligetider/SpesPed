@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api";
@@ -202,7 +202,7 @@ describe("DocumentWorkspace", () => {
     await screen.findByText("Saved exact prose");
     expect(await screen.findByDisplayValue("Saved exact prose")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Språk", { selector: "select" }), { target: { value: "nb" } });
-    fireEvent.change(screen.getByLabelText(/Forklaring for/), { target: { value: "Reviewed gap without inventing evidence" } });
+    fireEvent.change(screen.getByLabelText("Forklaring for no observations"), { target: { value: "Reviewed gap without inventing evidence" } });
     await userEvent.type(screen.getByLabelText("Begrunnelse"), "Checked revision");
     await userEvent.click(screen.getByRole("button", { name: "Lagre ny revisjon" }));
     await screen.findByRole("alert");
@@ -218,6 +218,7 @@ describe("DocumentWorkspace", () => {
     const stale: DocumentCase = { id: "doc-withheld", learner_id: "learner-1", owner_id: "staff-1", kind: "ordinary_subject_assessment", state: "draft", version: 4, current_revision: 2, revision_id: "rev-stale", content_digest: "digest", dispatch: { state: "not_requested", automatic_send: false }, revision: { id: "rev-stale", number: 2, digest: "digest", configuration: { purpose: "assessment", language: "nn", length: "detailed", starts_on: "2026-10-01", ends_on: "2026-10-15", topics: ["reading"], selection: { discover_evidence: false, discover_observations: false, references: [] } }, content: null, source_status: "review_required", source_changes: { state: "review_required", content_withheld: true }, snapshot: null, approval: null } };
     const workspace = { ...empty, documents: { items: [stale], total: 1 } };
     const get = vi.fn((_school: string, path: readonly string[], query?: URLSearchParams) => {
+      if (path.at(-1) === "recovery") return Promise.resolve({ document_id: stale.id, version: stale.version, revision_id: stale.revision.id, content_digest: stale.revision.digest, section_keys: ["summary", "next_steps"], generated_fields: [] });
       if (path[0] === "documents" && path.includes("choices") && path.at(-1) === "sources") { const items = query?.get("source_mode") === "interval" ? [source] : []; return Promise.resolve({ items, total: items.length }); }
       if (path[0] === "documents" && path.includes("choices")) { const items = path.at(-1) === "owners" ? [{ user_id: "staff-1", display_name: "Lærer", purpose: "owner", action: "documents.write", state: "eligible", assignment_purpose: null }] : []; return Promise.resolve({ items, total: items.length }); }
       return Promise.resolve(path.at(-1) === "suggestions" ? { items: [], total: 0 } : workspace);
@@ -262,4 +263,152 @@ describe("DocumentWorkspace", () => {
     expect(command.mock.calls[1][1]).toEqual(["documents", "cases", "doc-ai", "suggestion-review"]);
     expect(command.mock.calls[1][2]).toMatchObject({ revision_id: "rev-ai", job_id: "job-ai", proposal_digest: "f".repeat(64), selected_sections: ["summary"], select_subject: false, outcome: "applied", reason: "Jeg har kontrollert forslaget" });
   });
+  function recoveryDocument(id = "recovery-A", kind = "ordinary_subject_assessment", bad = true): DocumentCase {
+    return { id, learner_id: "learner-1", owner_id: "staff-1", kind, state: "draft", version: 4, current_revision: 2, revision_id: `rev-${id}`, content_digest: "a".repeat(64), dispatch: { state: "not_requested", automatic_send: false }, revision: { id: `rev-${id}`, number: 2, digest: "a".repeat(64), configuration: { purpose: "assessment", language: "nn", length: "detailed", starts_on: "2026-10-01", ends_on: "2026-10-15", recipient_relationship_ids: kind === "guardian_email" ? ["guardian-link-1"] : [], selection: { discover_evidence: false, discover_observations: false, references: [], goals: [{ goal_revision_id: "old-goal", applicable_at: "2026-10-02T12:00:00Z" }], actual_revision_ids: ["withdrawn-actual"], future_plan_revision_ids: ["old-plan"] } }, content: { subject: `Prior subject ${id}`, sections: [{ key: "body", text: `Withheld prose ${id}`, source_keys: [], missing_inputs: ["professional_input_missing"] }], handled_gaps: {} }, source_status: bad ? "review_required" : "current", source_changes: { state: bad ? "review_required" : "current" }, snapshot: { manifest: { entries: [], gaps: ["no_confirmed_observations_in_selected_period"], period: { starts_on: "2026-10-01", ends_on: "2026-10-15" } } }, approval: null } };
+  }
+  function recoveryClient(documents: DocumentCase[], options: { templates?: Promise<unknown>; generatedFields?: string[]; currentTyped?: boolean; deniedCategories?: string[]; recovery?: Promise<unknown> } = {}) {
+    const command = vi.fn().mockRejectedValue(new ApiError("offline", 0, "NETWORK_ERROR"));
+    const api = { ...client(), schoolCommand: command, schoolGet: (_school: string, path: readonly string[], query?: URLSearchParams) => {
+      if (path.at(-1) === "workspace") return Promise.resolve({ ...empty, documents: { items: documents, total: documents.length } });
+      if (path.at(-1) === "recovery") { const doc = documents.find((document) => document.id === path.at(-2))!; return options.recovery ?? Promise.resolve({ document_id: doc.id, version: doc.version, revision_id: doc.revision.id, content_digest: doc.revision.digest, section_keys: ["body"], generated_fields: options.generatedFields ?? [] }); }
+      if (path.includes("choices") && path[0] === "documents") {
+        if (options.deniedCategories?.includes(String(path.at(-1)))) return Promise.reject(new ApiError("Source choices unavailable", 403, "forbidden"));
+        if (path.at(-1) === "templates" && query?.get("kind") === documents[0].kind && options.templates) return options.templates;
+        const items = path.at(-1) === "owners" ? [{ user_id: "staff-1", display_name: "Teacher", purpose: "owner", state: "eligible" }] : path.at(-1) === "guardians" ? [{ relationship_id: "guardian-link-1", display_name: "Guardian", state: "eligible_proposal" }] : options.currentTyped && path.at(-1) === "goals" ? [{ goal_revision_id: "new-goal", title: "Current historical goal", applicable_at: "2026-10-02T12:00:00Z" }] : options.currentTyped && path.at(-1) === "actuals" ? [{ delivery_revision_id: "new-actual", label: "Current actual delivery", classification: "actual_delivery_not_learning_progress" }] : options.currentTyped && path.at(-1) === "future_plans" ? [{ session_revision_id: "new-plan", title: "Current future plan", classification: "future_plan_not_actual" }] : [];
+        return Promise.resolve({ items, total: items.length });
+      }
+      return Promise.resolve({ items: [], total: 0 });
+    } } as unknown as ApiClient;
+    return { api, command };
+  }
+  it.each([["ordinary_subject_assessment", false], ["ordinary_subject_assessment", true], ["guardian_email", false], ["guardian_email", true]] as const)("preserves dirty prose, reason and all gap explanations after late template response for %s (failure=%s)", async (kind, fails) => {
+    let resolve!: (value: unknown) => void;
+    let reject!: (error: unknown) => void;
+    const templates = new Promise((yes, no) => { resolve = yes; reject = no; });
+    const doc = recoveryDocument("late", kind, false);
+    const { api, command } = recoveryClient([doc], { templates });
+    render(<DocumentWorkspace {...props(api)} />);
+    const panel = within(await screen.findByRole("article"));
+    await panel.findByDisplayValue("Withheld prose late");
+    fireEvent.change(panel.getByLabelText("Tekst"), { target: { value: "Unsaved independent edit" } });
+    fireEvent.change(panel.getByLabelText("Begrunnelse"), { target: { value: "Professional reason" } });
+    for (const field of panel.getAllByLabelText(/Forklaring for/)) fireEvent.change(field, { target: { value: "Human gap explanation" } });
+    await act(async () => { if (fails) reject(new Error("Inventory temporarily unavailable")); else resolve({ items: [], total: 0 }); });
+    expect(panel.getByLabelText("Tekst")).toHaveValue("Unsaved independent edit");
+    expect(panel.getByLabelText("Begrunnelse")).toHaveValue("Professional reason");
+    for (const field of panel.getAllByLabelText(/Forklaring for/)) expect(field).toHaveValue("Human gap explanation");
+    fireEvent.click(panel.getByRole("button", { name: "Lagre ny revisjon" }));
+    await waitFor(() => expect(command).toHaveBeenCalledOnce());
+    expect(command.mock.calls[0][2]).toMatchObject({ reason: "Professional reason", document: { content: { sections: [{ key: "body", text: "Unsaved independent edit", missing_inputs: ["professional_input_missing"] }], handled_gaps: { no_confirmed_observations_in_selected_period: "Human gap explanation", professional_input_missing: "Human gap explanation" } } } });
+  });
+  it("scopes rebuilding to one exact document and withholds the next document's prior prose", async () => {
+    const { api } = recoveryClient([recoveryDocument("A"), recoveryDocument("B")]);
+    render(<DocumentWorkspace {...props(api)} />);
+    const begin = await screen.findByRole("button", { name: "Kontroller og bygg nytt kildegrunnlag" });
+    await waitFor(() => expect(begin).toBeEnabled()); fireEvent.click(begin);
+    expect(within(screen.getByRole("article")).getByLabelText("Tekst")).toHaveValue("");
+    fireEvent.click(screen.getAllByRole("button", { name: "ordinary_subject_assessment · 2" })[1]);
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Lagre ny revisjon med gjeldende kilder" })).not.toBeInTheDocument());
+    expect(screen.queryByDisplayValue("Withheld prose B")).not.toBeInTheDocument();
+    expect(screen.queryByText("Prior subject B")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("article")).queryByLabelText("Tekst")).not.toBeInTheDocument();
+  });
+  it("saves an honest gap-only recovery and removes every obsolete typed dependency", async () => {
+    const { api, command } = recoveryClient([recoveryDocument("recovery-A", "guardian_email")]);
+    render(<DocumentWorkspace {...props(api)} />);
+    const begin = await screen.findByRole("button", { name: "Kontroller og bygg nytt kildegrunnlag" });
+    await waitFor(() => expect(begin).toBeEnabled()); fireEvent.click(begin);
+    const panel = within(screen.getByRole("article"));
+    fireEvent.change(panel.getByLabelText("Emne"), { target: { value: "Human review of missing observations" } });
+    fireEvent.change(panel.getByLabelText("Tekst"), { target: { value: "No confirmed observations remain; further observation is needed." } });
+    fireEvent.click(panel.getByRole("button", { name: "Lagre ny revisjon med gjeldende kilder" }));
+    await waitFor(() => expect(command).toHaveBeenCalledOnce());
+    expect(command.mock.calls[0][2].document.selection).toEqual({ references: [], background_references: [], goals: [], actual_revision_ids: [], future_plan_revision_ids: [], discover_evidence: false, discover_observations: false });
+    expect(command.mock.calls[0][2].sever_generation_fields).toBeUndefined();
+    expect(panel.getByLabelText("Tekst")).toHaveValue("No confirmed observations remain; further observation is needed.");
+  });
+  it("offers fresh historical goals, actual delivery and future plans as distinct choices", async () => {
+    const { api, command } = recoveryClient([recoveryDocument()], { currentTyped: true });
+    render(<DocumentWorkspace {...props(api)} />);
+    const begin = await screen.findByRole("button", { name: "Kontroller og bygg nytt kildegrunnlag" });
+    await waitFor(() => expect(begin).toBeEnabled()); fireEvent.click(begin);
+    const panel = within(screen.getByRole("article"));
+    fireEvent.click(panel.getByLabelText(/Current historical goal/)); fireEvent.click(panel.getByLabelText(/Current actual delivery/)); fireEvent.click(panel.getByLabelText(/Current future plan/));
+    fireEvent.click(panel.getByRole("button", { name: "Lagre ny revisjon med gjeldende kilder" }));
+    await waitFor(() => expect(command).toHaveBeenCalledOnce());
+    expect(command.mock.calls[0][2].document.selection).toMatchObject({ goals: [{ goal_revision_id: "new-goal", applicable_at: "2026-10-02T12:00:00Z" }], actual_revision_ids: ["new-actual"], future_plan_revision_ids: ["new-plan"] });
+  });
+  it("requires explicit independent new text before severing unavailable AI field provenance", async () => {
+    const doc = recoveryDocument("recovery-A", "guardian_email"); doc.revision.content = null; doc.revision.snapshot = null;
+    const { api, command } = recoveryClient([doc], { generatedFields: ["body", "subject"] });
+    render(<DocumentWorkspace {...props(api)} />);
+    const begin = await screen.findByRole("button", { name: "Kontroller og bygg nytt kildegrunnlag" });
+    await waitFor(() => expect(begin).toBeEnabled()); fireEvent.click(begin);
+    const panel = within(screen.getByRole("article"));
+    const save = panel.getByRole("button", { name: "Lagre ny revisjon med gjeldende kilder" });
+    expect(save).toBeDisabled();
+    fireEvent.click(panel.getByLabelText(/Jeg har skrevet en selvstendig erstatning for body/));
+    fireEvent.click(panel.getByLabelText(/Jeg har skrevet en selvstendig erstatning for Emne/));
+    expect(save).toBeDisabled();
+    fireEvent.change(panel.getByLabelText("Tekst"), { target: { value: "Independent human authored new report." } });
+    fireEvent.change(panel.getByLabelText("Emne"), { target: { value: "Independent human subject" } });
+    expect(save).toBeEnabled(); fireEvent.click(save);
+    await waitFor(() => expect(command).toHaveBeenCalledOnce());
+    expect(command.mock.calls[0][2]).toMatchObject({ expected_version: 4, sever_generation_fields: ["body", "subject"], document: { content: { subject: "Independent human subject", sections: [{ key: "body", text: "Independent human authored new report." }] } } });
+  });
+  it("ignores recovery metadata from another revision instead of guessing generated fields", async () => {
+    const { api } = recoveryClient([recoveryDocument()], { recovery: Promise.resolve({ document_id: "recovery-A", version: 3, revision_id: "obsolete", content_digest: "a".repeat(64), section_keys: ["body"], generated_fields: ["body"] }) });
+    render(<DocumentWorkspace {...props(api)} />);
+    await screen.findByText(/Grunnlaget er endret. Last inn dokumentet på nytt/);
+    expect(screen.getByRole("button", { name: "Kontroller og bygg nytt kildegrunnlag" })).toBeDisabled();
+  });
+
+  it("allows a manual empty basis when optional goal and teaching inventories are denied", async () => {
+    const { api, command } = recoveryClient([recoveryDocument()], { deniedCategories: ["goals", "actuals", "future_plans"] });
+    render(<DocumentWorkspace {...props(api)} />);
+    const begin = await screen.findByRole("button", { name: "Kontroller og bygg nytt kildegrunnlag" });
+    await waitFor(() => expect(begin).toBeEnabled()); fireEvent.click(begin);
+    const panel = within(screen.getByRole("article"));
+    expect(panel.getByText(/Source choices unavailable/)).toBeInTheDocument();
+    fireEvent.click(panel.getByRole("button", { name: "Lagre ny revisjon med gjeldende kilder" }));
+    await waitFor(() => expect(command).toHaveBeenCalledOnce());
+    expect(command.mock.calls[0][2].document.selection).toMatchObject({ goals: [], actual_revision_ids: [], future_plan_revision_ids: [] });
+  });
+  it("preserves generated provenance for unchanged text in an ordinary readable revision", async () => {
+    const doc = recoveryDocument("generated-current", "guardian_email", false);
+    doc.revision.lineage = { body: { job_id: "job-1", basis_id: "basis-1", proposal_digest: "a".repeat(64) } };
+    const { api, command } = recoveryClient([doc]);
+    render(<DocumentWorkspace {...props(api)} />);
+    const panel = within(await screen.findByRole("article"));
+    await panel.findByDisplayValue("Withheld prose generated-current");
+    fireEvent.click(panel.getByLabelText(/Jeg har skrevet en selvstendig erstatning for body/));
+    expect(panel.getByRole("button", { name: "Lagre ny revisjon" })).toBeDisabled();
+    fireEvent.click(panel.getByLabelText(/Jeg har skrevet en selvstendig erstatning for body/));
+    fireEvent.click(panel.getByRole("button", { name: "Lagre ny revisjon" }));
+    await waitFor(() => expect(command).toHaveBeenCalledOnce());
+    expect(command.mock.calls[0][2].sever_generation_fields).toBeUndefined();
+  });
+
+  it("discards a late AI diff when the same revision becomes source-withheld", async () => {
+    const documents = [recoveryDocument("late-ai", "guardian_email", false)];
+    const { api } = recoveryClient(documents);
+    const originalGet = api.schoolGet.bind(api);
+    let resolveDiff!: (value: unknown) => void;
+    const pendingDiff = new Promise((resolve) => { resolveDiff = resolve; });
+    api.schoolGet = vi.fn((_school: string, path: readonly string[], query?: URLSearchParams) => {
+      if (path.at(-1) === "suggestions") return Promise.resolve({ items: [{ id: "job-late", state: "succeeded", availability: "current", created_at: "2026-10-01T00:00:00Z", reviews: [] }], total: 1 });
+      if (path.at(-1) === "diff") return pendingDiff;
+      return originalGet(_school, path, query);
+    }) as ApiClient["schoolGet"];
+    render(<DocumentWorkspace {...props(api)} />);
+    await screen.findByText("Henter valgt forslag …");
+    documents[0] = { ...documents[0], revision: { ...documents[0].revision, source_status: "unavailable", source_changes: { state: "unavailable", content_withheld: true }, content: null, snapshot: null } };
+    fireEvent.click(screen.getAllByRole("button", { name: "Last inn på nytt" })[0]);
+    await screen.findByText(/Gammel tekst holdes tilbake/);
+    await act(async () => { resolveDiff({ document_id: documents[0].id, revision_id: documents[0].revision.id, expected_version: 4, job_id: "job-late", proposal_digest: "a".repeat(64), before: { subject: "Withheld prior subject", sections: [] }, proposed: { subject: "Late withheld AI subject", sections: [{ key: "body", text: "Late withheld AI prose", missing_evidence: [] }], missing_evidence: [] }, source_manifest: [], requires_human_review: true }); });
+    expect(screen.queryByText("Late withheld AI prose")).not.toBeInTheDocument();
+    expect(screen.queryByText("Withheld prior subject")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lagre valgte felt som ny revisjon" })).not.toBeInTheDocument();
+  });
+
 });

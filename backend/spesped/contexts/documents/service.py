@@ -357,6 +357,24 @@ def document_view(db,actor,school_id,identity):
     except DomainError:owner_state='inactive_or_scope_revoked'
     return {**row_json(row),'owner_state':owner_state,'revision_id':rev.id,'content_digest':rev.digest,'revision':value,'contributions':contributions,'dispatch':{'state':'not_requested','automatic_send':False},'legal_finalization':'reviewed_report' if row.kind!='guardian_email' and row.state=='approved' and value['source_status']=='current' else 'not_finalized'}
 @read_contract
+def recovery_metadata(db,actor,school_id,identity):
+    """Exact current edit coordinates, including when source text is withheld.
+
+    The owning revision is authoritative for sever_generation_fields. Reading
+    these coordinates neither resolves nor releases any source/generated text,
+    and makes no assertion that that text or its processing remains usable.
+    Independent replacement and fresh source selection still use the existing
+    revision command and its current authorization and exact change checks.
+    """
+    row=get(db,m.DocumentCase,school_id,identity)
+    access(db,actor,school_id,row.learner_id,'documents.write')
+    rev=current(db,row)
+    if rev is None:raise conflict('The current document revision is unavailable.')
+    return {'document_id':row.id,'learner_id':row.learner_id,'kind':row.kind,'state':row.state,
+        'version':row.version,'revision_id':rev.id,'revision':rev.number,'content_digest':rev.digest,
+        'section_keys':[section['key'] for section in rev.content['sections']],
+        'generated_fields':sorted(rev.lineage)}
+@read_contract
 def revision_history(db,actor,school_id,identity,offset=0,limit=50):
     row=get(db,m.DocumentCase,school_id,identity);access(db,actor,school_id,row.learner_id)
     rows=list(db.scalars(select(m.DocumentRevision).where(m.DocumentRevision.school_id==school_id,m.DocumentRevision.document_id==row.id).order_by(m.DocumentRevision.number)))
