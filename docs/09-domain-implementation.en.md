@@ -307,5 +307,6 @@ ports. An authorized dated assignee receives only the assigned learner's name
 and responsible contact name alongside the curated brief. Full-group delivery
 reads recover exact persisted deviation ownership/action only through the
 existing dependency gate; learner-scoped reads never expose that group prose.
-These new read ports are awaiting independent review, separate from previously
-accepted consumer cores.
+These read ports at `3c4d823` are independently accepted in the bounded
+[practitioner choice review](reviews/practitioner-choice-ports-review.md).
+Complete UI workflow acceptance remains separate.

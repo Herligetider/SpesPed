@@ -765,6 +765,12 @@
           "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
           "path": "docs/reviews/generated-teaching-composition-review.md",
           "result": "Bounded application composition accepted: five pinned integration cases and four independent fresh-application probes passed. SQLite/PostgreSQL single-head, 115-table metadata and empty roundtrip match; splitting/rejoining parents preserves data. Known consumer findings and absent complete UI prevent overall workflow acceptance."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "3c4d823626a69c3b0a5b5996b5760217808c4b30",
+          "path": "docs/reviews/practitioner-choice-ports-review.md",
+          "result": "Bounded practitioner read ports accepted: 12 pinned tests, 30 focused regressions, 16 independent adverse cases passed across SQLite/PostgreSQL. Current learner/purpose model choices without admin access, scoped active staff names, curated assignment labels and persisted exact delivery follow-up ownership pass. No whole feature/UI acceptance."
         }
       ],
       "findings": [
@@ -928,6 +934,12 @@
           "revision": "8d82b74908bedecdacac330e71fa430a041c3700",
           "path": "docs/reviews/iep-gateway-review.md",
           "result": "Bounded IEP gateway accepted. Initial 206 passed with seven expected SQLite skips; five independent failures exposed missing immutable-basis revision guard. Recheck 79 passed, no skips; all five guards closed, nested trusted-runtime context restoration and fresh-worker/completion rechecks verified. Actual plans/teaching consumers and UI remain separate."
+        },
+        {
+          "type": "independent_integration_review",
+          "revision": "3c4d823626a69c3b0a5b5996b5760217808c4b30",
+          "path": "docs/reviews/practitioner-choice-ports-review.md",
+          "result": "Bounded practitioner read ports accepted: 12 pinned tests, 30 focused regressions, 16 independent adverse cases passed across SQLite/PostgreSQL. Current learner/purpose model choices without admin access, scoped active staff names, curated assignment labels and persisted exact delivery follow-up ownership pass. No whole feature/UI acceptance."
         }
       ],
       "findings": [
