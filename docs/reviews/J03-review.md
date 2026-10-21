@@ -1,4 +1,12 @@
-# J03 independent review
+# J03 independent review and recheck
+
+**Final disposition: ACCEPTED for the scoped J03 authenticated shell at
+`a46aef1f6eeafdfcc661be02b72c2cf6e77091ff`.** All seven initial findings and the
+additional live-browser native-fetch blocker were repaired and independently
+verified. Real browser/API integration was performed against the isolated
+PostgreSQL synthetic demo environment. Full F01/F02/F31 remain partial; this is
+not production-readiness or a complete accessibility certification. Detailed final
+evidence follows the retained initial review below.
 
 Reviewed commit: `7f3d652a20af3465f65fd57cf86c96dd317582d1`.
 
@@ -8,7 +16,7 @@ F01/F02/F31 specifications, and the concurrent foundation's identity router,
 authentication and settings code. The backend was not edited or started. Its
 uncommitted implementation is a contract reference, not a reviewed J03 artifact.
 
-**Disposition: changes required; actual API/browser integration acceptance gate
+**Initial disposition: changes required; actual API/browser integration acceptance gate
 remains open.** Passing the checks below does not establish completion of F01,
 F02 or F31.
 
@@ -142,5 +150,164 @@ Before J03 acceptance, after repairs and J01 availability:
   not establish a working sourced pedagogical profile or F02 completion. Keep
   unavailable detail distinct from confirmed absence as that integration lands.
 
-Only `docs/reviews/J03-review.md` was added by this review. Concurrent backend and
-orchestrator changes in the shared checkout were left untouched.
+At the initial review, only `docs/reviews/J03-review.md` was added. Concurrent
+backend and orchestrator changes in the shared checkout were left untouched.
+
+## Independent repair recheck and live integration — 21 October 2026
+
+Final reviewed web candidate:
+`a46aef1f6eeafdfcc661be02b72c2cf6e77091ff`, including initial candidate
+`7f3d652a20af3465f65fd57cf86c96dd317582d1`, fixes `afa7247`, explicit loopback
+proxy `9ac02a2`, native-fetch repair `b8ccfa2`, and final mobile CSS `a46aef1`.
+The final command
+`git diff --exit-code a46aef1f6eeafdfcc661be02b72c2cf6e77091ff -- web`
+ran from the repository root and passed with no output. Concurrent unrelated
+domain/backend work is excluded from this review's candidate equality.
+
+### Resolution of the seven original findings
+
+1. **Resolved:** `App.tsx:135–161` increments and checks profile generations for
+   open/back/school/auth transitions. The original independent in-memory
+   reproducer now keeps Beta after late Alpha success. Chromium checks held an
+   actual authorized profile response, selected another pupil, then released the
+   earlier response: the selected profile remained correct. A second real
+   response approved under the leader's session was held through logout and a
+   different teacher login/profile open; it did not overwrite that teacher's
+   profile. The repaired suite also covers rejected stale profile requests.
+2. **Resolved:** retry now changes `listReload` and runs through the same guarded
+   effect (`App.tsx:73–89,198`). Both the original independent deferred-promise
+   reproducer and Chromium passed. The browser check injected one connection
+   reset, retried against the real school-one endpoint, delayed its real response,
+   switched to school two, then released it. School two retained its correct
+   empty authorized list. Automated regressions cover a retry resolving after a
+   different-user login as well.
+3. **Resolved:** `api.ts:19,31–56,76,94–98` binds requests and token updates to an
+   authentication generation; restoration also checks effect lifetime and app
+   generation (`App.tsx:40–71`). In Chromium, an old learner request retained its
+   original cookie and was delayed until a new login rotated/revoked that session.
+   The real backend returned 401 for the old cookie; the newer client login was
+   not expired, and its retained CSRF token completed a successful logout. Actual
+   UI refresh/restoration and externally revoked-session recovery also passed.
+4. **Resolved:** the school selector is visible and usable at both 320px and
+   760px. The synthetic teacher now has two memberships and could select each;
+   school one showed only the assigned pupil and school two correctly showed an
+   empty list. Final CSS additionally fixes stretched mobile rows and language
+   control placement. At 320px the sidebar measures 244px high; the language label
+   precedes its select, then logout, and school → language → logout is the actual
+   keyboard tab order. No horizontal page overflow occurred, including the
+   52-learner paginated leader view at 320px.
+5. **Resolved:** `api.ts:64–66` sends bounded offset/limit parameters; the UI keeps
+   the server total and provides previous/next controls (`App.tsx:228–240`). The
+   real leader list with 52 pupils rendered 50 on page one and two on page two,
+   with correct totals and disabled next on the last page. The final pupil's real
+   detail opened; back retained page two; previous returned to page one. Enter
+   activated next. Paging also passed after the final CSS change at 320px.
+6. **Resolved:** final computed browser colors are muted `#536057` and eyebrow
+   `#4f5d53`. Measured contrast is 6.09:1 for muted text against the page, 6.61:1
+   against white, and 6.70:1 for eyebrow text against the composited translucent
+   header. The reviewer inspected the final 320px screenshot; controls and learner
+   content remain legible and usable. The orchestrator independently inspected
+   the desktop/mobile screenshots and requested the final mobile CSS refinement.
+7. **Resolved for the current API contract:** known safe codes map to nb/nn
+   messages and the skip link is translated. Actual invalid-credential responses
+   showed `E-postadressen eller passordet er feil.` in Bokmål and
+   `E-postadressa eller passordet er feil.` in Nynorsk. A real offline browser
+   login attempt showed the Nynorsk network message. The document `lang` became
+   `nn`. A real revoked-session response showed the localized re-login notice.
+   Future endpoint codes still require language entries as those modules land.
+
+### Additional integration defects found and repaired
+
+- **Resolved P1 native browser transport blocker:** at `9ac02a2`, `api.ts` stored
+  raw browser `fetch` and called it as `this.fetcher(...)`. Chromium threw
+  `Failed to execute 'fetch' on 'Window': Illegal invocation` before sending any
+  request, while all 15 mocked tests passed. Independently confirmed that the
+  default client returned `NETWORK_ERROR`/0 whereas a correctly bound client
+  reached the API and received 401. `b8ccfa2` wraps `globalThis.fetch` with the
+  correct receiver and adds a default-transport regression. Actual UI login,
+  restoration, reads and logout now work with the default client.
+- **Resolved development proxy ambiguity:** the orchestrator found that
+  `localhost:8000` reached an unrelated IPv6 listener on this host. `9ac02a2`
+  explicitly targets `127.0.0.1:8000`. The reviewer independently confirmed
+  `/api/v1/health` through `http://localhost:5173` returns 200/`{status:'ok'}` and
+  used that proxy for all subsequent UI checks.
+
+### Exact verification environment and checks
+
+The frontend was `http://localhost:5173`, proxying to the local FastAPI service at
+`127.0.0.1:8000`. The environment file was read programmatically without printing
+its secrets; its permission mode was confirmed as 0600. Before writing fixtures,
+the configured DSN was checked to name `spesped_demo`, separate from the test
+database. No real data or external messages were used. With explicit assignment
+authorization, the reviewer created 50 additional synthetic pupils through the
+real API and one teacher membership in the other synthetic school. There are now
+52 pupils in the primary demo school. The extra membership grants no pupil read
+rights. These review fixtures remain in the isolated demo database.
+
+Final commands from `web/`:
+
+- `npm test` — PASS, 2 files / **16 tests**.
+- `npm run typecheck` — PASS.
+- `npm run build` — PASS, 31 modules transformed.
+
+Independent ephemeral Node here-doc harnesses used the installed Playwright at
+`/Users/lauritz/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright`
+and explicit cached Chromium headless shell 1248, reporting Chromium
+`156.0.8078.4`. The default Playwright executable lookup initially failed because
+its expected revision was absent; selecting the already installed revision
+resolved the harness setup. No dependency/lockfile changes were made. Native
+select typeahead was used for the actual keyboard school-choice check because
+this macOS headless shell did not commit ArrowDown popup selection.
+
+The following actual API/browser checks passed:
+
+- Real browser-generated login Origin was exactly `http://localhost:5173`.
+  Login without Origin was rejected 403. Logout without CSRF, with wrong CSRF,
+  and with valid CSRF but disallowed Origin was rejected 403, preserving the
+  legitimate session. The actual browser logout request carried CSRF, returned
+  204, and subsequent `/auth/me` returned 401. Cookie properties were
+  HttpOnly/SameSite=Lax/path `/api`; Secure is intentionally disabled in this
+  local HTTP development environment.
+- Teacher list/detail for its assigned pupil returned 200; unrelated detail and
+  access to the other school before the extra membership returned 403.
+  Assistant, technical administrator and guardian each received an empty learner
+  list and 403 for direct pupil detail. These checks use the actual backend and
+  cookie sessions, not caller-provided role headers.
+- Keyboard-only teacher login (initial email focus, Tab, password, Tab, Enter),
+  school choice via native typeahead, pupil activation, back and logout passed.
+  Browser accessible role/name snapshots exposed the school combobox, main
+  landmark and buttons. Both viewport sizes and the final mobile control tab
+  order were checked. No page exceptions occurred in the main browser flow.
+- Refresh restored the real cookie session and authorized pupil list. Revoking
+  the same session through the real API, then changing school in the still-open
+  page, returned the UI to login with an expiry notice and no learner rows.
+- Real login/error/offline, 52-pupil pagination, two-school switching, and delayed
+  actual response checks passed as detailed above. The connection-reset probe
+  was explicitly injected browser transport failure; subsequent delayed list and
+  profile bodies were fetched from the real API. The old-session 401 was also a
+  genuine backend rejection.
+- Optional pedagogical fields remain unavailable from the current identity
+  endpoint. The profile now explicitly says they are not shown yet rather than
+  claiming confirmed absence. No sourced F02 pedagogical profile is claimed.
+
+Final synthetic screenshots, refreshed after `a46aef1`, are ignored local files:
+
+- `var/review-j03/desktop-1280.png`
+- `var/review-j03/mobile-320.png`
+
+### Acceptance boundary
+
+There are no remaining actionable findings in this reviewed J03 scope. The real
+browser/API acceptance gate is now met for this private, synthetic development
+environment. This acceptance does not cover full F01 school/user/authority
+administration, full F02 pedagogical and guardian workflows, full F31 document
+accessibility/translation workflows, production deployment/TLS/cookie settings,
+or a human VoiceOver/NVDA session. The reviewer checked browser accessibility
+roles and real keyboard use, which is narrower than assistive-technology
+certification. Assignment expiry and deeper foundation enforcement belong to the
+separate backend review, not a claim inferred from these shell checks.
+
+The reviewer changed only this review document, created the explicitly requested
+ignored screenshots, and exercised authorized synthetic demo fixtures. No
+implementation, lockfile, other documentation or unrelated working changes were
+edited or committed by the reviewer.

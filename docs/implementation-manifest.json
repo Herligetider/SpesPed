@@ -25,7 +25,8 @@
       "reviewAgent": "/root/review_j01",
       "commits": [
         "da754c695bdadf4f031eb2f00ab15b364afd5fda",
-        "f38b06142252fea78b7f20c0b094227fade3a230"
+        "f38b06142252fea78b7f20c0b094227fade3a230",
+        "1895d8876a15ce9a05a4e7c5f2667244a203e6df"
       ],
       "evidence": [
         {
@@ -44,27 +45,43 @@
           "type": "implementer_report",
           "revision": "f38b06142252fea78b7f20c0b094227fade3a230",
           "result": "Full backend:73 passed,1 intentional SQLite concurrency skip,90 subtests; PostgreSQL first-login concurrency passed; independent recheck pending"
+        },
+        {
+          "type": "independent_review",
+          "revision": "f38b06142252fea78b7f20c0b094227fade3a230",
+          "path": "docs/reviews/J01-review.md",
+          "result": "Original four findings verified fixed; new throttle-row deletion race found"
+        },
+        {
+          "type": "implementer_report",
+          "revision": "1895d8876a15ce9a05a4e7c5f2667244a203e6df",
+          "result": "40 foundation tests passed,3 intentional SQLite concurrency skips;PostgreSQL competing-success regressions pass;final independent recheck pending"
         }
       ],
       "findings": [
         {
           "id": "J01-R1",
           "summary": "Case-scoped delegation cannot be bootstrapped through API",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J01-R2",
           "summary": "Scoped managers cannot list/revoke their authorized assignments",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J01-R3",
           "summary": "Concurrent first login failures lose throttle counts",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J01-R4",
           "summary": "Delegation validity ignores actor membership end",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J01-R5",
+          "summary": "Concurrent successful login deletes a throttle row another request claimed",
           "status": "open"
         }
       ]
@@ -188,7 +205,7 @@
         "F31"
       ],
       "dependsOn": [],
-      "status": "awaiting_review",
+      "status": "verified",
       "requiredEvidence": "Production build, typed client, keyboard flow, real API integration after J01",
       "implementationAgent": "/root/j03_web_shell",
       "reviewAgent": "/root/review_j03",
@@ -196,7 +213,8 @@
         "7f3d652a20af3465f65fd57cf86c96dd317582d1",
         "afa7247",
         "9ac02a2",
-        "b8ccfa2"
+        "b8ccfa2",
+        "a46aef1f6eeafdfcc661be02b72c2cf6e77091ff"
       ],
       "evidence": [
         {
@@ -225,48 +243,54 @@
           "type": "integration_finding",
           "revision": "9ac02a2",
           "result": "Real Chromium found illegal native-fetch receiver, preventing all UI requests; root repair b8ccfa2 under independent browser recheck"
+        },
+        {
+          "type": "independent_review",
+          "revision": "a46aef1f6eeafdfcc661be02b72c2cf6e77091ff",
+          "path": "docs/reviews/J03-review.md",
+          "result": "Accepted scoped web shell;16 tests,typecheck,build and real Chromium/API checks passed including login,CSRF,session revoke,stale responses,52-learner paging,keyboard,mobile320/760 and nb/nn errors. Full features remain partial."
         }
       ],
       "findings": [
         {
           "id": "J03-R01",
           "summary": "Stale profile responses cross learner/session context",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R02",
           "summary": "Stale list retry responses cross school/session context",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R03",
           "summary": "Old unauthorized response invalidates newer login",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R04",
           "summary": "School selector unavailable on mobile",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R05",
           "summary": "Authorized learner pagination missing",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R06",
           "summary": "Supporting text contrast insufficient",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R07",
           "summary": "Error messages ignore selected language",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J03-R08",
           "summary": "Default API transport invokes native fetch with an invalid receiver in real browser",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ]
     },
