@@ -2,7 +2,7 @@
 from datetime import datetime,timedelta,timezone
 import json
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import select
+from sqlalchemy import func,select
 from sqlalchemy.exc import IntegrityError
 from spesped.audit import record_audit
 from spesped.auth import Actor,require_authority,require_learner_access,require_school_access,active_at,school_today
@@ -297,10 +297,24 @@ def save_session(db,actor,school_id,command,session_id=None,generation_job_id=No
 
 
 def validate_owner(db,school_id,user_id):
-    person=db.get(UserAccount,user_id)
+    person=db.get(UserAccount,user_id,populate_existing=True)
     today=school_today(db.get(School,school_id))
-    membership=db.scalar(select(SchoolMembership).where(SchoolMembership.school_id == school_id,SchoolMembership.user_id == user_id,*active_at(SchoolMembership,today)))
+    membership=db.scalar(select(SchoolMembership).where(SchoolMembership.school_id == school_id,SchoolMembership.user_id == user_id,*active_at(SchoolMembership,today)).execution_options(populate_existing=True))
     if person is None or person.state != 'active' or membership is None or membership.role in {'guardian','technical_administrator'}: raise DomainError('owner_unavailable','Choose an active school staff member.',409)
+
+
+def staff_choices(db,actor,school_id,learner_id,purpose,*,offset=0,limit=50):
+    # These are the same active staff candidates accepted by validate_owner.
+    # The list never asserts teaching qualifications or grants pupil access.
+    access(db,actor,school_id,learner_id,'teaching.write')
+    if purpose == 'assistant':require_authority(db,actor,school_id,'teaching.assign',learner_id)
+    today=school_today(db.get(School,school_id))
+    query=select(UserAccount.id,UserAccount.display_name).join(SchoolMembership,SchoolMembership.user_id == UserAccount.id).where(
+        SchoolMembership.school_id == school_id,*active_at(SchoolMembership,today),
+        UserAccount.state == 'active',SchoolMembership.role.not_in(['guardian','technical_administrator']))
+    total=db.scalar(select(func.count()).select_from(query.subquery()))
+    rows=db.execute(query.order_by(UserAccount.display_name,UserAccount.id).offset(offset).limit(limit)).mappings()
+    return {'items':[dict(row) for row in rows],'total':total}
 
 
 def review_session(db,actor,school_id,identity,command,kind):
@@ -414,6 +428,15 @@ def assignment(db,actor,school_id,identity,*,write=False,teacher=False):
     return row,guide
 
 
+def assignment_labels(db,row,guide):
+    """Call only after the teacher/dated-assignee access gate, without dossier access."""
+    revision=load(db,SessionRevision,row.school_id,guide.session_revision_id)
+    owner=load(db,TeachingSession,row.school_id,revision.session_id).owner_id
+    learner_name=db.scalar(select(Learner.display_name).where(Learner.school_id == row.school_id,Learner.id == guide.learner_id))
+    names=dict(db.execute(select(UserAccount.id,UserAccount.display_name).where(UserAccount.id.in_([row.assistant_id,owner]))).all())
+    return {'learner_name':learner_name,'assistant_name':names.get(row.assistant_id),'follow_up_owner_name':names.get(owner)}
+
+
 def assignment_view(db,actor,row,guide):
     own=actor.user_id == row.assistant_id
     current=brief_is_current(db,actor,guide,curated=own)
@@ -422,7 +445,7 @@ def assignment_view(db,actor,row,guide):
     owner=load(db,TeachingSession,row.school_id,revision.session_id).owner_id
     if not current:follow_up(db,actor,row.school_id,guide.learner_id,'brief',guide.id,'basis_changed',owner,'Review the stale assistant brief and contact the assigned assistant.')
     record_audit(db,actor,row.school_id,'teaching.brief_opened','brief_assignment',row.id)
-    return {'id':row.id,'version':row.version,'state':row.state,'brief_state':'assigned' if current else 'review_required','learner_id':guide.learner_id,'role':row.role if current else None,'valid_from':row.valid_from,'valid_until':row.valid_until,'planned_at':basis.planned_at,'arena':basis.arena if current else None,'content':guide.content if current else None,'opened_is_completion':False,'understanding_confirmed':False,'follow_up_owner_id':owner}
+    return {'id':row.id,'version':row.version,'state':row.state,'brief_state':'assigned' if current else 'review_required','learner_id':guide.learner_id,'role':row.role if current else None,'valid_from':row.valid_from,'valid_until':row.valid_until,'planned_at':basis.planned_at,'arena':basis.arena if current else None,'content':guide.content if current else None,'opened_is_completion':False,'understanding_confirmed':False,'follow_up_owner_id':owner} | assignment_labels(db,row,guide)
 
 
 def interact(db,actor,school_id,identity,command):
@@ -602,6 +625,23 @@ def ensure_staffing_follow_up(db,actor,revision,pupil,assessed):
     follow_up(db,actor,revision.school_id,pupil.learner_id,'delivery_revision',revision.id,'staffing_basis_changed',owner,'Review the original staffing competence and responsibility basis; claimed support is currently unassessed and actual staff expenditure remains separate.')
 
 
+def delivery_follow_up_view(db,actor,revision,*,learner_scoped=False):
+    hidden={'follow_up_owner_id':None,'follow_up':None,'follow_up_source_status':'not_exposed'}
+    if learner_scoped:return hidden
+    rows=list(db.scalars(select(TeachingFollowUp).where(
+        TeachingFollowUp.school_id == revision.school_id,
+        TeachingFollowUp.target_type == 'delivery_revision',
+        TeachingFollowUp.target_id == revision.id,
+        TeachingFollowUp.reason_code == 'delivery_deviation')))
+    if not rows:return hidden | {'follow_up_source_status':'none'}
+    views=[follow_up_view(db,actor,row) for row in rows]
+    values={(v['owner_id'],v['action']) for v in views}
+    if any(v['source_status'] != 'current' for v in views) or len(values) != 1:
+        return hidden | {'follow_up_source_status':'review_required'}
+    owner,action=next(iter(values))
+    return {'follow_up_owner_id':owner,'follow_up':action,'follow_up_source_status':'current'}
+
+
 def delivery_view(db,actor,row,revision=None,learner_id=None):
     revision=revision or delivery_revision(db,row)
     participants=participation_rows(db,revision)
@@ -615,7 +655,7 @@ def delivery_view(db,actor,row,revision=None,learner_id=None):
     for p in participants:ensure_staffing_follow_up(db,actor,revision,p,assessments[p.id])
     # A learner-scoped projection contains no other child's participation or
     # group narrative. Staff totals are exposed only through the group read.
-    return {'id':row.id,'version':row.version,'revision':revision.revision,'revision_id':revision.id,'session_revision_id':revision.session_revision_id,'state':revision.status,'occurred_at':revision.occurred_at,'recorded_at':revision.created_at,'recorded_by':revision.recorded_by,'duration_minutes':revision.duration_minutes,'activity':revision.activity if not learner_id else None,'cause':revision.cause,'cause_detail':revision.cause_detail if not learner_id else None,'correction_reason':revision.reason if not learner_id else None,'participants':[row_json(p,('learner_id','goal_revision_ids','status','minutes','category','support','provision','counting_basis','attributed_staff_minutes','support_status')) | {'support_assessment':'assessed' if assessments[p.id] else 'unassessed'} for p in participants],'staff':[row_json(s,('staff_id','minutes','role','category')) for s in staff_rows(db,revision)] if not learner_id else None,'staff_minutes':sum(s.minutes for s in staff_rows(db,revision)) if not learner_id else None,'staff_labels_are_reported':True,'staff_labels_prove_qualification':False}
+    return {'id':row.id,'version':row.version,'revision':revision.revision,'revision_id':revision.id,'session_revision_id':revision.session_revision_id,'state':revision.status,'occurred_at':revision.occurred_at,'recorded_at':revision.created_at,'recorded_by':revision.recorded_by,'duration_minutes':revision.duration_minutes,'activity':revision.activity if not learner_id else None,'cause':revision.cause,'cause_detail':revision.cause_detail if not learner_id else None,'correction_reason':revision.reason if not learner_id else None,'participants':[row_json(p,('learner_id','goal_revision_ids','status','minutes','category','support','provision','counting_basis','attributed_staff_minutes','support_status')) | {'support_assessment':'assessed' if assessments[p.id] else 'unassessed'} for p in participants],'staff':[row_json(s,('staff_id','minutes','role','category')) for s in staff_rows(db,revision)] if not learner_id else None,'staff_minutes':sum(s.minutes for s in staff_rows(db,revision)) if not learner_id else None,'staff_labels_are_reported':True,'staff_labels_prove_qualification':False} | delivery_follow_up_view(db,actor,revision,learner_scoped=learner_id is not None)
 
 
 def observation_snapshot(rev):

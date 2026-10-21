@@ -168,6 +168,42 @@ def _configuration(db, runtime, job, *, metadata_only=False):
     return policy, release, provider
 
 
+def generation_choices(db, actor, school_id, learner_id, purpose, runtime, *, offset=0, limit=50):
+    """Current reviewed configuration labels, never administrative configuration.
+
+    Listing does not resolve sources or invoke a provider. Job creation and
+    execution still recheck the source-specific processing boundary.
+    """
+    _authorize(db, actor, school_id, learner_id, purpose)
+    policies = db.scalars(select(ProcessingPolicy).where(
+        ProcessingPolicy.school_id == school_id, ProcessingPolicy.state == 'active')
+        .order_by(ProcessingPolicy.id).execution_options(populate_existing=True)).all()
+    releases = db.scalars(select(ModelRelease).where(
+        ModelRelease.school_id == school_id, ModelRelease.state == 'reviewed')
+        .order_by(ModelRelease.model_version, ModelRelease.id).execution_options(populate_existing=True)).all()
+    items = []
+    for release in releases:
+        for policy in policies:
+            binding = SimpleNamespace(school_id=school_id, purpose=purpose,
+                policy_id=policy.id, policy_version=policy.version,
+                release_id=release.id, release_digest=release.configuration_digest)
+            try:
+                _, _, provider = _configuration(db, runtime, binding)
+                if provider.kind == 'remote_openai':
+                    if runtime.environment != 'development' or not runtime.remote_synthetic_development:
+                        continue
+                else:
+                    validate_provider(runtime, provider, [])
+            except ProviderFailure:
+                continue
+            items.append({'policy_id': policy.id, 'release_id': release.id,
+                'label': release.model_version, 'model_version': release.model_version,
+                'reviewed_at': release.reviewed_at})
+    record_audit(db, actor, school_id, 'ai.choices_read', 'learner', learner_id)
+    db.commit()
+    return {'items': items[offset:offset + limit], 'total': len(items)}
+
+
 def _require_visible(db, actor, job, runtime):
     """Every return of an existing result uses the same current visibility gate.
 

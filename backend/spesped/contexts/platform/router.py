@@ -1,4 +1,5 @@
 from uuid import UUID
+from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import Field
 from sqlalchemy import func, select
@@ -60,6 +61,11 @@ def get_configuration(school_id: UUID, actor: Actor = Depends(get_actor), db: Se
         query = select(model).where(model.school_id == sid)
         result[name] = {'items': [view(r) for r in db.scalars(query.order_by(model.created_at.desc(), model.id).limit(limit).offset(offset))], 'total': db.scalar(select(func.count()).select_from(model).where(model.school_id == sid))}
     return result
+
+
+@router.get('/choices')
+def generation_choices(school_id: UUID, learner_id: UUID, purpose: Literal['iep_drafting', 'session_planning'], request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db), limit: int = Query(default=50, ge=1, le=100), offset: int = Query(default=0, ge=0)):
+    return service.generation_choices(db, actor, str(school_id), str(learner_id), purpose, runtime(request), offset=offset, limit=limit)
 
 
 class EvaluationCommand(VersionCommand):

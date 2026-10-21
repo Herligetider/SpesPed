@@ -1,6 +1,7 @@
 """Authenticated BC07 workflow endpoints. Root assembly owns registration."""
 from datetime import datetime
 from uuid import UUID
+from typing import Literal
 from fastapi import APIRouter,Depends,Query,Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -36,6 +37,12 @@ def bounded_dates(*dates):
 def templates(school_id:UUID,actor:Actor=Depends(get_actor),db:Session=Depends(context)):
     require_school_access(db,actor,str(school_id))
     return {'items':[{'id':'practical','focus':'Practical steps, material location and help contact'},{'id':'visual_support','focus':'Visual cues and agreed simplification'},{'id':'guided_practice','focus':'Model, supported practice and when to ask the teacher'}],'total':3,'five_minute_comprehension':'requires_practitioner_usability_test','replaces_training':False}
+
+
+@router.get('/learners/{learner_id}/teaching-staff')
+def teaching_staff(school_id:UUID,learner_id:UUID,purpose:Literal['owner','assistant','delivery','follow_up'],offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor:Actor=Depends(get_actor),db:Session=Depends(context)):
+    value=service.staff_choices(db,actor,str(school_id),str(learner_id),purpose,offset=offset,limit=limit)
+    return read(db,actor,str(school_id),'teaching.staff_choices_read','learner',str(learner_id),value)
 
 
 @router.post('/teaching/bases',status_code=201)
@@ -274,5 +281,5 @@ def session_briefs(school_id:UUID,session_id:UUID,offset:int=Query(0,ge=0),limit
 def brief_assignments(school_id:UUID,brief_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor:Actor=Depends(get_actor),db:Session=Depends(context)):
     guide=service.brief(db,actor,str(school_id),str(brief_id))
     rows=list(db.scalars(select(BriefAssignment).where(BriefAssignment.school_id == str(school_id),BriefAssignment.brief_id == guide.id).order_by(BriefAssignment.created_at.desc(),BriefAssignment.id)))
-    value={'items':[service.row_json(row,('id','version','state','assistant_id','valid_from','valid_until','assigned_by')) for row in rows[offset:offset+limit]],'total':len(rows)}
+    value={'items':[service.row_json(row,('id','version','state','assistant_id','valid_from','valid_until','assigned_by')) | service.assignment_labels(db,row,guide) for row in rows[offset:offset+limit]],'total':len(rows)}
     return read(db,actor,str(school_id),'teaching.assignments_read','teaching_brief',guide.id,value)

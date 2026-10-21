@@ -291,3 +291,21 @@ Technical references inspected 21 October 2026: [FastAPI](https://fastapi.tiango
 [SQLAlchemy](https://docs.sqlalchemy.org/en/20/), [React](https://react.dev/learn),
 [Vite](https://vite.dev/guide/). Actual installed versions are recorded in lockfiles;
 references establish the architecture's building blocks, not compliance.
+
+Practitioner choice ports support the planning and teaching screens without
+administrative configuration access. `GET /ai/choices` takes an authorized
+`learner_id`, `purpose=iep_drafting|session_planning`, offset and limit, and returns
+only current reviewed policy/release pairs with model labels and review dates.
+It neither resolves pupil sources nor contacts a provider; generation still
+rechecks exact sources and processing boundaries. `GET
+/learners/{learner_id}/teaching-staff` takes
+`purpose=owner|assistant|delivery|follow_up` and returns paginated current active
+staff identifiers and names. The assistant choice requires assignment authority;
+no choice establishes qualifications or grants the chosen person pupil access.
+Persisted session briefs and their assignments have separately paginated read
+ports. An authorized dated assignee receives only the assigned learner's name
+and responsible contact name alongside the curated brief. Full-group delivery
+reads recover exact persisted deviation ownership/action only through the
+existing dependency gate; learner-scoped reads never expose that group prose.
+These new read ports are awaiting independent review, separate from previously
+accepted consumer cores.
