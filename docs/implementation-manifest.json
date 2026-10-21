@@ -919,6 +919,12 @@
           "revision": "004e19f935450f3260c4c1036530a4cfec8e6742",
           "path": "docs/reviews/J07-teaching-review.md",
           "result": "Both remaining R3 gaps independently closed; R1/R2/R4 regressions pass. Exact 88-test suite and build passed, two normal 11-step actual-App browser runs and independent adverse probes completed. Additional P1 J07-TE-R5 reproduced in open saved history after actual model recall with current manual revision unchanged. Original author assigned bounded history-refresh repair; teaching acceptance remains withheld."
+        },
+        {
+          "type": "independent_review",
+          "revision": "79158a84a59fa047f10a58e6e55fd53088b18ea0",
+          "path": "docs/reviews/suggestion-recovery-ui-review.md",
+          "result": "Changes required: REC-UI-R1/P1 and REC-UI-R2/P2 independently reproduced with actual delayed/lost server responses and real model recall. Frozen114tests/typecheck/build and10 copied actual-App PostgreSQL browser workflows passed; two independent desired-behavior assertions fail. Original author assigned shared-hook repair; no recovery UI acceptance. Source-projection acceptance remains separate."
         }
       ],
       "findings": [
@@ -1028,6 +1034,18 @@
           "id": "J07-TE-R5",
           "priority": "P1",
           "description": "Saved session history retains recalled generated prose after tab reactivation and explicit refresh when the current independently authored manual revision is unchanged. Fresh backend history correctly redacts it.",
+          "status": "open"
+        },
+        {
+          "id": "REC-UI-R1",
+          "priority": "P1",
+          "description": "Fresh exact owner metadata reports a recalled proposal, but a successful diff computed before recall and delivered later restores its prose and review controls.",
+          "status": "open"
+        },
+        {
+          "id": "REC-UI-R2",
+          "priority": "P2",
+          "description": "A committed run with a lost response remains unknown after recall even though fresh exact owner metadata proves an advanced completed execution state; reconciliation only accepts metadata for expiry.",
           "status": "open"
         }
       ],
