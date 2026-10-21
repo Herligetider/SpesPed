@@ -1,5 +1,6 @@
 """Transaction-owning protected workflows. No external delivery or AI decisions."""
 from functools import wraps
+from datetime import datetime
 import hashlib
 import json
 from sqlalchemy import select, func
@@ -130,7 +131,12 @@ def case_content(db,case):
     if case.kind=='environment' and not result['plans']:missing.append('action_plan_not_recorded')
     if case.kind=='concern' and not result['accounts']:missing.append('fact_basis_not_recorded')
     if case.kind=='physical' and result['record']['duration_seconds'] is None:missing.append('duration_unknown')
-    result['workflow_checks']={'missing_documentation':missing,'notification_execution':'recorded' if result['actual_contacts'] else 'not_recorded','legal_completeness':'requires_reviewed_rule_context'}
+    effective=effective_contacts(result['actual_contacts'],result['contact_reconciliations'])
+    result['effective_contacts']=effective
+    notifications=contact_summary([r for r in effective if r['contact_kind']=='notification'])
+    contacts=contact_summary(effective)
+    result['workflow_checks']={'missing_documentation':missing,'notification_execution':notifications['execution'],'notification_receipt':notifications['receipt_state'],
+        'notification_status':notifications,'contact_status':contacts,'legal_completeness':'requires_reviewed_rule_context'}
     return result
 
 
@@ -246,7 +252,7 @@ def finalize(db,actor,case,command,operation,fingerprint,personal=False,new=Fals
     db.add(row);db.flush()
     emit(db,actor,case.school_id,case.id,case.version,operation,getattr(command,'occurred_at',utcnow()))
     result=contribution_projection(db,actor,case.school_id,case.id) if participant else personal_projection(db,actor,case.school_id,case.id) if personal else {**content,'evidence_reference':{'reference_id':row.id,'revision':row.revision,'digest':row.digest}}
-    db.add(m.CommandReceipt(school_id=case.school_id,actor_id=actor.user_id,request_key=command.request_key,request_digest=fingerprint,case_id=case.id,result=result))
+    db.add(m.CommandReceipt(school_id=case.school_id,actor_id=actor.user_id,request_key=command.request_key,request_digest=fingerprint,case_id=case.id,result={'id':case.id,'revision':case.version}))
     db.flush()
     return result
 
@@ -257,8 +263,7 @@ def create_case(db,actor,school_id,command,kind):
     db.scalar(select(School).where(School.id==school_id).with_for_update())
     old,fingerprint=receipt(db,actor,school_id,command,'create_'+kind)
     if old:
-        personal_access(db,actor,school_id,old.case_id)
-        return old.result
+        return personal_projection(db,actor,school_id,old.case_id)
     learner=db.scalar(select(Learner).where(Learner.school_id==school_id,Learner.id==str(command.learner_id),Learner.state=='active'))
     if learner is None: raise access_denied()
     if actor.user_id in {str(v) for v in command.excluded_user_ids}: raise access_denied()
@@ -284,7 +289,7 @@ def prepare(db,actor,school_id,case_id,command,operation,personal=False,action='
     old,fingerprint=receipt(db,actor,school_id,command,operation,case.id)
     if old: return case,old,fingerprint
     if case.version!=command.expected_version: raise DomainError('version_conflict','This case changed. Reload before retrying.',409)
-    closed_metadata=operation in {'review','assignment','protection'} or operation.startswith('followup_assignment:')
+    closed_metadata=operation in {'review','assignment','protection'} or operation.startswith(('followup_assignment:','contact_reconciliation:'))
     if case.state=='closed' and not closed_metadata and not (personal or participant):raise DomainError('case_closed','Reopen this case before changing it.')
     return case,None,fingerprint
 
@@ -300,7 +305,7 @@ def add_account_row(db,actor,case,command):
 @transaction
 def add_account(db,actor,school_id,case_id,command,participant=False):
     case,old,key=prepare(db,actor,school_id,case_id,command,'participant_account' if participant else 'account',participant=participant)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case,participant=participant)
     if participant and command.corrects_id and scoped_child(db,m.AttributedAccount,case,command.corrects_id).author_id!=actor.user_id:raise access_denied()
     add_account_row(db,actor,case,command)
     if not participant and command.kind=='investigation' and case.kind=='environment':case.state='investigating'
@@ -323,7 +328,12 @@ def add_pupil_row(db,actor,case,command,personal=False):
 def add_pupil_view(db,actor,school_id,case_id,command,participant=False,personal=False):
     operation='participant_pupil_view' if participant else 'personal_pupil_view' if personal else 'pupil_view'
     case,old,key=prepare(db,actor,school_id,case_id,command,operation,personal,participant=participant)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case,personal=personal,participant=participant)
+    pending=pending_pupil_followup(db,case)
+    if (personal or participant) and pending:
+        if pending.followup_owner_id!=actor.user_id:raise access_denied()
+        if personal and pending.author_id!=actor.user_id:participant_access(db,actor,school_id,case.id)
+        if command.occurred_at<case.occurred_at:raise DomainError('invalid_followup_chronology','A pupil-perspective followup cannot precede the incident.')
     add_pupil_row(db,actor,case,command,personal=personal or participant)
     return finalize(db,actor,case,command,operation,key,personal=personal,participant=participant)
 
@@ -331,7 +341,7 @@ def add_pupil_view(db,actor,school_id,case_id,command,participant=False,personal
 @transaction
 def create_plan(db,actor,school_id,case_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'plan')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     if case.kind!='environment':raise DomainError('wrong_case_type','Action plans belong to school environment cases.')
     revision=1+int(db.scalar(select(func.count()).select_from(m.ActionPlan).where(m.ActionPlan.case_id==case.id)))
     row=m.ActionPlan(school_id=school_id,case_id=case.id,revision=revision,problem_assessment=command.problem_assessment,evaluation_date=command.evaluation_date,author_id=actor.user_id)
@@ -347,7 +357,7 @@ def create_plan(db,actor,school_id,case_id,command):
 def record_action(db,actor,school_id,case_id,command,personal=False,participant=False):
     operation='participant_action' if participant else 'personal_action' if personal else 'performed_action'
     case,old,key=prepare(db,actor,school_id,case_id,command,operation,personal,participant=participant)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case,personal=personal,participant=participant)
     check_time(command.occurred_at)
     if command.measure_id:
         if personal:raise DomainError('case_permission_required','Linking a plan measure needs current case permission.',403)
@@ -362,21 +372,21 @@ def record_action(db,actor,school_id,case_id,command,personal=False,participant=
 @transaction
 def create_draft(db,actor,school_id,case_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'draft')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     if case.kind!='concern':raise DomainError('wrong_case_type','Message drafts belong to concern reports.')
     # A responsible author prepares human text. There is no generated legal
     # determination and no recipient/guardian automatically copied.
     revision=1+int(db.scalar(select(func.count()).select_from(m.ConcernDraft).where(m.ConcernDraft.case_id==case.id)))
     fields=command.model_dump(exclude={'request_key','expected_version'})
     db.add(m.ConcernDraft(school_id=school_id,case_id=case.id,revision=revision,author_id=actor.user_id,digest=digest(fields),**fields))
-    case.state='message_prepared'
+    sync_contact_state(db,case)
     return finalize(db,actor,case,command,'draft',key)
 
 
 @transaction
 def review_draft(db,actor,school_id,case_id,draft_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'draft_review:'+str(draft_id))
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     row=scoped_child(db,m.ConcernDraft,case,draft_id)
     latest=db.scalar(select(func.max(m.ConcernDraft.revision)).where(m.ConcernDraft.case_id==case.id))
     if row.revision!=latest or row.digest!=command.draft_digest:raise DomainError('draft_changed','Review the exact current draft.',409)
@@ -410,7 +420,7 @@ def contact_routes(db,actor,school_id,purpose,about,case_id=None):
 def record_contact(db,actor,school_id,case_id,command,personal=False,participant=False):
     operation='participant_contact' if participant else 'personal_contact' if personal else 'contact'
     case,old,key=prepare(db,actor,school_id,case_id,command,operation,personal,participant=participant)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case,personal=personal,participant=participant)
     check_time(command.occurred_at)
     if command.draft_id:
         if personal or participant:raise DomainError('case_permission_required','A protected draft reference needs case permission; personal action can be recorded without a draft.',403)
@@ -429,11 +439,7 @@ def record_contact(db,actor,school_id,case_id,command,personal=False,participant
     values=command.model_dump(exclude={'request_key','expected_version'})
     for name in ('draft_id','route_id'):values[name]=str(values[name]) if values[name] else None
     db.add(m.ActualContact(school_id=school_id,case_id=case.id,author_id=actor.user_id,**values))
-    # A notification requirement, prepared text, failed attempt or unknown
-    # outcome never becomes an actual performed notification.
-    if command.outcome=='performed' and case.state!='closed':
-        if case.kind=='environment' and case.state=='received' and command.contact_kind=='notification':case.state='notified'
-        elif case.kind=='concern':case.state='actual_contact'
+    sync_contact_state(db,case)
     return finalize(db,actor,case,command,operation,key,personal,participant=participant)
 
 
@@ -441,21 +447,19 @@ def record_contact(db,actor,school_id,case_id,command,personal=False,participant
 def reconcile_contact(db,actor,school_id,case_id,contact_id,command):
     operation='contact_reconciliation:'+str(contact_id)
     case,old,key=prepare(db,actor,school_id,case_id,command,operation)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     contact=scoped_child(db,m.ActualContact,case,contact_id)
     check_time(command.occurred_at)
     if command.occurred_at<contact.occurred_at:raise DomainError('invalid_chronology','Reconciliation cannot precede the contact.')
     db.add(m.ContactReconciliation(school_id=school_id,case_id=case.id,contact_id=contact.id,author_id=actor.user_id,**command.model_dump(exclude={'request_key','expected_version'})))
-    if command.outcome=='performed':
-        if case.kind=='environment' and case.state=='received' and contact.contact_kind=='notification':case.state='notified'
-        elif case.kind=='concern':case.state='actual_contact'
+    sync_contact_state(db,case)
     return finalize(db,actor,case,command,operation,key)
 
 
 @transaction
 def create_followup(db,actor,school_id,case_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'followup')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     owner_valid(db,case,command.owner_id)
     fields=command.model_dump(exclude={'request_key','expected_version'});fields['owner_id']=str(command.owner_id)
     db.add(m.Followup(school_id=school_id,case_id=case.id,**fields))
@@ -467,11 +471,12 @@ def create_followup(db,actor,school_id,case_id,command):
 def complete_followup(db,actor,school_id,case_id,followup_id,command,participant=False):
     operation=('participant_' if participant else '')+'followup_completion:'+str(followup_id)
     case,old,key=prepare(db,actor,school_id,case_id,command,operation,participant=participant)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case,participant=participant)
     row=scoped_child(db,m.Followup,case,followup_id)
     owner_valid(db,case,row.owner_id)
     if row.owner_id!=actor.user_id:raise access_denied()
     check_time(command.occurred_at)
+    if command.occurred_at<case.occurred_at:raise DomainError('invalid_followup_chronology','An incident followup cannot be completed before the incident. Record earlier background work as a separate actual action.')
     row.state=command.state;row.outcome=command.outcome;row.completed_at=command.occurred_at
     return finalize(db,actor,case,command,operation,key,participant=participant)
 
@@ -479,7 +484,7 @@ def complete_followup(db,actor,school_id,case_id,followup_id,command,participant
 @transaction
 def assign_owner(db,actor,school_id,case_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'assignment',action='review')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     owner_valid(db,case,command.owner_id,full=True)
     case.owner_id=str(command.owner_id)
     db.add(m.CaseReview(school_id=school_id,case_id=case.id,decision='assignment',assessment=command.reason,pupil_situation='Assignment only; no pupil situation assessment.',reviewer_id=actor.user_id,occurred_at=utcnow()))
@@ -489,7 +494,7 @@ def assign_owner(db,actor,school_id,case_id,command):
 @transaction
 def review_case(db,actor,school_id,case_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'review',action='review')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     check_time(command.occurred_at)
     if case.owner_id is None:raise DomainError('owner_required','Assign a currently authorized responsible owner before reviewing.')
     owner_valid(db,case,case.owner_id,full=True)
@@ -517,7 +522,7 @@ def review_case(db,actor,school_id,case_id,command):
 def correct_record(db,actor,school_id,case_id,command,kind):
     operation='correct_'+kind
     case,old,key=prepare(db,actor,school_id,case_id,command,operation)
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     if case.kind!=kind:raise DomainError('wrong_case_type','Use the correction command for this case type.')
     if kind=='concern' and actor.user_id!=case.author_id:raise DomainError('responsible_author_required','Only the responsible report author can correct their assessment. Other contributors record their own attributed assessment.',403)
     row=db.scalar(select(TYPED[kind]).where(TYPED[kind].case_id==case.id,TYPED[kind].school_id==school_id))
@@ -532,7 +537,10 @@ def create_route(db,actor,school_id,command):
     authority(db,actor,school_id,'routes.manage')
     db.scalar(select(School).where(School.id==school_id).with_for_update())
     old,key=receipt(db,actor,school_id,command,'route_create')
-    if old:return old.result
+    if old:
+        existing=db.get(m.ContactRoute,old.result['id'])
+        if existing is None or existing.school_id!=school_id:raise access_denied()
+        return view(existing)
     person_valid(db,school_id,command.owner_id)
     if command.recipient_user_id:person_valid(db,school_id,command.recipient_user_id)
     if command.supersedes_id:
@@ -544,7 +552,7 @@ def create_route(db,actor,school_id,command):
     db.add(row);db.flush()
     emit(db,actor,school_id,row.id,row.version,'route_create',utcnow(),'SafeguardingContactRoute')
     result=view(row)
-    db.add(m.CommandReceipt(school_id=school_id,actor_id=actor.user_id,request_key=command.request_key,request_digest=key,result=result))
+    db.add(m.CommandReceipt(school_id=school_id,actor_id=actor.user_id,request_key=command.request_key,request_digest=key,result={'id':row.id,'revision':row.version}))
     return result
 
 
@@ -554,7 +562,7 @@ def review_route(db,actor,school_id,route_id,command):
     row=db.scalar(select(m.ContactRoute).where(m.ContactRoute.school_id==school_id,m.ContactRoute.id==str(route_id)).with_for_update().execution_options(populate_existing=True))
     if row is None:raise access_denied()
     old,key=receipt(db,actor,school_id,command,'route_review:'+str(route_id))
-    if old:return old.result
+    if old:return view(row)
     if row.version!=command.expected_version or row.digest!=command.digest:raise DomainError('version_conflict','Review the exact current route.',409)
     if command.decision=='approve':
         if row.state!='unreviewed':raise DomainError('route_not_unreviewed','A reviewed/revoked route requires a new configuration revision.')
@@ -568,7 +576,7 @@ def review_route(db,actor,school_id,route_id,command):
     row.version+=1;db.flush()
     emit(db,actor,school_id,row.id,row.version,'route_review',utcnow(),'SafeguardingContactRoute')
     result=view(row)
-    db.add(m.CommandReceipt(school_id=school_id,actor_id=actor.user_id,request_key=command.request_key,request_digest=key,result=result))
+    db.add(m.CommandReceipt(school_id=school_id,actor_id=actor.user_id,request_key=command.request_key,request_digest=key,result={'id':row.id,'revision':row.version}))
     return result
 
 
@@ -589,6 +597,13 @@ def contribution_projection(db,actor,school_id,case_id):
     result={'id':case.id,'kind':case.kind,'version':case.version}
     for key,model,field in [('own_accounts',m.AttributedAccount,'author_id'),('own_pupil_views',m.PupilPerspective,'author_id'),('own_actions',m.PerformedAction,'actor_id'),('own_contacts',m.ActualContact,'author_id'),('assigned_followups',m.Followup,'owner_id'),('assigned_measures',m.PlanMeasure,'owner_id')]:
         result[key]=[view(r) for r in all_children(db,model,case) if getattr(r,field)==actor.user_id]
+    plans=all_children(db,m.ActionPlan,case)
+    current_plan=max(plans,key=lambda plan:plan.revision) if plans else None
+    result['assigned_measures']=[r for r in result['assigned_measures'] if current_plan and r['plan_id']==current_plan.id]
+    pending=pending_pupil_followup(db,case)
+    result['assigned_pupil_view_followups']=[]
+    if pending and pending.followup_owner_id==actor.user_id:
+        result['assigned_pupil_view_followups']=[{'id':pending.id,'missing_reason':pending.missing_reason,'due_date':str(pending.followup_due),'state':'pending'}]
     return result
 
 
@@ -605,7 +620,7 @@ def list_contributions(db,actor,school_id,offset=0,limit=50):
 @transaction
 def update_protection(db,actor,school_id,case_id,command):
     case,old,key=prepare(db,actor,school_id,case_id,command,'protection',action='review')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     additions={str(uid) for uid in command.excluded_user_ids}
     if actor.user_id in additions:raise DomainError('independent_case_reviewer_required','Another currently authorized case reviewer must record your exclusion.',403)
     for uid in additions:person_valid(db,school_id,uid)
@@ -620,9 +635,82 @@ def update_protection(db,actor,school_id,case_id,command):
 def reassign_followup(db,actor,school_id,case_id,followup_id,command):
     operation='followup_assignment:'+str(followup_id)
     case,old,key=prepare(db,actor,school_id,case_id,command,operation,action='review')
-    if old:return old.result
+    if old:return replay_projection(db,actor,case)
     row=scoped_child(db,m.Followup,case,followup_id)
     owner_valid(db,case,command.owner_id)
     row.owner_id=str(command.owner_id)
     db.add(m.CaseReview(school_id=school_id,case_id=case.id,decision='followup_assignment',assessment=command.reason,pupil_situation='Followup assignment only; no pupil situation assessment.',reviewer_id=actor.user_id,occurred_at=utcnow()))
     return finalize(db,actor,case,command,operation,key)
+
+
+def replay_projection(db,actor,case,personal=False,participant=False):
+    """A receipt deduplicates commands, never freezes permission to its response."""
+    if participant:return contribution_projection(db,actor,case.school_id,case.id)
+    if personal:return personal_projection(db,actor,case.school_id,case.id)
+    case_access(db,actor,case.school_id,case.id)
+    snapshot=current_snapshot(db,case)
+    return {**snapshot.content,'evidence_reference':{'reference_id':snapshot.id,'revision':snapshot.revision,'digest':snapshot.digest}}
+
+
+def effective_contacts(contacts,reconciliations):
+    """Keep every attestation; the latest actual reconciliation determines status.
+
+    An older reconciliation entered later remains history. Entry time breaks a
+    tie between corrections about the same actual instant, never newer facts.
+    """
+    current={}
+    for item in reconciliations:
+        rank=(datetime.fromisoformat(item['occurred_at']),datetime.fromisoformat(item['recorded_at']),item['id'])
+        previous=current.get(item['contact_id'])
+        if previous is None or rank>previous[0]:current[item['contact_id']]=(rank,item)
+    result=[]
+    for contact in contacts:
+        correction=current.get(contact['id'])
+        state=correction[1] if correction else contact
+        result.append({'contact_id':contact['id'],'contact_kind':contact['contact_kind'],'outcome':state['outcome'],
+            'receipt_state':state['receipt_state'],'effective_at':state['occurred_at'],'recorded_at':state['recorded_at'],
+            'reconciliation_id':state['id'] if correction else None})
+    return result
+
+
+def contact_summary(contacts):
+    counts={key:sum(r['outcome']==key for r in contacts) for key in ('performed','attempted','unknown','failed')}
+    receipt_counts={key:sum(r['receipt_state']==key for r in contacts) for key in ('not_requested','pending','received','unknown')}
+    outcomes=[key for key,count in counts.items() if count]
+    receipts=[key for key,count in receipt_counts.items() if count]
+    return {'execution':outcomes[0] if len(outcomes)==1 else 'mixed' if outcomes else 'not_recorded',
+        'receipt_state':receipts[0] if len(receipts)==1 else 'mixed' if receipts else 'not_recorded',
+        'outcome_counts':counts,'receipt_counts':receipt_counts,
+        'has_unresolved_outcome':bool(counts['unknown'] or counts['attempted']),
+        'has_unconfirmed_receipt':any(r['outcome']=='performed' and r['receipt_state'] in ('unknown','pending') for r in contacts)}
+
+
+def sync_contact_state(db,case):
+    """Factual contact corrections cannot erase reviewed workflow/closure state."""
+    effective=effective_contacts([view(r) for r in all_children(db,m.ActualContact,case)],[view(r) for r in all_children(db,m.ContactReconciliation,case)])
+    if case.state=='closed':return
+    if case.kind=='environment' and case.state in ('received','notified'):
+        case.state='notified' if any(r['contact_kind']=='notification' and r['outcome']=='performed' for r in effective) else 'received'
+    elif case.kind=='concern' and case.state in ('registered','message_prepared','actual_contact','contact_attempted','contact_unknown','contact_failed','contact_mixed'):
+        status=contact_summary(effective)
+        draft_exists=bool(db.scalar(select(func.count()).select_from(m.ConcernDraft).where(m.ConcernDraft.school_id==case.school_id,m.ConcernDraft.case_id==case.id)))
+        if status['outcome_counts']['performed']:case.state='actual_contact'
+        elif effective:case.state='contact_'+status['execution']
+        else:case.state='message_prepared' if draft_exists else 'registered'
+
+
+def pending_pupil_followup(db,case):
+    views=all_children(db,m.PupilPerspective,case)
+    return views[-1] if views and views[-1].statement is None else None
+
+
+@transaction
+def resolve_pupil_followup(db,actor,school_id,case_id,view_id,command):
+    operation='participant_pupil_resolution:'+str(view_id)
+    case,old,key=prepare(db,actor,school_id,case_id,command,operation,participant=True)
+    if old:return replay_projection(db,actor,case,participant=True)
+    pending=pending_pupil_followup(db,case)
+    if pending is None or pending.id!=str(view_id) or pending.followup_owner_id!=actor.user_id:raise access_denied()
+    if command.occurred_at<case.occurred_at:raise DomainError('invalid_followup_chronology','A pupil-perspective followup cannot precede the incident.')
+    add_pupil_row(db,actor,case,command,personal=True)
+    return finalize(db,actor,case,command,operation,key,participant=True)

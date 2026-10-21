@@ -222,3 +222,8 @@ def protection(school_id:UUID,case_id:UUID,command:s.ProtectionChange,actor:Acto
 @router.post('/cases/{case_id}/followups/{followup_id}/assignment')
 def followup_assignment(school_id:UUID,case_id:UUID,followup_id:UUID,command:s.Assign,actor:Actor=Depends(get_actor),db:Session=Depends(safeguarding_db)):
     return svc.reassign_followup(db,actor,str(school_id),case_id,followup_id,command)
+
+
+@router.post('/contributions/{case_id}/pupil-view-followups/{view_id}/resolution',status_code=201)
+def resolve_pupil_followup(school_id:UUID,case_id:UUID,view_id:UUID,command:s.PupilViewResolution,actor:Actor=Depends(get_actor),db:Session=Depends(safeguarding_db)):
+    return svc.resolve_pupil_followup(db,actor,str(school_id),case_id,view_id,command)

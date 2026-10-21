@@ -7,6 +7,8 @@ from spesped.domain.primitives import instant
 
 Text = Annotated[str, Field(min_length=1, max_length=12000)]
 Short = Annotated[str, Field(min_length=1, max_length=2000)]
+LocationOrSource = Annotated[str, Field(min_length=1, max_length=1000)]
+Channel = Annotated[str, Field(min_length=1, max_length=100)]
 About = Literal['pupil','staff','headteacher']
 Kind = Literal['environment','concern','physical']
 Digest = Annotated[str, Field(pattern=r'^[a-f0-9]{64}$')]
@@ -72,7 +74,7 @@ class NewCase(Command, Occurrence):
 
 class EnvironmentCreate(NewCase):
     received_concern: Text
-    received_from: Short
+    received_from: LocationOrSource
 
 
 class ConcernCreate(NewCase):
@@ -96,7 +98,7 @@ class PhysicalDuration(BaseModel):
 
 
 class PhysicalCreate(NewCase, PhysicalDuration):
-    place: Short
+    place: LocationOrSource
     before_facts: Text
     during_facts: Text
     actual_action: Text
@@ -146,7 +148,7 @@ class DraftReview(Change):
 class Contact(Change, Occurrence):
     contact_kind: Literal['notification','personal_contact','emergency_action','submission','information']
     recipient: Short
-    channel: Short
+    channel: Channel
     information_shared: Text
     outcome: Literal['performed','attempted','unknown','failed']
     receipt_state: Literal['not_requested','pending','received','unknown']
@@ -191,7 +193,7 @@ class RouteCreate(Command):
     owner_id: UUID
     recipient: Short
     recipient_user_id: UUID | None = None
-    channel: Short
+    channel: Channel
     contact_details: Text
     guidance: Text
     valid_from: date
@@ -219,7 +221,7 @@ class ReconcileContact(Change, Occurrence):
 
 class EnvironmentCorrection(Change):
     received_concern: Text
-    received_from: Short
+    received_from: LocationOrSource
     correction_reason: Text
 
 class ConcernCorrection(Change):
@@ -228,7 +230,7 @@ class ConcernCorrection(Change):
     correction_reason: Text
 
 class PhysicalCorrection(Change, PhysicalDuration):
-    place: Short
+    place: LocationOrSource
     before_facts: Text
     during_facts: Text
     actual_action: Text
@@ -246,3 +248,7 @@ class ProtectionChange(Change):
     def unique(self):
         if len(set(self.excluded_user_ids))!=len(self.excluded_user_ids):raise ValueError('Duplicate excluded person')
         return self
+
+
+class PupilViewResolution(AddPupilView):
+    statement: Text
