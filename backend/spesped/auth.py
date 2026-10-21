@@ -79,11 +79,13 @@ def active_at(model, today):
 
 
 def require_school_access(db: Session, actor: Actor, school_id: str) -> SchoolMembership:
-    user = db.get(UserAccount, actor.user_id)
-    school = db.get(School, school_id)
+    # Service consumers can retain this Session across other committed requests.
+    # Authorization must use current persisted identity and assignment state.
+    user = db.get(UserAccount, actor.user_id, populate_existing=True)
+    school = db.get(School, school_id, populate_existing=True)
     if user is None or user.state != "active" or school is None or school.state != "active":
         raise access_denied()
-    membership = db.scalar(select(SchoolMembership).where(SchoolMembership.school_id == school_id, SchoolMembership.user_id == actor.user_id, *active_at(SchoolMembership, school_today(school))))
+    membership = db.scalar(select(SchoolMembership).where(SchoolMembership.school_id == school_id, SchoolMembership.user_id == actor.user_id, *active_at(SchoolMembership, school_today(school))).execution_options(populate_existing=True))
     if membership is None:
         raise access_denied()
     return membership
@@ -106,12 +108,12 @@ def require_learner_access(db: Session, actor: Actor, school_id: str, learner_id
     membership = require_school_access(db, actor, school_id)
     if membership.role == "guardian":
         raise access_denied()
-    learner = db.scalar(select(Learner).where(Learner.id == learner_id, Learner.school_id == school_id, Learner.state == "active"))
+    learner = db.scalar(select(Learner).where(Learner.id == learner_id, Learner.school_id == school_id, Learner.state == "active").execution_options(populate_existing=True))
     if learner is None:
         raise access_denied()
     today = school_today(db.get(School, school_id))
     # Multiple dated assignments are allowed; do not trust role names or guardian relationships.
-    assignments = db.scalars(select(StaffAssignment).where(StaffAssignment.school_id == school_id, StaffAssignment.learner_id == learner_id, StaffAssignment.user_id == actor.user_id, *active_at(StaffAssignment, today))).all()
+    assignments = db.scalars(select(StaffAssignment).where(StaffAssignment.school_id == school_id, StaffAssignment.learner_id == learner_id, StaffAssignment.user_id == actor.user_id, *active_at(StaffAssignment, today)).execution_options(populate_existing=True)).all()
     requested = action if "." in action else f"learner.{action}"
     if any(requested in a.actions for a in assignments):
         return learner

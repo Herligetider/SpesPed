@@ -5,6 +5,7 @@ exercise the real teaching basis and persistent session/assistant consumers.
 """
 from copy import deepcopy
 from dataclasses import replace
+from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from socketserver import TCPServer
@@ -17,7 +18,7 @@ from pydantic import ValidationError
 from sqlalchemy import event, select
 
 from spesped.assembly import EvidenceSourceResolver, SyntheticAttestation, load_evaluation_suites
-from spesped.contexts.identity.models import AuthorityGrant, School, UserAccount
+from spesped.contexts.identity.models import AuthorityGrant, School, UserAccount, SchoolMembership, StaffAssignment
 from spesped.contexts.platform import service
 from spesped.contexts.platform.contracts import (
     EvaluationCase, GenerationRequest, ProviderSpec, ReleaseCommand, ReviewCommand,
@@ -277,6 +278,37 @@ def test_current_job_denies_cached_identity_after_deactivation(typed, kind):
             with pytest.raises(DomainError) as exc:
                 read()
             assert exc.value.status_code == 403
+
+
+@pytest.mark.parametrize('removed', ['learner.read', 'ai.session_planning', 'membership_role'])
+def test_current_job_refreshes_active_assignment_actions_and_membership_role(typed, removed):
+    with typed.factory.begin() as db:
+        assignment = StaffAssignment(school_id=typed.ids['school'], learner_id=typed.ids['learner'],
+            user_id=typed.actor.user_id, actions=['learner.read', 'ai.session_planning'],
+            purpose='session_planning', valid_from=date(2020, 1, 1))
+        db.add(assignment)
+        for grant in db.scalars(select(AuthorityGrant).where(AuthorityGrant.school_id == typed.ids['school'],
+                AuthorityGrant.user_id == typed.actor.user_id,
+                AuthorityGrant.action.in_(['learner.read', 'ai.session_planning']))):
+            grant.state = 'revoked'
+        db.flush()
+        assignment_id = assignment.id
+    result, _ = finished(typed)
+    with typed.factory() as reader:
+        cached_assignment = reader.get(StaffAssignment, assignment_id)
+        cached_membership = reader.scalar(select(SchoolMembership).where(
+            SchoolMembership.school_id == typed.ids['school'], SchoolMembership.user_id == typed.actor.user_id))
+        assert service.current_job(reader, typed.actor, typed.ids['school'], result.id, typed.runtime).id == result.id
+        with typed.factory.begin() as writer:
+            if removed == 'membership_role':
+                writer.get(SchoolMembership, cached_membership.id).role = 'guardian'
+            else:
+                row = writer.get(StaffAssignment, assignment_id)
+                row.actions = [action for action in row.actions if action != removed]
+        assert cached_assignment and cached_membership
+        with pytest.raises(DomainError) as exc:
+            service.current_job(reader, typed.actor, typed.ids['school'], result.id, typed.runtime)
+        assert exc.value.status_code == 403
 
 
 def test_remote_metadata_requires_current_operator_attestation_and_boundary(typed):
