@@ -104,6 +104,26 @@ content. Case grants are independent of learner-team access. Signing authority i
 explicit and dated. An assistant sees the assigned brief and necessary observation
 input, not the whole evidence dossier. Guardians receive only approved packages.
 
+Professional records in the supporting `administration` module extend BC01's
+staff and authority responsibilities; they do not introduce another bounded
+context. Immutable qualification, pupil responsibility and subject-policy
+revisions support separately attributed human reviews. A recorded external HR
+reference is explicitly human-checked: storing its identifier, version and digest
+does not establish a live connection to the issuing system.
+
+BC07's `QualificationReadPort` binds the exact person, pupil, decision provision
+and whole actual teaching interval. BC09's `AssessmentAuthorityPort` binds the
+person, pupil, purpose, exact instrument/result/statement revision and digest,
+and complete assessment period. Subject completion, exemption and grading policy
+need their own reviewed sources. Neither adapter grants access or derives
+competence from a job title. Curated eligibility metadata and private personnel
+evidence use separate permissions. A later withdrawal makes current eligibility
+unresolved while retaining the original human review and actual-work history.
+Native owner readers recheck authority and source revisions, and refuse pending
+dependency edits without flushing, committing, rolling back or replacing the
+caller's staged data. These contracts need their own implementation review;
+they do not establish complete school administration or legal compliance.
+
 Curated projections can call
 `evidence.projections.confirmed_binding_is_current(db, school_id, learner_id,
 evidence_id, evidence_revision, link_id)` after authorizing their own projection.

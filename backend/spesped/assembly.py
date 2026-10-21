@@ -310,3 +310,8 @@ def configure_contexts(app, settings):
     app.state.governance_case_scope_resolver = resolve_case_learner
     app.state.safeguarding_rule_context = safeguarding_rule_context
     app.state.evidence_goal_validator = validate_goal_reference
+    from spesped.contexts.administration.adapters import (
+        NativeAssessmentAuthorityPort, NativeQualificationReadPort,
+    )
+    app.state.teaching_qualification_port = NativeQualificationReadPort()
+    app.state.assessment_authority_port = NativeAssessmentAuthorityPort()

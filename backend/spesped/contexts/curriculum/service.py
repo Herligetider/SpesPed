@@ -100,7 +100,7 @@ def read_contract(fn):
     @wraps(fn)
     def wrapped(db,*args,**kwargs):
         # Never flush/overwrite a caller's uncommitted permission or source edit.
-        watched=('spesped.contexts.identity.models','spesped.contexts.evidence.models','spesped.contexts.plans.models','spesped.contexts.curriculum.models')
+        watched=('spesped.contexts.identity.models','spesped.contexts.evidence.models','spesped.contexts.plans.models','spesped.contexts.curriculum.models','spesped.contexts.administration.models')
         excluded={'AuditRecord','IdentityEvent','CurriculumEvent','CommandReceipt'}
         pending=set(db.dirty)|set(db.deleted)|set(db.new)
         if any(type(row).__module__ in watched and type(row).__name__ not in excluded for row in pending):

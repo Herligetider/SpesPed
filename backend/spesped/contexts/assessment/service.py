@@ -513,7 +513,7 @@ def view(db,actor,school_id,kind,identifier):
 def read_contract(fn):
     @wraps(fn)
     def wrapped(db,*args,**kwargs):
-        watched=('spesped.contexts.identity.','spesped.contexts.evidence.','spesped.contexts.plans.','spesped.contexts.teaching.','spesped.contexts.curriculum.','spesped.contexts.assessment.','spesped.contexts.entitlements.','spesped.contexts.platform.')
+        watched=('spesped.contexts.identity.','spesped.contexts.evidence.','spesped.contexts.plans.','spesped.contexts.teaching.','spesped.contexts.curriculum.','spesped.contexts.assessment.','spesped.contexts.entitlements.','spesped.contexts.platform.','spesped.contexts.administration.')
         excluded=(m.AssessmentCommand,m.AssessmentEvent)
         if any(type(row).__module__.startswith(watched) and not isinstance(row,excluded) for row in db.new|db.dirty|db.deleted):
             raise DomainError('dependency_pending','Flush or roll back pending assessment/source/permission changes before reading.',409)

@@ -17,6 +17,7 @@ def learner_delivery_basis(db, actor, school_id, learner_id, delivery_revision_i
         'spesped.contexts.identity.models', 'spesped.contexts.evidence.models',
         'spesped.contexts.entitlements.models', 'spesped.contexts.plans.models',
         'spesped.contexts.teaching.models', 'spesped.contexts.platform.models',
+        'spesped.contexts.administration.models',
     }
     excluded = {'AuditRecord', 'IdentityEvent', 'TeachingEvent', 'CommandReceipt'}
     pending = set(db.dirty) | set(db.deleted) | set(db.new)

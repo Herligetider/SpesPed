@@ -11,6 +11,9 @@ from curriculum_fixtures import scheme
 from plans_fixtures import base, evidence, expected, login, retry
 from teaching_fixtures import actual, ordinary_goal
 from spesped.contexts.evidence.models import SourceSubjectLink
+from spesped.contexts.administration.adapters import (
+    NativeAssessmentAuthorityPort, NativeQualificationReadPort,
+)
 from spesped.db import utcnow
 from spesped.main import create_app
 
@@ -20,8 +23,9 @@ def fresh_app(fixture_app, factory):
     # Reuse only the original-file store. Routers and readers come from production
     # composition, and the fixture's synthetic authority ports are not copied.
     app.state.evidence_storage = fixture_app.state.evidence_storage
-    for name in ("assessment_authority_port", "curriculum_source_port",
-                 "curriculum_future_session_port", "teaching_qualification_port"):
+    assert isinstance(app.state.assessment_authority_port, NativeAssessmentAuthorityPort)
+    assert isinstance(app.state.teaching_qualification_port, NativeQualificationReadPort)
+    for name in ("curriculum_source_port", "curriculum_future_session_port"):
         assert getattr(app.state, name, None) is None
     return app
 
@@ -104,7 +108,7 @@ def test_native_statement_and_instrument_do_not_invent_professional_authority(as
 
         instrument_row, _ = instrument(client, ids, headers)
         administration = planned(client, ids, headers, instrument_row)
-        assert administration["qualification_status"] == "unavailable"
+        assert administration["qualification_status"] == "unresolved"
         url = path(ids) + f'/administrations/{administration["id"]}'
         response = client.post(url + "/start", headers=headers, json=expected(
             administration, occurred_at=(utcnow() - timedelta(hours=1)).isoformat()))

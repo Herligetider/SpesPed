@@ -13,7 +13,7 @@ def owner_reader(db):
     rollback_only joins an already-begun Connection transaction: close neither
     commits nor rolls it back. The owner services used here are strictly reads.
     """
-    watched=('spesped.contexts.identity.','spesped.contexts.evidence.','spesped.contexts.plans.','spesped.contexts.teaching.','spesped.contexts.curriculum.','spesped.contexts.entitlements.','spesped.contexts.platform.')
+    watched=('spesped.contexts.identity.','spesped.contexts.evidence.','spesped.contexts.plans.','spesped.contexts.teaching.','spesped.contexts.curriculum.','spesped.contexts.entitlements.','spesped.contexts.platform.','spesped.contexts.administration.')
     if any(type(row).__module__.startswith(watched) for row in db.new|db.dirty|db.deleted):
         raise DomainError('dependency_pending','Flush or roll back pending source or permission changes before resolving assessment content.',409)
     with db.no_autoflush:
