@@ -66,6 +66,27 @@ describe("GuardianPortal", () => {
     expect(screen.getByRole("button", { name: "Oppdater" })).toBeEnabled();
   });
 
+  it("does not redisplay a late payload after refresh removes its pending grant", async () => {
+    let release!: (value: GuardianPayload) => void;
+    let listCalls = 0;
+    const schoolGet = vi.fn((_school: string, _segments: readonly string[], query?: URLSearchParams) => {
+      if (query) {
+        listCalls++;
+        return Promise.resolve(listCalls === 1 ? { items: [grant()], total: 1 } : { items: [], total: 0 });
+      }
+      return new Promise<GuardianPayload>((resolve) => { release = resolve; });
+    });
+    setup({ list: schoolGet });
+    fireEvent.click(await screen.findByRole("button", { name: "Åpne brev" }));
+    await waitFor(() => expect(release).toBeTypeOf("function"));
+    fireEvent.focus(window);
+    await screen.findByText("Du har ingen tilgjengelige brev nå.");
+    await act(async () => { release(letter); });
+    expect(screen.queryByRole("heading", { name: "Oppsummering" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Trygg tekst/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Last ned" })).not.toBeInTheDocument();
+  });
+
   it("clears an open letter when a refresh is denied by the backend", async () => {
     let calls = 0;
     const list = vi.fn(async (_school: string, _segments: readonly string[], query?: URLSearchParams) => {

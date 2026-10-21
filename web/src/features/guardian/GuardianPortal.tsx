@@ -46,11 +46,13 @@ function Scoped(props: GuardianPortalProps) {
   const listVersion = useRef(0);
   const grantRef = useRef<GuardianGrant[]>([]);
   const selectedRef = useRef<GuardianGrant | null>(null);
+  const pendingGrantRef = useRef<string | null>(null);
   const listRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const clearPayload = useCallback(() => {
     scopeVersion.current++;
     operationVersion.current++;
     selectedRef.current = null;
+    pendingGrantRef.current = null;
     setPayload(null); setReadConfirmed(false); setSelected(null); setMessage(""); setPending(null); setBusy(false);
   }, []);
 
@@ -63,10 +65,11 @@ function Scoped(props: GuardianPortalProps) {
       if (!active.current || ticket !== listVersion.current) return;
       const rows = Array.isArray(result.items) ? result.items : [];
       grantRef.current = rows; setGrants(rows); setTotal(result.total); setOffset(pageOffset);
-      if (selectedRef.current) {
-        const refreshed = rows.find((grant) => grant.id === selectedRef.current?.id);
+      if (pageOffset === offset && (selectedRef.current || pendingGrantRef.current)) {
+        const trackedId = selectedRef.current?.id ?? pendingGrantRef.current;
+        const refreshed = rows.find((grant) => grant.id === trackedId);
         if (!refreshed) clearPayload();
-        else { selectedRef.current = refreshed; setSelected(refreshed); }
+        else if (selectedRef.current) { selectedRef.current = refreshed; setSelected(refreshed); }
       }
     } catch (error) {
       if (!active.current || ticket !== listVersion.current) return;
@@ -102,6 +105,7 @@ function Scoped(props: GuardianPortalProps) {
   const runOpen = async (grant: GuardianGrant, retry = false) => {
     const body = retry && pending?.kind === "open" && pending.id === grant.id ? pending.body : { expected_version: grant.version, request_key: requestKey() };
     clearPayload();
+    pendingGrantRef.current = grant.id;
     setPending({ kind: "open", id: grant.id, body }); setBusy(true); setActionError("");
     const currentScope = scopeVersion.current;
     const currentOperation = ++operationVersion.current;
@@ -110,6 +114,7 @@ function Scoped(props: GuardianPortalProps) {
       if (!active.current || currentScope !== scopeVersion.current) return;
       const fresh = await props.client.schoolGet<GuardianPayload>(props.schoolId, ["communication", "portal", "grants", grant.id, "payload"]);
       if (!active.current || currentScope !== scopeVersion.current) return;
+      pendingGrantRef.current = null;
       selectedRef.current = opened; setSelected(opened); setPayload(fresh); setMessage(t.opened); setPending(null);
       grantRef.current = grantRef.current.map((item) => item.id === opened.id ? opened : item); setGrants(grantRef.current);
     } catch (error) {
