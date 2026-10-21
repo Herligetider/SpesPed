@@ -796,7 +796,8 @@
         "c18a0e05c7dd3519df6365e7a0bab740841f351a",
         "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
         "004e19f935450f3260c4c1036530a4cfec8e6742",
-        "79158a84a59fa047f10a58e6e55fd53088b18ea0"
+        "79158a84a59fa047f10a58e6e55fd53088b18ea0",
+        "033fb8f91b333cc40183e2cae21dae6538e29584"
       ],
       "evidence": [
         {
@@ -925,6 +926,17 @@
           "revision": "79158a84a59fa047f10a58e6e55fd53088b18ea0",
           "path": "docs/reviews/suggestion-recovery-ui-review.md",
           "result": "Changes required: REC-UI-R1/P1 and REC-UI-R2/P2 independently reproduced with actual delayed/lost server responses and real model recall. Frozen114tests/typecheck/build and10 copied actual-App PostgreSQL browser workflows passed; two independent desired-behavior assertions fail. Original author assigned shared-hook repair; no recovery UI acceptance. Source-projection acceptance remains separate."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "033fb8f91b333cc40183e2cae21dae6538e29584",
+          "path": "docs/reviews/J07-teaching-review.md",
+          "result": "R5 independently verified fixed; bounded teaching scope accepted and J07-TE-R1–R5 closed. Exact119tests/build, six independent actual-App history checks, nine preserved adverse regressions and normal PostgreSQL browser workflows passed. Unchanged manual current no longer authorizes recalled historical prose; pending/failed refresh and held old replies stay hidden. Separate REC-UI findings and full J07 remain incomplete."
+        },
+        {
+          "type": "implementation_assignment",
+          "agent": "/root",
+          "result": "Root is adding source replacement and reprocessing to the intake UI with stable source identity, preserved original versions, current revision checks and explicit uncertain-outcome reconciliation. Separate tests and actual browser verification will precede independent review; no feature acceptance."
         }
       ],
       "findings": [
@@ -1034,7 +1046,7 @@
           "id": "J07-TE-R5",
           "priority": "P1",
           "description": "Saved session history retains recalled generated prose after tab reactivation and explicit refresh when the current independently authored manual revision is unchanged. Fresh backend history correctly redacts it.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "REC-UI-R1",
@@ -1053,7 +1065,7 @@
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Close and independently recheck J07-TE-R5 historical source recall; complete persisted proposal recovery review/repairs and complete-workflow gaps."
+        "Close and independently recheck REC-UI-R1/R2, then complete source maintenance, intake generation, timeline/history and other full-workflow gaps."
       ]
     },
     {
@@ -1325,9 +1337,28 @@
           "type": "implementation_candidate",
           "revision": "673a0ebe078a31191a529e0947560dd03f6f872e",
           "result": "Native BC09 backend and actual application registration pinned: 16 static tables, reviewed instruments/scales/licenses, actual administrations/results/corrections, source-backed interval progress snapshots, manual subject statements and separate human authority boundaries. Author 39 dual-DB tests passed with one SQLite-only concurrency skip; PostgreSQL race ran. Root 4 fresh-application composition tests passed with native source owners and no synthetic authority. Native J19 authority and typed AI remain absent and explicit; J20 UI and dispatch integrations remain required. Independent review assigned /root/review_j09; no feature accepted."
+        },
+        {
+          "type": "independent_review",
+          "revision": "673a0ebe078a31191a529e0947560dd03f6f872e",
+          "path": "docs/reviews/J10-review.md",
+          "result": "Changes required: J10-R1 and J10-R2 reproduced on SQLite/PostgreSQL. Frozen candidate/composition43passed1SQLite-onlyskip,10independentchecks passed including defect reproductions. Original author assigned source-review propagation and additive event-envelope migration; bounded BC09 acceptance withheld. Native J19/AI/UI/dispatch remain required integrations."
         }
       ],
-      "findings": [],
+      "findings": [
+        {
+          "id": "J10-R1",
+          "priority": "P2",
+          "description": "Late contradictory evidence on a confirmed progress review is lost when used downstream, leaving statements current and finalizable.",
+          "status": "open"
+        },
+        {
+          "id": "J10-R2",
+          "priority": "P2",
+          "description": "Persisted assessment outbox omits required occurrence/recording timestamps, correlation identity and schema version.",
+          "status": "open"
+        }
+      ],
       "remainingWork": [
         "Implement and independently review the native BC09 backend and real source/assessment-scheme composition.",
         "Integrate typed AI summaries, native finalization/qualification/exemption authority, J20 UI and real normal/adverse browser workflows."
@@ -3448,6 +3479,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Revalidated catalog 0.3: all 40 detailed features, 86 acceptance examples, 90 requirements and 71 sources retained; parent emails use chosen intervals with optional recurring drafts. Accepted native assessment-source projections after separate independent review. Teaching concurrent-edit repair and persisted-proposal recovery UI pinned for independent review. Full frozen backend baseline and separately accepted missing-adapter test repairs recorded. Native BC09 implementation continues; no whole feature or release gate marked complete."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Previous turn pinned native assessment candidate673a0eb, completed four fresh-application composition checks, accepted native assessment inputs and pushed saved work through adb76e9. Current independent review closed teaching history R5 at033fb8f and reproduced two assessment findings for repair. Recovery UI repairs continue. All 40 features/86 acceptance examples/28 delivery jobs retained; no whole feature promoted."
     }
   ]
 }

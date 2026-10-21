@@ -222,3 +222,45 @@ The normal scripts replay the previously reviewed author scenario against the se
 All processes were awaited. The reviewer stopped only its listeners on 18894 and 18895 (PIDs 58411 and 60327), then removed only their recorded synthetic PostgreSQL schemas, `j05_b905a222a39a4f55ba11dba481052a21` and `j05_4e1ca7c6a93441cba4fe6f1242557646`. `cleanup.json` confirms both listeners stopped and both namespaces absent. Ports 8000, 5173 and 18878 were untouched. No real pupil data, external model, production edits, commits, pushes or subagents were used.
 
 Earlier whole-feature limitations and separately reviewed planning work remain outside this bounded recheck. The original R3 repair is closed; R5 must be independently verified after repair before teaching acceptance.
+
+## Independent R5 repair recheck — `033fb8f91b333cc40183e2cae21dae6538e29584`
+
+Rechecked on 2026-10-21. The exact two-file repair changes saved-history read dependencies to the fresh row projection and active-tab state and adds `TeachingHistoryReactivation.test.tsx`. The prior findings and evidence remain above.
+
+**Verdict: J07-TE-R5 is verified fixed at this pin. J07-TE-R1–R5 are closed within this teaching UI review's bounded scope; no additional findings arose in this recheck.** This accepts the reviewed teaching interactions and their repairs, not all of J07, complete features, deployment readiness, or the separately reviewed proposal-recovery UI. REC-UI-R1/R2 and that work's acceptance remain with its separate reviewer.
+
+### Independently verified R5 behavior
+
+The preserved original reproduction was extended with independently authored adverse checks and run against the exact archived production App, actual FastAPI, actual PostgreSQL and a synthetic local model service. Four browser contexts first loaded authorized generated revision 2 history while independent manual revision 3 remained current. The model release was then actually revoked through the authenticated API. Fresh backend history returned null content for revision 2, and current revision 3 retained its exact revision ID and version.
+
+All six checks passed:
+
+1. Explicit refresh immediately suppresses previously displayed history while its new read is held pending; the independently authorized current manual record remains available.
+2. The original tab-return sequence and an explicit same-version refresh now show redacted revision 2, with no recalled generated support text.
+3. Holding a newly fetched redacted response does not retain old rows while waiting. Releasing it restores only the newly authorized history projections.
+4. A history-only HTTP 503 hides retained historical prose while the current record remains readable. The history panel's own retry recovers the redacted result.
+5. Real pre-recall history responses held across a later activated read cannot replace that read's authoritative redaction when released late.
+6. Authorized manual revision 1 and independently authored current revision 3 remain readable alongside the redacted generated revision.
+
+Evidence: `var/review-j07-r5/history-adverse.mjs`, `history-evidence.json`, `history-adverse.log`, visually inspected `recalled-history.png`, and `late-history.png`. The preserved `original-history-probe.mjs` remains available for comparison. The new test suite also verifies paging beyond 100 historical rows; that paging case is a component test, not a claim of 101 real-browser database revisions.
+
+### Scoped regressions and completed verification
+
+A second fresh synthetic PostgreSQL fixture ran the preserved independent R1–R4/R3 probes. All nine checks passed: internal session/observation/delivery draft preservation; correction of both original null and exact observation links with microsecond precision; newly saved observation reuse without losing basis selections; trusted local DST validation without an outgoing command; concurrent revision and second-writer 409 with retained draft/reason and deliberate rebase; explicit removal of a corrected selected observation; assistant recall redaction; failed current-assignment refresh and late child replies; and unchanged-current historical edit-buffer recall with late responses and explicit discard.
+
+| Completed check | Result | Evidence under `var/review-j07-r5/` |
+| --- | --- | --- |
+| Archived `npm test -- --reporter=verbose` | 119 passed, nine files, 4.70 s | `web-tests.log` |
+| Archived `npm run build` | TypeScript and production build passed, 55 modules | `build.log` |
+| Normal real workflow, first fixture | All 11 steps completed | `normal-complete.log`, `evidence.json` |
+| Independent original R5 and adverse checks | Six checks passed; no findings | `history-adverse.log`, `history-evidence.json` |
+| Normal real workflow, second fresh fixture | All 11 steps completed | `regressions/normal-replay.log`, `regressions/evidence.json` |
+| Preserved independent R1–R4/R3 regression probes | Nine checks passed; no findings | `regressions/independent-recheck.log`, `regressions/independent-evidence.json` |
+
+The first normal replay initially waited for the previous model-job button label. Its initial manual draft and queued job were retained, and `normal-complete.mjs` resumed that same fixture using the actual pin's **Kjør lagret modelljobb** label. The second fixture completed the corrected full replay from the start. The first adverse-probe attempt read the API before its login had completed and received 401; adding a wait for the authenticated pupil list corrected this reviewer-harness timing issue. The successful rerun and initial `attempt1-*` evidence are preserved. No application edits were made for either correction. Merely exercising the recovery UI's normal run button does not accept its separate adverse paths.
+
+The Git archive is `var/review-j07-r5/pin`. `exact-files.json` verifies both changed files byte-for-byte against the exact commit. Both listeners served the independently built archived bundle and imported the backend from the absolute archived `backend` and `backend/tests` paths; their `import-origins.txt` files confirm the archived application. No shared editable application sources supplied behavior.
+
+All test, browser and server processes were awaited. Only reviewer listeners 18896/18897 (PIDs 65254/65867) were stopped. Only their recorded schemas `j05_4a98ef7d65f34048a9093a9689edade9` and `j05_a1d205c6ac0646ee927116b3bbab2e3e` were removed; `cleanup.json` confirms stopped listeners and absent namespaces. Ports 8000, 5173 and 18878 were untouched. Only this report and ignored evidence were written. No production edits, commits, pushes or subagents.
+
+This closes the original teaching review's five findings. Separate proposal-recovery/planning acceptance, full Nynorsk, timed practitioner usability, the production qualification adapter, assessed provision-comparison UI and other whole-feature obligations remain outside this result. Legal sources were not re-researched.
