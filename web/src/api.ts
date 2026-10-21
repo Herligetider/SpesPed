@@ -16,6 +16,7 @@ export class ApiError extends Error {
 export class ApiClient {
   private csrfToken: string | null = null;
   private onSessionExpired: (() => void) | undefined;
+  private authGeneration = 0;
 
   constructor(
     private readonly fetcher: typeof fetch = fetch,
@@ -28,26 +29,31 @@ export class ApiClient {
 
   resetSession(): void {
     this.csrfToken = null;
+    this.authGeneration += 1;
   }
 
   async login(email: string, password: string): Promise<Session> {
+    const generation = ++this.authGeneration;
+    this.csrfToken = null;
     const session = await this.request<Session>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    });
-    this.csrfToken = session.csrf_token;
+    }, true);
+    if (generation === this.authGeneration) this.csrfToken = session.csrf_token;
     return session;
   }
 
   async me(): Promise<Session> {
+    const generation = this.authGeneration;
     const session = await this.request<Session>('/auth/me');
-    this.csrfToken = session.csrf_token;
+    if (generation === this.authGeneration) this.csrfToken = session.csrf_token;
     return session;
   }
 
   async logout(): Promise<void> {
+    const generation = this.authGeneration;
     await this.request<void>('/auth/logout', { method: 'POST' });
-    this.resetSession();
+    if (generation === this.authGeneration) this.resetSession();
   }
 
   async schools(): Promise<School[]> {
@@ -55,8 +61,9 @@ export class ApiClient {
     return result.items;
   }
 
-  async learners(schoolId: string): Promise<ListResponse<Learner>> {
-    return this.request<ListResponse<Learner>>(`/schools/${encodeURIComponent(schoolId)}/learners`);
+  async learners(schoolId: string, offset = 0, limit = 50): Promise<ListResponse<Learner>> {
+    const query = new URLSearchParams({ offset: String(offset), limit: String(limit) });
+    return this.request<ListResponse<Learner>>(`/schools/${encodeURIComponent(schoolId)}/learners?${query}`);
   }
 
   async learner(schoolId: string, learnerId: string): Promise<LearnerProfile> {
@@ -65,7 +72,8 @@ export class ApiClient {
     );
   }
 
-  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  private async request<T>(path: string, init: RequestInit = {}, ignoreUnauthorized = false): Promise<T> {
+    const requestGeneration = this.authGeneration;
     const headers = new Headers(init.headers);
     if (init.body !== undefined) headers.set('Content-Type', 'application/json');
     if (init.method && init.method.toUpperCase() !== 'GET') {
@@ -83,8 +91,9 @@ export class ApiClient {
       throw new ApiError('Fikk ikke kontakt med SpesPed. Kontroller tilkoblingen og prøv igjen.', 0, 'NETWORK_ERROR');
     }
 
-    if (response.status === 401) {
-      this.resetSession();
+    if (response.status === 401 && !ignoreUnauthorized && requestGeneration === this.authGeneration) {
+      this.csrfToken = null;
+      this.authGeneration += 1;
       this.onSessionExpired?.();
     }
     if (!response.ok) {
