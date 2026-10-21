@@ -139,6 +139,8 @@ class LearnerParticipation(Record, Base):
     provision: Mapped[dict | None] = mapped_column(JSON,nullable=True)
     counting_basis: Mapped[str | None] = mapped_column(String(30),nullable=True)
     attributed_staff_minutes: Mapped[int | None] = mapped_column(Integer,nullable=True)
+    support_status: Mapped[str] = mapped_column(String(20),default='assessed')
+    qualification_binding: Mapped[list | None] = mapped_column(JSON,nullable=True)
     __table_args__ = (UniqueConstraint('school_id','delivery_revision_id','learner_id','category'),parent_fk('delivery_revision_id','teaching_delivery_revisions'),parent_fk('learner_id','identity_learners'),CheckConstraint('minutes >= 0'))
 
 
@@ -189,7 +191,9 @@ class TeachingFollowUp(Aggregate, SchoolRow, Base):
     owner_id: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
     action: Mapped[str] = mapped_column(Text)
     resolution: Mapped[str | None] = mapped_column(Text,nullable=True)
-    __table_args__ = (UniqueConstraint('school_id','id'),UniqueConstraint('school_id','learner_id','target_type','target_id','reason_code'),parent_fk('learner_id','identity_learners'),CheckConstraint("state IN ('open','resolved')"))
+    dependency_binding: Mapped[dict | None] = mapped_column(JSON,nullable=True)
+    dependency_key: Mapped[str] = mapped_column(String(64))
+    __table_args__ = (UniqueConstraint('school_id','id'),UniqueConstraint('school_id','learner_id','target_type','target_id','reason_code','dependency_key',name='uq_teaching_follow_up_dependency'),parent_fk('learner_id','identity_learners'),CheckConstraint("state IN ('open','resolved')"))
 
 
 class ProposalReview(Record, Base):
@@ -252,11 +256,31 @@ class AssistantActualInput(Aggregate, SchoolRow, Base):
     reviewed_by: Mapped[str | None] = mapped_column(ForeignKey('identity_users.id'),nullable=True)
     review_reason: Mapped[str | None] = mapped_column(Text,nullable=True)
     delivery_revision_id: Mapped[str | None] = mapped_column(String(36),nullable=True)
-    __table_args__ = (UniqueConstraint('school_id','id'),parent_fk('assignment_id','teaching_brief_assignments'),parent_fk('delivery_revision_id','teaching_delivery_revisions'),CheckConstraint("state IN ('submitted','recorded','needs_clarification','rejected')"))
+    invalidated_by_revision_id: Mapped[str | None] = mapped_column(String(36),nullable=True)
+    __table_args__ = (UniqueConstraint('school_id','id'),parent_fk('assignment_id','teaching_brief_assignments'),parent_fk('delivery_revision_id','teaching_delivery_revisions'),parent_fk('invalidated_by_revision_id','teaching_delivery_revisions'),CheckConstraint("state IN ('submitted','recorded','needs_clarification','rejected')"))
 
 
 @event.listens_for(AssistantActualInput,'before_update')
 def immutable_actual_input(mapper,connection,row):
     if any(inspect(row).attrs[n].history.has_changes() for n in ('assignment_id','author_id','occurred_at','content')):immutable(mapper,connection,row)
 
-__all__ = ['TeachingBasis','TeachingSession','SessionRevision','SessionReview','AssistantBrief','BriefAssignment','BriefMessage','SessionDelivery','DeliveryRevision','LearnerParticipation','StaffParticipation','TeachingObservation','ObservationRevision','TeachingFollowUp','ProposalReview','TeachingCommand','TeachingEvent','AssistantActualInput']
+__all__ = ['TeachingBasis','TeachingSession','SessionRevision','SessionReview','AssistantBrief','BriefAssignment','BriefMessage','SessionDelivery','DeliveryRevision','LearnerParticipation','StaffParticipation','TeachingObservation','ObservationRevision','TeachingFollowUp','ProposalReview','TeachingCommand','TeachingEvent','AssistantActualInput','ActualInputReview']
+
+
+class ActualInputReview(Record,Base):
+    __tablename__ = 'teaching_actual_input_reviews'
+    input_id: Mapped[str] = mapped_column(String(36))
+    outcome: Mapped[str] = mapped_column(String(30))
+    delivery_revision_id: Mapped[str | None] = mapped_column(String(36),nullable=True)
+    reason: Mapped[str] = mapped_column(Text)
+    reviewed_by: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
+    reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(),nullable=True)
+    __table_args__ = (parent_fk('input_id','teaching_assistant_actual_inputs'),parent_fk('delivery_revision_id','teaching_delivery_revisions'))
+
+
+event.listen(ActualInputReview,'before_update',immutable)
+
+
+@event.listens_for(TeachingFollowUp,'before_update')
+def immutable_follow_up_binding(mapper,connection,row):
+    if any(inspect(row).attrs[n].history.has_changes() for n in ('learner_id','target_type','target_id','reason_code','dependency_binding','dependency_key')):immutable(mapper,connection,row)

@@ -150,14 +150,16 @@ class Participation(Value):
     minutes: int = Field(strict=True, ge=0, le=480)
     category: Category
     support: str = Field(min_length=1, max_length=1500)
+    support_status: Literal['assessed','unassessed'] = 'assessed'
     provision: ProvisionReference | None = None
     # This describes what was actually observed, never a fabricated allocation.
     counting_basis: Literal['learner_time','staff_time'] | None = None
-    attributed_staff_minutes: int | None = Field(default=None, ge=0, le=480)
+    attributed_staff_minutes: int | None = Field(default=None, strict=True, ge=0, le=480)
 
     @model_validator(mode='after')
     def actual(self):
         if (self.status == 'absent') != (self.minutes == 0): raise ValueError('Absence has zero participation; participation needs actual minutes')
+        if self.status == 'absent' and self.attributed_staff_minutes not in {None,0}:raise ValueError('Absence cannot receive delivered staff-time support; record actual staff expenditure separately')
         if self.category == 'ordinary_teaching' and self.provision is not None: raise ValueError('Ordinary teaching cannot claim an entitlement')
         if self.provision is None and (self.counting_basis is not None or self.attributed_staff_minutes is not None): raise ValueError('A counting basis requires an exact provision')
         if self.counting_basis == 'staff_time' and self.attributed_staff_minutes is None: raise ValueError('Record an explicit staff allocation')
@@ -194,6 +196,7 @@ class DeliveryContent(Value):
         if any(x.minutes > self.duration_minutes for x in self.participants+self.staff): raise ValueError('Actual minutes cannot exceed the session duration')
         if self.status == 'cancelled' and (self.duration_minutes or self.staff or any(x.minutes for x in self.participants)): raise ValueError('Cancellation carries no delivered minutes')
         if self.status != 'cancelled' and (self.duration_minutes == 0 or not self.staff): raise ValueError('Delivery needs an actual duration and staffing')
+        if self.status == 'delivered' and any(p.status != 'participated' or p.support_status == 'unassessed' for p in self.participants):raise ValueError('Absence, partial participation or unassessed support requires a partial record with a cause and owned follow-up')
         if self.status in {'partial','cancelled'} and (self.cause is None or self.follow_up_owner_id is None or not self.follow_up): raise ValueError('A deviation requires a cause and owned follow-up')
         if (self.follow_up_owner_id is None) != (self.follow_up is None): raise ValueError('Follow-up needs an owner and action')
         if self.cause == 'other' and not self.cause_detail: raise ValueError('Describe the cause')

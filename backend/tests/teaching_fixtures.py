@@ -17,7 +17,7 @@ def teaching_env(env):
     client,factory,app,ids=env
     url=factory.kw['bind'].url.render_as_string(hide_password=False)
     config=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));config.attributes['database_url']=url
-    command.upgrade(config,'j06_teaching')
+    command.upgrade(config,'heads')
     if not any(getattr(r,'path','').endswith('/teaching/bases') for r in app.routes):app.include_router(router)
     with factory.begin() as db:
         for name in ('reviewer','teacher'):
@@ -128,3 +128,20 @@ def configure_ai(factory,app,ids,wire):
         release=gateway.review_release(db,actor,ids['school'],release.id,ReviewCommand(expected_version=release.version,evaluation_id=evaluation.id,professional_quality_confirmed=True,rationale='Synthetic structured session fixture reviewed by a professional'))
     app.state.ai_gateway=configured
     return configured,policy.id,release.id
+
+
+class SyntheticQualificationPort:
+    """Contract fixture for future BC01/J19 records, never a production adapter."""
+    def __init__(self,ids):
+        self.ids=ids;self.mode='reviewed';self.review_id=uuid4();self.source_id=uuid4();self.reviewed_at=utcnow();self.requests=[]
+
+    def resolve(self,db,actor,request):
+        from spesped.contexts.teaching.ports import QualificationResult,QualificationSource
+        self.requests.append(request)
+        if self.mode == 'unavailable' or str(request.staff_id) == self.ids['assistant']:
+            return QualificationResult(request=request,state='unavailable')
+        result=QualificationResult(request=request,state='reviewed_current',responsibility='responsible_teaching',review_id=self.review_id,reviewed_by=self.ids['reviewer'],reviewed_at=self.reviewed_at,effective_from=self.reviewed_at-timedelta(days=365),effective_until=self.reviewed_at+timedelta(days=365),sources=[QualificationSource(kind='competence_review',source_id=self.source_id,revision=1,digest='a'*64)])
+        if self.mode == 'mismatched':return result.model_copy(update={'request':request.model_copy(update={'staff_id':uuid4()})})
+        if self.mode == 'missing_sources':return result.model_copy(update={'sources':[]})
+        if self.mode == 'future_review':return result.model_copy(update={'reviewed_at':utcnow()+timedelta(days=1)})
+        return result

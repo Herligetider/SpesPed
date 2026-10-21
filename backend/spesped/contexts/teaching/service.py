@@ -175,15 +175,16 @@ def revision_valid(db,actor,revision,*,curated=False):
     basis=load(db,TeachingBasis,revision.school_id,revision.basis_id)
     if canonical_content_digest({'basis_digest':basis.digest,'content':revision.content,'field_job_ids':revision.field_job_ids}) != revision.content_digest: return False
     if not basis_current(db,actor,basis,curated=curated): return False
+    runtime=(db.info.get('ai_gateway_runtime') or db.info.get('teaching_runtime') or db.info.get('plans_runtime'))
     for job_id in revision.generation_job_ids:
         if curated:
             # Curated access needs only live model/policy/source metadata. Root's
             # gateway predicate must never disclose model output to an assistant.
             from spesped.contexts.platform.service import job_binding_is_current
-            if not job_binding_is_current(db,revision.school_id,job_id,db.info.get('teaching_runtime')): return False
+            if not job_binding_is_current(db,revision.school_id,job_id,runtime): return False
         else:
-            if not hasattr(db,'info') or db.info.get('teaching_runtime') is None: return False
-            try: gateway.current_job(db,actor,revision.school_id,job_id,db.info['teaching_runtime'])
+            if runtime is None: return False
+            try: gateway.current_job(db,actor,revision.school_id,job_id,runtime)
             except DomainError: return False
     return True
 
@@ -192,19 +193,44 @@ def approved(db,revision):
     return db.scalar(select(SessionReview).where(SessionReview.school_id == revision.school_id,SessionReview.revision_id == revision.id,SessionReview.kind == 'approve',SessionReview.content_digest == revision.content_digest)) is not None
 
 
-def follow_up(db,actor,school_id,learner_id,target_type,target_id,reason,owner,action):
-    prior=db.scalar(select(TeachingFollowUp).where(TeachingFollowUp.school_id == school_id,TeachingFollowUp.learner_id == learner_id,TeachingFollowUp.target_type == target_type,TeachingFollowUp.target_id == target_id,TeachingFollowUp.reason_code == reason))
+def follow_up_binding(db,school_id,target_type,target_id,session_revision_id=None):
+    delivery_id=None
+    if target_type == 'session':
+        revision=load(db,SessionRevision,school_id,session_revision_id) if session_revision_id else current_revision(db,load(db,TeachingSession,school_id,target_id))
+        session_revision_id=revision.id
+    elif target_type == 'brief':session_revision_id=load(db,AssistantBrief,school_id,target_id).session_revision_id
+    elif target_type in {'brief_message','assistant_actual_input'}:
+        model=BriefMessage if target_type == 'brief_message' else AssistantActualInput
+        item=load(db,model,school_id,target_id)
+        assigned=load(db,BriefAssignment,school_id,item.assignment_id)
+        session_revision_id=load(db,AssistantBrief,school_id,assigned.brief_id).session_revision_id
+        if target_type == 'assistant_actual_input':delivery_id=item.delivery_revision_id
+    elif target_type == 'delivery_revision':
+        actual=load(db,DeliveryRevision,school_id,target_id)
+        delivery_id=actual.id;session_revision_id=actual.session_revision_id
+    else:return None
+    binding={'format':'teaching.follow-up-basis.v1','session_revision_id':session_revision_id,'delivery_revision_id':delivery_id}
+    if session_revision_id:
+        revision=load(db,SessionRevision,school_id,session_revision_id)
+        basis=load(db,TeachingBasis,school_id,revision.basis_id)
+        binding.update(session_content_digest=revision.content_digest,basis_id=basis.id,basis_digest=basis.digest)
+    return binding
+
+
+def follow_up(db,actor,school_id,learner_id,target_type,target_id,reason,owner,action,*,session_revision_id=None):
+    binding=follow_up_binding(db,school_id,target_type,target_id,session_revision_id)
+    dependency_key=canonical_content_digest(binding)
+    query=select(TeachingFollowUp).where(TeachingFollowUp.school_id == school_id,TeachingFollowUp.learner_id == learner_id,TeachingFollowUp.target_type == target_type,TeachingFollowUp.target_id == target_id,TeachingFollowUp.reason_code == reason,TeachingFollowUp.dependency_key == dependency_key)
+    prior=db.scalar(query)
     if prior:return prior
-    row=TeachingFollowUp(school_id=school_id,learner_id=learner_id,target_type=target_type,target_id=target_id,reason_code=reason,owner_id=owner,action=action,state='open')
+    row=TeachingFollowUp(school_id=school_id,learner_id=learner_id,target_type=target_type,target_id=target_id,reason_code=reason,owner_id=owner,action=action,state='open',dependency_binding=binding,dependency_key=dependency_key)
     try:
         with db.begin_nested():
             db.add(row);db.flush();event(db,actor,row,'teaching.follow_up_created')
     except IntegrityError as exc:
-        # Concurrent projections may discover the same material change. Recover
-        # only its exact deduplication race; unrelated constraints remain errors.
         unique=getattr(exc.orig,'sqlstate',None) == '23505' or (db.bind.dialect.name == 'sqlite' and 'UNIQUE constraint failed' in str(exc.orig))
         if not unique:raise
-        existing=db.scalar(select(TeachingFollowUp).where(TeachingFollowUp.school_id == school_id,TeachingFollowUp.learner_id == learner_id,TeachingFollowUp.target_type == target_type,TeachingFollowUp.target_id == target_id,TeachingFollowUp.reason_code == reason))
+        existing=db.scalar(query)
         if existing is None:raise
         return existing
     return row
@@ -215,7 +241,7 @@ def session_view(db,actor,row,revision=None):
     basis=load(db,TeachingBasis,row.school_id,revision.basis_id);basis_access(db,actor,basis)
     valid=revision_valid(db,actor,revision)
     if not valid:
-        for learner in basis.learners: follow_up(db,actor,row.school_id,learner['learner_id'],'session',row.id,'basis_changed',row.owner_id,'Review the affected session and any assigned brief using current sources.')
+        for learner in basis.learners: follow_up(db,actor,row.school_id,learner['learner_id'],'session',row.id,'basis_changed',row.owner_id,'Review the affected session and any assigned brief using current sources.',session_revision_id=revision.id)
         for guide in db.scalars(select(AssistantBrief).where(AssistantBrief.school_id == row.school_id,AssistantBrief.session_revision_id == revision.id)):
             follow_up(db,actor,row.school_id,guide.learner_id,'brief',guide.id,'basis_changed',row.owner_id,'Review the affected brief and its dated assignments using current sources.')
     return {'id':row.id,'version':row.version,'state':row.state if valid else 'review_required','owner_id':row.owner_id,'revision_id':revision.id,'revision':revision.revision,'basis_id':basis.id,'content_digest':revision.content_digest,'content':revision.content if valid else None,'source_status':'current' if valid else 'review_required','approved':approved(db,revision) and valid,'planned_at':basis.planned_at,'duration_minutes':basis.duration_minutes,'delivery_state':delivery_status(db,row),'generation_job_id':revision.generation_job_id,'field_job_ids':revision.field_job_ids}
@@ -450,22 +476,72 @@ def delivery(db,actor,school_id,identity,action='teaching.read',lock=False):
     return row
 
 
+def qualification_request(school_id,pupil,staff_id,occurred_at,provision):
+    from .ports import QualificationRequest
+    ref=pupil.provision
+    return QualificationRequest(school_id=school_id,learner_id=str(pupil.learner_id),staff_id=str(staff_id),decision_id=ref['decision_id'] if isinstance(ref,dict) else ref.decision_id,decision_revision_id=ref['decision_revision_id'] if isinstance(ref,dict) else ref.decision_revision_id,provision_id=ref['provision_id'] if isinstance(ref,dict) else ref.provision_id,occurred_at=occurred_at,provision_digest=canonical_content_digest(row_json(provision,('id','decision_revision_id','category','organization','competence','effective_from','effective_until','source'))))
+
+
 def validate_actual(db,actor,school_id,content):
+    from .ports import resolve_qualification
     if content.occurred_at + timedelta(minutes=content.duration_minutes) > utcnow():raise DomainError('future_delivery','Record actual work only after it occurred; keep future work as a plan.',422)
+    qualifications={}
+    for staff in content.staff:validate_owner(db,school_id,str(staff.staff_id))
     for p in content.participants:
         lid=str(p.learner_id);access(db,actor,school_id,lid,'teaching.write')
-        for gid in p.goal_revision_ids: plans.goal_reference(db,actor,school_id,lid,str(gid),at=content.occurred_at,historical=True)
+        for gid in p.goal_revision_ids:plans.goal_reference(db,actor,school_id,lid,str(gid),at=content.occurred_at,historical=True)
+        provision=None
         if p.provision:
             case,decision,revision,provision=entitlements.resolve_provision(db,actor,school_id,lid,str(p.provision.decision_id),str(p.provision.decision_revision_id),str(p.provision.provision_id),at=content.occurred_at,historical=True)
             if provision.category != p.category or provision.counting_basis != p.counting_basis:raise DomainError('delivery_provision','Actual support must use the exact decision category and counting basis.',409)
             if content.occurred_at + timedelta(minutes=p.minutes) > provision.effective_until:raise DomainError('decision_period','Actual participation extends outside the provision period.',409)
-    for staff in content.staff:validate_owner(db,school_id,str(staff.staff_id))
+        bindings=[]
+        if p.category == 'individually_adapted_education' and p.minutes and p.support_status == 'assessed':
+            if provision is None:raise DomainError('ito_staffing_unassessed','ITO counting requires its exact provision and reviewed staffing competence. Record unassessed actual work with an owned deviation when the basis is unavailable.',409)
+            qualified_minutes=0
+            for staff in content.staff:
+                if staff.category != p.category:continue
+                request=qualification_request(school_id,p,staff.staff_id,content.occurred_at,provision)
+                result=resolve_qualification(db,actor,request)
+                if result.state == 'reviewed_current':
+                    bindings.append(result.model_dump(mode='json'));qualified_minutes+=staff.minutes
+            required=p.attributed_staff_minutes if p.counting_basis == 'staff_time' else p.minutes
+            if qualified_minutes < required:raise DomainError('ito_staffing_unassessed','The actual staffing lacks a current reviewed competence and responsibility basis for these ITO minutes. Record unassessed work with an owned deviation.',409)
+        qualifications[(lid,p.category)]=bindings or None
+    for pupil in content.participants:
+        possible=sum(min(s.minutes,pupil.minutes) for s in content.staff if s.category == pupil.category)
+        if (pupil.attributed_staff_minutes or 0) > possible:raise DomainError('staff_allocation','Delivered staff support exceeds the possible support during actual pupil participation. Record other staff expenditure separately.',422)
     if sum(p.attributed_staff_minutes or 0 for p in content.participants) > sum(s.minutes for s in content.staff):raise DomainError('staff_allocation','Allocated staff minutes exceed actual staff resource time.',422)
     for category in {p.category for p in content.participants}:
         allocated=sum(p.attributed_staff_minutes or 0 for p in content.participants if p.category == category)
         actual=sum(s.minutes for s in content.staff if s.category == category)
         if allocated > actual:raise DomainError('staff_allocation','Allocated staff minutes exceed actual staff time in this support category.',422)
     if content.follow_up_owner_id:validate_owner(db,school_id,str(content.follow_up_owner_id))
+    return qualifications
+
+
+def support_assessment_current(db,actor,revision,pupil):
+    if pupil.status == 'absent':return pupil.minutes == 0 and pupil.attributed_staff_minutes in {None,0}
+    if pupil.support_status != 'assessed':return False
+    if pupil.category != 'individually_adapted_education':return True
+    if not pupil.provision or not pupil.qualification_binding:return False
+    from .ports import QualificationResult,resolve_qualification
+    try:
+        ref=pupil.provision
+        _,_,_,provision=entitlements.resolve_provision(db,actor,pupil.school_id,pupil.learner_id,ref['decision_id'],ref['decision_revision_id'],ref['provision_id'],at=revision.occurred_at,historical=True)
+        actual_staff={s.staff_id:s for s in staff_rows(db,revision) if s.category == pupil.category}
+        total=0;seen=set()
+        for saved in pupil.qualification_binding:
+            stored=QualificationResult.model_validate(saved)
+            staff_id=str(stored.request.staff_id)
+            if staff_id in seen or staff_id not in actual_staff:return False
+            seen.add(staff_id)
+            request=qualification_request(pupil.school_id,pupil,staff_id,revision.occurred_at,provision)
+            if stored.request != request or resolve_qualification(db,actor,request) != stored:return False
+            total+=actual_staff[staff_id].minutes
+        required=pupil.attributed_staff_minutes if pupil.counting_basis == 'staff_time' else pupil.minutes
+        return total >= required
+    except (DomainError,ValueError,TypeError,KeyError):return False
 
 
 def save_delivery(db,actor,school_id,command,identity=None):
@@ -483,7 +559,7 @@ def save_delivery(db,actor,school_id,command,identity=None):
     prior,digest=replay(db,actor,school_id,operation,command,identity)
     if prior:
         return delivery(db,actor,school_id,prior)
-    validate_actual(db,actor,school_id,content)
+    qualifications=validate_actual(db,actor,school_id,content)
     if row:
         expected(row,command)
         old=delivery_revision(db,row)
@@ -497,12 +573,31 @@ def save_delivery(db,actor,school_id,command,identity=None):
     db.add(rev);db.flush()
     for p in content.participants:
         values=p.model_dump(mode='json');values['goal_revision_ids']=[str(g) for g in p.goal_revision_ids]
-        db.add(LearnerParticipation(school_id=school_id,delivery_revision_id=rev.id,**values))
+        db.add(LearnerParticipation(school_id=school_id,delivery_revision_id=rev.id,qualification_binding=qualifications[(str(p.learner_id),p.category)],**values))
     for s in content.staff:db.add(StaffParticipation(school_id=school_id,delivery_revision_id=rev.id,**s.model_dump(mode='json')))
+    db.flush()
+    if identity:
+        old_ids=select(DeliveryRevision.id).where(DeliveryRevision.school_id == school_id,DeliveryRevision.delivery_id == row.id,DeliveryRevision.id != rev.id)
+        for item in db.scalars(select(AssistantActualInput).where(AssistantActualInput.school_id == school_id,AssistantActualInput.state == 'recorded',AssistantActualInput.delivery_revision_id.in_(old_ids)).with_for_update().execution_options(populate_existing=True)):
+            item.state='needs_clarification';item.invalidated_by_revision_id=rev.id;item.updated_at=utcnow()
+            assigned=load(db,BriefAssignment,school_id,item.assignment_id)
+            guide=load(db,AssistantBrief,school_id,assigned.brief_id)
+            owner=load(db,TeachingSession,school_id,load(db,SessionRevision,school_id,guide.session_revision_id).session_id).owner_id
+            follow_up(db,actor,school_id,guide.learner_id,'assistant_actual_input',item.id,'actual_revision_changed',owner,'Review the assistant input against the corrected current actual record; the prior reconciliation is historical.')
+            event(db,actor,item,'teaching.actual_reconciliation_invalidated',delivery_revision_id=rev.id)
     if content.follow_up:
         for p in content.participants:follow_up(db,actor,school_id,str(p.learner_id),'delivery_revision',rev.id,'delivery_deviation',str(content.follow_up_owner_id),content.follow_up)
     event(db,actor,row,operation,revision_id=rev.id);remember(db,actor,school_id,operation,command,digest,row.id)
     return row
+
+
+def ensure_staffing_follow_up(db,actor,revision,pupil,assessed):
+    if pupil.category != 'individually_adapted_education' or not pupil.minutes or pupil.support_status != 'assessed' or assessed:return
+    owner=revision.recorded_by
+    if revision.session_revision_id:
+        planned=load(db,SessionRevision,revision.school_id,revision.session_revision_id)
+        owner=load(db,TeachingSession,revision.school_id,planned.session_id).owner_id
+    follow_up(db,actor,revision.school_id,pupil.learner_id,'delivery_revision',revision.id,'staffing_basis_changed',owner,'Review the original staffing competence and responsibility basis; claimed support is currently unassessed and actual staff expenditure remains separate.')
 
 
 def delivery_view(db,actor,row,revision=None,learner_id=None):
@@ -514,9 +609,11 @@ def delivery_view(db,actor,row,revision=None,learner_id=None):
         if not participants:raise access_denied()
     else:
         for p in participants:access(db,actor,row.school_id,p.learner_id)
+    assessments={p.id:support_assessment_current(db,actor,revision,p) for p in participants}
+    for p in participants:ensure_staffing_follow_up(db,actor,revision,p,assessments[p.id])
     # A learner-scoped projection contains no other child's participation or
     # group narrative. Staff totals are exposed only through the group read.
-    return {'id':row.id,'version':row.version,'revision':revision.revision,'revision_id':revision.id,'session_revision_id':revision.session_revision_id,'state':revision.status,'occurred_at':revision.occurred_at,'recorded_at':revision.created_at,'recorded_by':revision.recorded_by,'duration_minutes':revision.duration_minutes,'activity':revision.activity if not learner_id else None,'cause':revision.cause,'cause_detail':revision.cause_detail if not learner_id else None,'correction_reason':revision.reason if not learner_id else None,'participants':[row_json(p,('learner_id','goal_revision_ids','status','minutes','category','support','provision','counting_basis','attributed_staff_minutes')) for p in participants],'staff':[row_json(s,('staff_id','minutes','role','category')) for s in staff_rows(db,revision)] if not learner_id else None,'staff_minutes':sum(s.minutes for s in staff_rows(db,revision)) if not learner_id else None}
+    return {'id':row.id,'version':row.version,'revision':revision.revision,'revision_id':revision.id,'session_revision_id':revision.session_revision_id,'state':revision.status,'occurred_at':revision.occurred_at,'recorded_at':revision.created_at,'recorded_by':revision.recorded_by,'duration_minutes':revision.duration_minutes,'activity':revision.activity if not learner_id else None,'cause':revision.cause,'cause_detail':revision.cause_detail if not learner_id else None,'correction_reason':revision.reason if not learner_id else None,'participants':[row_json(p,('learner_id','goal_revision_ids','status','minutes','category','support','provision','counting_basis','attributed_staff_minutes','support_status')) | {'support_assessment':'assessed' if assessments[p.id] else 'unassessed'} for p in participants],'staff':[row_json(s,('staff_id','minutes','role','category')) for s in staff_rows(db,revision)] if not learner_id else None,'staff_minutes':sum(s.minutes for s in staff_rows(db,revision)) if not learner_id else None,'staff_labels_are_reported':True,'staff_labels_prove_qualification':False}
 
 
 def observation_snapshot(rev):
@@ -696,14 +793,22 @@ def delivery_summary(db,actor,school_id,learner_id,start,end):
     access(db,actor,school_id,learner_id)
     if start >= end:raise DomainError('summary_period','Use a nonempty UTC-aware half-open interval.',422)
     rows=list(db.scalars(select(LearnerParticipation).join(DeliveryRevision,LearnerParticipation.delivery_revision_id == DeliveryRevision.id).join(SessionDelivery,SessionDelivery.id == DeliveryRevision.delivery_id).where(LearnerParticipation.school_id == school_id,LearnerParticipation.learner_id == learner_id,DeliveryRevision.revision == SessionDelivery.current_revision,DeliveryRevision.occurred_at >= start,DeliveryRevision.occurred_at < end)))
-    categories={}
+    categories={};assessed_categories={};unassessed_categories={}
     provisions={}
     for row in rows:
         categories[row.category]=categories.get(row.category,0)+row.minutes
+        actual_revision=load(db,DeliveryRevision,school_id,row.delivery_revision_id)
+        assessed=support_assessment_current(db,actor,actual_revision,row)
+        ensure_staffing_follow_up(db,actor,actual_revision,row,assessed)
+        amounts=assessed_categories if assessed else unassessed_categories
+        amounts[row.category]=amounts.get(row.category,0)+row.minutes
         if row.provision:
             key=canonical_content_digest(row.provision)
-            bucket=provisions.setdefault(key,{'reference':row.provision,'counting_basis':row.counting_basis,'recorded_minutes':0,'actual_revision_ids':[],'entitlement':None,'comparison':'unassessed'})
-            bucket['recorded_minutes']+=row.minutes if row.counting_basis == 'learner_time' else row.attributed_staff_minutes or 0
+            bucket=provisions.setdefault(key,{'reference':row.provision,'counting_basis':row.counting_basis,'recorded_minutes':0,'assessed_recorded_minutes':0,'unassessed_claimed_minutes':0,'actual_revision_ids':[],'entitlement':None,'comparison':'unassessed'})
+            amount=0 if row.status == 'absent' else (row.minutes if row.counting_basis == 'learner_time' else row.attributed_staff_minutes or 0)
+            if assessed:bucket['assessed_recorded_minutes']+=amount
+            else:bucket['unassessed_claimed_minutes']+=amount
+            bucket['recorded_minutes']=None if bucket['unassessed_claimed_minutes'] else bucket['assessed_recorded_minutes']
             bucket['actual_revision_ids'].append(row.delivery_revision_id)
     for bucket in provisions.values():
         ref=bucket['reference']
@@ -715,7 +820,8 @@ def delivery_summary(db,actor,school_id,learner_id,start,end):
                 bucket['comparison']='recorded_support_only' if (start,end) == (provision.effective_from,provision.effective_until) else 'different_reference_period'
             else:bucket['comparison']='non_quantitative'
         except DomainError:bucket['comparison']='basis_unavailable'
-    return {'learner_id':learner_id,'start':start,'end':end,'actual_minutes_by_category':categories,'provisions':list(provisions.values()),'entitlement_fulfilment':'unassessed','missing_records_are_zero':False,'staff_time_is_learner_time':False}
+        if bucket['unassessed_claimed_minutes'] and bucket['comparison'] != 'basis_unavailable':bucket['comparison']='support_unassessed'
+    return {'learner_id':learner_id,'start':start,'end':end,'actual_minutes_by_category':categories,'assessed_minutes_by_category':assessed_categories,'unassessed_claimed_minutes_by_category':unassessed_categories,'provisions':list(provisions.values()),'category_totals_are_actual_claims':True,'entitlement_fulfilment':'unassessed','missing_records_are_zero':False,'staff_time_is_learner_time':False}
 
 
 def submit_actual_input(db,actor,school_id,identity,command):
@@ -731,46 +837,87 @@ def submit_actual_input(db,actor,school_id,identity,command):
     event(db,actor,row,'teaching.actual_input_submitted');remember(db,actor,school_id,'teaching.actual_input',command,digest,row.id);return row
 
 
+def matching_current_actual(db,actor,row,guide,revision_id,*,lock=False):
+    rev=load(db,DeliveryRevision,row.school_id,revision_id)
+    actual=delivery(db,actor,row.school_id,rev.delivery_id,'teaching.write',lock)
+    parent=load(db,TeachingSession,row.school_id,load(db,SessionRevision,row.school_id,guide.session_revision_id).session_id)
+    pupil=next((p for p in participation_rows(db,rev) if p.learner_id == guide.learner_id and p.category == row.content['category']),None)
+    if (actual.current_revision != rev.revision or actual.session_id != parent.id or rev.status not in {'delivered','partial'} or pupil is None or pupil.status == 'absent' or pupil.minutes <= 0 or not support_assessment_current(db,actor,rev,pupil) or rev.occurred_at != row.occurred_at or pupil.minutes != row.content['duration_minutes'] or pupil.status != row.content['status']):
+        raise DomainError('actual_input_mismatch','Link the eligible exact current actual record or request clarification.',409)
+    return rev
+
+
 def review_actual_input(db,actor,school_id,identity,command):
+    # Match delivery's learner -> delivery -> input lock order, preventing an
+    # actual correction from racing a review into a stale reconciliation.
+    preview=load(db,AssistantActualInput,school_id,identity)
+    assigned,guide=assignment(db,actor,school_id,preview.assignment_id,teacher=True)
+    if command.delivery_revision_id:
+        candidate=load(db,DeliveryRevision,school_id,str(command.delivery_revision_id))
+        actual=delivery(db,actor,school_id,candidate.delivery_id,'teaching.write')
+        lock_learners(db,school_id,[p.learner_id for p in participation_rows(db,delivery_revision(db,actual))])
+    else:lock_learners(db,school_id,[guide.learner_id])
+    rev=matching_current_actual(db,actor,preview,guide,str(command.delivery_revision_id),lock=True) if command.delivery_revision_id else None
     row=load(db,AssistantActualInput,school_id,identity,True)
-    assigned,guide=assignment(db,actor,school_id,row.assignment_id,write=True,teacher=True)
+    access(db,actor,school_id,guide.learner_id,'teaching.write')
     prior,digest=replay(db,actor,school_id,'teaching.actual_input_review',command,identity)
     if prior:return row
     expected(row,command)
-    if row.state != 'submitted':raise conflict('This actual input has already been reviewed; submit a separate clarification or correction.')
-    if command.delivery_revision_id:
-        rev=load(db,DeliveryRevision,school_id,str(command.delivery_revision_id))
-        actual=delivery(db,actor,school_id,rev.delivery_id,'teaching.write')
-        parent=load(db,TeachingSession,school_id,load(db,SessionRevision,school_id,guide.session_revision_id).session_id)
-        pupil=next((p for p in participation_rows(db,rev) if p.learner_id == guide.learner_id and p.category == row.content['category']),None)
-        if actual.session_id != parent.id or pupil is None or rev.occurred_at != row.occurred_at or pupil.minutes != row.content['duration_minutes'] or pupil.category != row.content['category'] or pupil.status != row.content['status']:
-            raise DomainError('actual_input_mismatch','Link the matching exact actual record or request clarification.',409)
-        row.delivery_revision_id=rev.id
+    if row.state != 'submitted' and not (row.state == 'needs_clarification' and row.invalidated_by_revision_id):raise conflict('This actual input has already been reviewed; submit a separate clarification or correction.')
+    row.delivery_revision_id=rev.id if rev else None;row.invalidated_by_revision_id=None
     row.state=command.outcome;row.reviewed_by=actor.user_id;row.review_reason=command.reason;row.updated_at=utcnow()
+    db.add(ActualInputReview(school_id=school_id,input_id=row.id,outcome=command.outcome,delivery_revision_id=rev.id if rev else None,reason=command.reason,reviewed_by=actor.user_id,reviewed_at=utcnow()))
     event(db,actor,row,'teaching.actual_input_reviewed');remember(db,actor,school_id,'teaching.actual_input_review',command,digest,row.id);return row
+
+
+def actual_input_view(db,actor,row,guide):
+    current=brief_is_current(db,actor,guide,curated=actor.user_id != row.reviewed_by and actor.user_id == load(db,BriefAssignment,row.school_id,row.assignment_id).assistant_id)
+    value=row_json(row,('id','version','state','author_id','occurred_at','created_at','content','delivery_revision_id','review_reason','invalidated_by_revision_id'))
+    # A historical link is shown as history, never as current reconciled work.
+    reconciled=False
+    if row.state == 'recorded' and row.delivery_revision_id:
+        rev=load(db,DeliveryRevision,row.school_id,row.delivery_revision_id)
+        actual=load(db,SessionDelivery,row.school_id,rev.delivery_id)
+        reconciled=actual.current_revision == rev.revision and actual.state in {'delivered','partial'}
+    if row.state == 'recorded' and not reconciled:value['state']='needs_clarification'
+    value['currently_reconciled']=reconciled
+    if not current:value['review_reason']=None
+    history=list(db.scalars(select(ActualInputReview).where(ActualInputReview.school_id == row.school_id,ActualInputReview.input_id == row.id).order_by(ActualInputReview.created_at,ActualInputReview.id)))
+    value['review_history']=[row_json(h,('id','outcome','delivery_revision_id','reviewed_by','reviewed_at')) | {'reason':h.reason if current else None,'historical':h.delivery_revision_id != row.delivery_revision_id or not reconciled} for h in history]
+    return value
+
+
+def follow_up_dependencies_current(db,actor,row):
+    binding=row.dependency_binding
+    if not isinstance(binding,dict) or binding.get('format') != 'teaching.follow-up-basis.v1' or canonical_content_digest(binding) != row.dependency_key:return False
+    try:
+        if binding.get('session_revision_id'):
+            revision=load(db,SessionRevision,row.school_id,binding['session_revision_id'])
+            basis=load(db,TeachingBasis,row.school_id,revision.basis_id)
+            if revision.content_digest != binding['session_content_digest'] or basis.id != binding['basis_id'] or basis.digest != binding['basis_digest']:return False
+            basis_access(db,actor,basis)
+            if not revision_valid(db,actor,revision):return False
+        if binding.get('delivery_revision_id'):
+            revision=load(db,DeliveryRevision,row.school_id,binding['delivery_revision_id'])
+            for pupil in participation_rows(db,revision):
+                access(db,actor,row.school_id,pupil.learner_id)
+                for goal in pupil.goal_revision_ids:plans.goal_reference(db,actor,row.school_id,pupil.learner_id,goal,at=revision.occurred_at,historical=True)
+                if pupil.category == 'individually_adapted_education' and pupil.minutes and not support_assessment_current(db,actor,revision,pupil):return False
+                if pupil.provision:
+                    ref=pupil.provision
+                    entitlements.resolve_provision(db,actor,row.school_id,pupil.learner_id,ref['decision_id'],ref['decision_revision_id'],ref['provision_id'],at=revision.occurred_at,historical=True)
+        return bool(binding.get('session_revision_id') or binding.get('delivery_revision_id'))
+    except (DomainError,KeyError,TypeError):return False
 
 
 def follow_up_view(db,actor,row):
     access(db,actor,row.school_id,row.learner_id)
-    value=row_json(row,('id','version','state','target_type','target_id','reason_code','owner_id','action','resolution'))
-    current=True
-    try:
-        if row.target_type == 'delivery_revision':
-            revision=load(db,DeliveryRevision,row.school_id,row.target_id)
-            delivery(db,actor,row.school_id,revision.delivery_id)
-        elif row.target_type == 'session':
-            parent=session(db,actor,row.school_id,row.target_id)
-            current=revision_valid(db,actor,current_revision(db,parent))
-        elif row.target_type == 'brief':
-            guide=brief(db,actor,row.school_id,row.target_id)
-            current=revision_valid(db,actor,load(db,SessionRevision,row.school_id,guide.session_revision_id))
-        elif row.target_type == 'brief_message':
-            message=load(db,BriefMessage,row.school_id,row.target_id)
-            _,guide=assignment(db,actor,row.school_id,message.assignment_id)
-            current=brief_is_current(db,actor,guide)
-    except DomainError:
-        current=False
-        if row.target_type == 'delivery_revision':value['action']=None
-    if not current:value['resolution']=None
+    value=row_json(row,('id','version','state','target_type','target_id','reason_code','owner_id','action','resolution','dependency_binding'))
+    current=follow_up_dependencies_current(db,actor,row)
+    if not current:
+        value['resolution']=None
+        # Delivery actions are user-authored group prose. Generic source-change
+        # actions remain actionable without disclosing the withdrawn material.
+        if row.target_type == 'delivery_revision' and row.reason_code == 'delivery_deviation':value['action']=None
     value['source_status']='current' if current else 'review_required'
     return value

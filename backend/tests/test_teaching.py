@@ -238,6 +238,15 @@ def test_real_local_ai_structured_field_selection_no_overwrite_replay_and_withdr
     applied=client.post(path+'/suggestions/review',headers=h,json=select_fields)
     assert applied.status_code == 200,applied.text
     next_row=applied.json();assert next_row['content']['support'] == 'Human chosen support' and next_row['state'] == 'draft'
+    # Nested gateway source resolution has its own trusted runtime binding, not
+    # an HTTP teaching request context. Both full and curated lineage use it.
+    with factory() as db:
+        db.info['ai_gateway_runtime']=runtime
+        revision=db.get(SessionRevision,next_row['revision_id'])
+        assert service.revision_valid(db,Actor(ids['reviewer']),revision)
+        assert service.revision_valid(db,Actor(ids['reviewer']),revision,curated=True)
+        assert db.info['ai_gateway_runtime'] is runtime
+        assert 'teaching_runtime' not in db.info
     replayed=client.post(path+'/suggestions/review',headers=h,json=select_fields);assert replayed.status_code == 200,replayed.text
     assert replayed.json()['revision_id'] == next_row['revision_id']
     teaching_wire_server.support='A regenerated support proposal'
@@ -313,13 +322,14 @@ def test_scoped_decision_provision_counting_period_and_goal_change(teaching_env)
     provision=decision['provisions'][0]
     reference={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':provision['id']}
     payload=actual(ids,{'a':gid},row)
-    payload['participants'][0].update(category='individually_adapted_education',provision=reference,counting_basis='learner_time')
+    payload['participants'][0].update(category='individually_adapted_education',provision=reference,counting_basis='learner_time',support_status='unassessed')
+    payload.update(status='partial',cause='other',cause_detail='The staffing competence basis is unavailable',follow_up_owner_id=ids['reviewer'],follow_up='Verify the exact staffing competence before counting support')
     payload['staff'][0]['category']='individually_adapted_education'
     recorded=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload));assert recorded.status_code == 201,recorded.text
     summary=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params={'start':(utcnow()-timedelta(days=1)).isoformat(),'end':utcnow().isoformat()})
     assert summary.status_code == 200,summary.text
-    values=summary.json();assert values['provisions'][0]['recorded_minutes'] == 30
-    assert values['provisions'][0]['comparison'] == 'different_reference_period' and values['entitlement_fulfilment'] == 'unassessed'
+    values=summary.json();assert values['provisions'][0]['recorded_minutes'] is None and values['provisions'][0]['unassessed_claimed_minutes'] == 30
+    assert values['provisions'][0]['comparison'] == 'support_unassessed' and values['entitlement_fulfilment'] == 'unassessed'
     wrong=actual(ids,{'a':gid});wrong['participants'][0].update(category='personal_assistance',provision=reference,counting_basis='learner_time')
     denied=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=wrong));assert denied.status_code == 409
     # An active replacement goal basis invalidates old session/brief content.
@@ -383,3 +393,372 @@ def test_utc_normalization_strict_brief_and_manual_recovery_after_corrected_sour
         assert client.get(base(ids)+f'/teaching/sessions/{row["id"]}').status_code == 403
     login(client)
     assert client.get(f'/api/v1/schools/{ids["other_school"]}/teaching/sessions/{row["id"]}').status_code == 403
+
+
+from plans_fixtures import support_case,decision_payload
+
+def test_multicategory_delivery_list_duplicates(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    ga,_=ordinary_goal(client,ids,h)
+    payload=actual(ids,{'a':ga})
+    payload['participants'].append({**payload['participants'][0], 'category':'personal_assistance','minutes':10})
+    payload['staff']=[{**payload['staff'][0],'minutes':20},{**payload['staff'][0],'category':'personal_assistance','minutes':10}]
+    saved=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload))
+    assert saved.status_code == 201,saved.text
+    listed=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-deliveries').json()
+    assert listed['total'] == 1 and len({x['id'] for x in listed['items']}) == 1,listed
+    second=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=actual(ids,{'a':ga})));assert second.status_code == 201,second.text
+    page1=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-deliveries',params={'offset':0,'limit':1}).json()
+    page2=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-deliveries',params={'offset':1,'limit':1}).json()
+    assert page1['total'] == page2['total'] == 2
+    assert {page1['items'][0]['id'],page2['items'][0]['id']} == {saved.json()['id'],second.json()['id']}
+
+
+def test_absent_learner_stafftime_is_counted_as_support(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,item=evidence(client,ids,h)
+    case=support_case(client,factory,ids,h)
+    payload=decision_payload(binding)
+    payload['provisions'][0].update(category='personal_assistance',counting_basis='staff_time')
+    path=base(ids)+f'/support-cases/{case["id"]}/decisions'
+    response=client.post(path,headers=h,json=payload);assert response.status_code == 201,response.text
+    row=response.json();response=client.post(path+'/'+row['id']+'/confirm',headers=h,json=expected(row,reason='Synthetic staff-time provision reviewed'))
+    assert response.status_code == 200,response.text
+    decision=response.json()
+    ga,_=ordinary_goal(client,ids,h)
+    payload=actual(ids,{'a':ga})
+    reference={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':decision['provisions'][0]['id']}
+    payload['participants'][0].update(status='absent',minutes=0,category='personal_assistance',provision=reference,counting_basis='staff_time',attributed_staff_minutes=30)
+    payload['staff'][0].update(staff_id=ids['assistant'],category='personal_assistance',role='Assistant')
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload))
+    assert response.status_code in {409,422},response.text
+
+def test_only_assistant_staff_can_be_classified_as_ito(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,item=evidence(client,ids,h)
+    case=support_case(client,factory,ids,h)
+    from plans_fixtures import confirmed_decision
+    decision=confirmed_decision(client,ids,h,case,binding)
+    ga,_=ordinary_goal(client,ids,h)
+    payload=actual(ids,{'a':ga})
+    payload['participants'][0].update(provision={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':decision['provisions'][0]['id']},counting_basis='learner_time')
+    payload['participants'][0]['category']='individually_adapted_education'
+    payload['staff'][0].update(staff_id=ids['assistant'],category='individually_adapted_education',role='Assistant')
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload))
+    assert response.status_code in {403,409,422},response.text
+
+def test_actual_input_can_reconcile_superseded_delivery(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    ga,_=ordinary_goal(client,ids,h)
+    br=basis(client,ids,h,{'a':ga});row=approve(client,ids,h,session(client,ids,h,br));guide,assignment=assigned_brief(client,ids,h,row)
+    ah=login(client,'assistant')
+    inp=client.post(base(ids)+f'/teaching/brief-assignments/{assignment["id"]}/actual-inputs',headers=ah,json=retry(content={'occurred_at':(utcnow()-timedelta(hours=1)).replace(microsecond=0).isoformat(),'duration_minutes':30,'status':'participated','category':'ordinary_teaching','activity':'Read cards','support':'Visual cue'}))
+    assert inp.status_code == 201,inp.text
+    h=login(client)
+    payload=actual(ids,{'a':ga},row,occurred_at=inp.json()['occurred_at'])
+    saved=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload));assert saved.status_code==201,saved.text
+    corrected={**payload,'status':'cancelled','duration_minutes':0,'staff':[],'cause':'learner_absence','follow_up_owner_id':ids['reviewer'],'follow_up':'Review absence','participants':[{**payload['participants'][0],'minutes':0,'status':'absent'}]}
+    correction=client.post(base(ids)+f'/teaching/deliveries/{saved.json()["id"]}/corrections',headers=h,json=expected(saved.json(),content=corrected,reason='Original entry was incorrect; pupil absent'))
+    assert correction.status_code==200,correction.text
+    reconciled=client.post(base(ids)+f'/teaching/actual-inputs/{inp.json()["id"]}/review',headers=h,json=expected(inp.json(),outcome='recorded',delivery_revision_id=saved.json()['revision_id'],reason='Reconcile against old revision'))
+    assert reconciled.status_code==409,reconciled.text
+
+def test_repaired_session_resurfaces_retired_source_followup_resolution(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,item=evidence(client,ids,h)
+    ga,_=ordinary_goal(client,ids,h)
+    selected=retry(planned_at=(utcnow()+timedelta(minutes=5)).isoformat(),duration_minutes=30,arena='Synthetic room',learners=[{'learner_id':ids['a'],'goal_revision_ids':[ga],'sources':[binding]}])
+    br=client.post(base(ids)+'/teaching/bases',headers=h,json=selected).json()
+    row=session(client,ids,h,br)
+    # Revoke the actor's source read while retaining teaching write/read.
+    with factory.begin() as db:
+        for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id==ids['reviewer'])):
+            assignment.actions=[a for a in assignment.actions if a != 'evidence.read']
+    path=base(ids)+f'/teaching/sessions/{row["id"]}'
+    assert client.get(path).json()['content'] is None
+    followups=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items']
+    task=next(x for x in followups if x['target_type']=='session')
+    with factory.begin() as db:
+        for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id==ids['reviewer'])):assignment.actions=list(assignment.actions)+['evidence.read']
+    result=client.post(base(ids)+f'/teaching/follow-ups/{task["id"]}/resolve',headers=h,json=expected(task,resolution='Source-derived sensitive statement from retired basis'))
+    assert result.status_code==200,result.text
+    with factory.begin() as db:
+        for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id==ids['reviewer'])):assignment.actions=[a for a in assignment.actions if a!='evidence.read']
+    masked=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items']
+    assert next(x for x in masked if x['id']==task['id'])['resolution'] is None
+    fresh=basis(client,ids,h,{'a':ga})
+    revised=client.post(path+'/revisions',headers=h,json=expected(row,basis_id=fresh['id'],owner_id=ids['reviewer'],content=content(),reason='Independent plan without retired source'))
+    assert revised.status_code==201,revised.text
+    tasks=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items']
+    task=next(x for x in tasks if x['id']==task['id'])
+    assert task['resolution'] is None
+    assert task['source_status']=='review_required'
+
+
+
+
+def test_absence_records_staff_expenditure_without_delivered_support(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,_=evidence(client,ids,h);case=support_case(client,factory,ids,h)
+    payload=decision_payload(binding);payload['provisions'][0].update(category='personal_assistance',counting_basis='staff_time')
+    path=base(ids)+f'/support-cases/{case["id"]}/decisions'
+    result=client.post(path,headers=h,json=payload);assert result.status_code == 201,result.text
+    decision=client.post(path+'/'+result.json()['id']+'/confirm',headers=h,json=expected(result.json(),reason='Reviewed the synthetic assistance provision')).json()
+    goal,_=ordinary_goal(client,ids,h)
+    actual_work=actual(ids,{'a':goal})
+    actual_work['participants'][0].update(status='absent',minutes=0,category='personal_assistance',counting_basis='staff_time',attributed_staff_minutes=0,provision={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':decision['provisions'][0]['id']})
+    actual_work['staff'][0].update(staff_id=ids['assistant'],category='personal_assistance',role='Waited at the agreed location')
+    assert client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=actual_work)).status_code == 422
+    actual_work.update(status='partial',cause='learner_absence',follow_up_owner_id=ids['reviewer'],follow_up='Review the missed pupil support separately from actual staff cost')
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=actual_work));assert response.status_code == 201,response.text
+    assert response.json()['staff_minutes'] == 30 and response.json()['participants'][0]['minutes'] == 0
+    summary=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params={'start':(utcnow()-timedelta(days=1)).isoformat(),'end':utcnow().isoformat()}).json()
+    assert summary['provisions'][0]['recorded_minutes'] == 0
+    assert summary['provisions'][0]['unassessed_claimed_minutes'] == 0
+    actual_work['participants'][0].update(status='partial',minutes=10,attributed_staff_minutes=30)
+    assert client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=actual_work)).status_code == 422
+    assert client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['total'] == 1
+
+
+def test_reconciliation_reopens_after_correction_and_keeps_exact_review_history(teaching_env):
+    client,factory,app,ids=teaching_env;h=login(client)
+    goal,_=ordinary_goal(client,ids,h);br=basis(client,ids,h,{'a':goal});row=approve(client,ids,h,session(client,ids,h,br));_,assigned=assigned_brief(client,ids,h,row)
+    ah=login(client,'assistant');when=(utcnow()-timedelta(hours=1)).replace(microsecond=0).isoformat()
+    result=client.post(base(ids)+f'/teaching/brief-assignments/{assigned["id"]}/actual-inputs',headers=ah,json=retry(content={'occurred_at':when,'duration_minutes':30,'status':'participated','category':'ordinary_teaching','activity':'Actually read the cards','support':'A visual cue'}));assert result.status_code == 201,result.text
+    entry=result.json();h=login(client)
+    payload=actual(ids,{'a':goal},row,occurred_at=when)
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload));assert response.status_code == 201,response.text
+    delivered=response.json()
+    command=expected(entry,outcome='recorded',delivery_revision_id=delivered['revision_id'],reason='Exact original actual record checked')
+    response=client.post(base(ids)+f'/teaching/actual-inputs/{entry["id"]}/review',headers=h,json=command);assert response.status_code == 200,response.text
+    assert response.json()['currently_reconciled'] and len(response.json()['review_history']) == 1
+    cancellation={**payload,'status':'cancelled','duration_minutes':0,'staff':[],'cause':'learner_absence','follow_up_owner_id':ids['reviewer'],'follow_up':'Review the incorrect recorded event','participants':[{**payload['participants'][0],'status':'absent','minutes':0}]}
+    corrected=client.post(base(ids)+f'/teaching/deliveries/{delivered["id"]}/corrections',headers=h,json=expected(delivered,content=cancellation,reason='The actual event was cancelled'));assert corrected.status_code == 200,corrected.text
+    assert client.post(base(ids)+f'/teaching/actual-inputs/{entry["id"]}/review',headers=h,json=command).status_code == 409
+    listed=client.get(base(ids)+f'/teaching/brief-assignments/{assigned["id"]}/actual-inputs').json()['items'][0]
+    assert listed['state'] == 'needs_clarification' and not listed['currently_reconciled']
+    assert listed['delivery_revision_id'] == delivered['revision_id'] and listed['invalidated_by_revision_id'] == corrected.json()['revision_id']
+    assert listed['review_history'][0]['reason'] == 'Exact original actual record checked' and listed['review_history'][0]['historical']
+    # A deliberate new matching actual correction can be reconciled anew; its
+    # review supplements rather than overwrites the historical review.
+    restored=client.post(base(ids)+f'/teaching/deliveries/{delivered["id"]}/corrections',headers=h,json=expected(corrected.json(),content=payload,reason='Verified the actual work with the original participant'));assert restored.status_code == 200,restored.text
+    reviewed=client.post(base(ids)+f'/teaching/actual-inputs/{entry["id"]}/review',headers=h,json=expected(listed,outcome='recorded',delivery_revision_id=restored.json()['revision_id'],reason='Exact replacement actual record checked'));assert reviewed.status_code == 200,reviewed.text
+    assert reviewed.json()['currently_reconciled'] and len(reviewed.json()['review_history']) == 2
+    assert reviewed.json()['review_history'][0]['delivery_revision_id'] == delivered['revision_id']
+
+
+def test_ito_requires_exact_reviewed_qualification_port_and_supports_unassessed_recovery(teaching_env):
+    from plans_fixtures import confirmed_decision
+    from teaching_fixtures import SyntheticQualificationPort
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,_=evidence(client,ids,h);case=support_case(client,factory,ids,h);decision=confirmed_decision(client,ids,h,case,binding)
+    goal,_=ordinary_goal(client,ids,h)
+    payload=actual(ids,{'a':goal});ref={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':decision['provisions'][0]['id']}
+    payload['participants'][0].update(category='individually_adapted_education',provision=ref,counting_basis='learner_time')
+    payload['staff'][0].update(category='individually_adapted_education',role='Claimed qualified professional')
+    endpoint=base(ids)+'/teaching/deliveries'
+    assert client.post(endpoint,headers=h,json=retry(content=payload)).status_code == 409
+    port=SyntheticQualificationPort(ids);app.state.teaching_qualification_port=port
+    for mode in ('mismatched','missing_sources','future_review'):
+        port.mode=mode
+        bad=client.post(endpoint,headers=h,json=retry(content=payload));assert bad.status_code == 409,bad.text
+    port.mode='reviewed'
+    response=client.post(endpoint,headers=h,json=retry(content=payload));assert response.status_code == 201,response.text
+    recorded=response.json();assert recorded['participants'][0]['support_assessment'] == 'assessed'
+    request=port.requests[-1]
+    assert str(request.school_id) == ids['school'] and str(request.staff_id) == ids['reviewer'] and str(request.provision_id) == ref['provision_id']
+    assert str(request.decision_revision_id) == ref['decision_revision_id'] and request.occurred_at.isoformat() == payload['occurred_at']
+    params={'start':(utcnow()-timedelta(days=1)).isoformat(),'end':utcnow().isoformat()}
+    summary=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params=params).json()
+    assert summary['provisions'][0]['recorded_minutes'] == 30
+    port.mode='unavailable'
+    stale=client.get(base(ids)+f'/teaching/deliveries/{recorded["id"]}').json()
+    assert stale['participants'][0]['support_assessment'] == 'unassessed'
+    summary=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params=params).json()
+    assert summary['provisions'][0]['recorded_minutes'] is None and summary['provisions'][0]['unassessed_claimed_minutes'] == 30
+    # A caller's forged professional title cannot override the owning record.
+    port.mode='reviewed';payload['staff'][0]['staff_id']=ids['assistant']
+    assert client.post(endpoint,headers=h,json=retry(content=payload)).status_code == 409
+    payload['participants'][0]['support_status']='unassessed'
+    payload.update(status='partial',cause='staff_unavailable',follow_up_owner_id=ids['reviewer'],follow_up='Obtain the staffing competence basis and assess missed teaching separately')
+    unassessed=client.post(endpoint,headers=h,json=retry(content=payload));assert unassessed.status_code == 201,unassessed.text
+    assert unassessed.json()['staff_minutes'] == 30 and not unassessed.json()['staff_labels_prove_qualification']
+    assert unassessed.json()['participants'][0]['support_assessment'] == 'unassessed'
+    tasks=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items']
+    assert {t['reason_code'] for t in tasks} == {'delivery_deviation','staffing_basis_changed'}
+
+
+def test_ito_stafftime_cannot_include_unqualified_assistant_cost(teaching_env):
+    from teaching_fixtures import SyntheticQualificationPort
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,_=evidence(client,ids,h);case=support_case(client,factory,ids,h)
+    decision_request=decision_payload(binding);decision_request['provisions'][0]['counting_basis']='staff_time'
+    path=base(ids)+f'/support-cases/{case["id"]}/decisions'
+    result=client.post(path,headers=h,json=decision_request);assert result.status_code == 201,result.text
+    decision=client.post(path+'/'+result.json()['id']+'/confirm',headers=h,json=expected(result.json(),reason='Checked the exact synthetic staff-time ITO basis')).json()
+    goal,_=ordinary_goal(client,ids,h);payload=actual(ids,{'a':goal})
+    payload['participants'][0].update(category='individually_adapted_education',provision={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':decision['provisions'][0]['id']},counting_basis='staff_time',attributed_staff_minutes=60)
+    payload['staff'][0]['category']='individually_adapted_education'
+    payload['staff'].append({**payload['staff'][0],'staff_id':ids['assistant'],'role':'Assistant support'})
+    app.state.teaching_qualification_port=SyntheticQualificationPort(ids)
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload));assert response.status_code == 409,response.text
+    payload['participants'][0]['attributed_staff_minutes']=30
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload));assert response.status_code == 201,response.text
+    assert response.json()['staff_minutes'] == 60
+    summary=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params={'start':(utcnow()-timedelta(days=1)).isoformat(),'end':utcnow().isoformat()}).json()
+    assert summary['provisions'][0]['recorded_minutes'] == 30
+
+
+@pytest.mark.parametrize('change',['source_correction','goal_replacement','model_recall','policy_recall'])
+def test_follow_up_resolution_keeps_original_dependencies_after_independent_revision(teaching_env,teaching_wire_server,change):
+    from spesped.contexts.platform import service as gateway
+    from spesped.contexts.platform.models import ModelRelease,ProcessingPolicy
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,item=evidence(client,ids,h);goal,plan=ordinary_goal(client,ids,h)
+    command=retry(planned_at=(utcnow()+timedelta(minutes=5)).isoformat(),duration_minutes=30,arena='Synthetic room',learners=[{'learner_id':ids['a'],'goal_revision_ids':[goal],'sources':[binding]}])
+    result=client.post(base(ids)+'/teaching/bases',headers=h,json=command);assert result.status_code == 201,result.text
+    original=session(client,ids,h,result.json());path=base(ids)+f'/teaching/sessions/{original["id"]}'
+    if change in {'model_recall','policy_recall'}:
+        runtime,policy,release=configure_ai(factory,app,ids,teaching_wire_server)
+        queued=client.post(path+'/suggestions',headers=h,json=retry(policy_id=policy,release_id=release)).json()
+        completed=gateway.run_job(factory,Actor(ids['reviewer']),ids['school'],queued['id'],queued['version'],runtime);assert completed.state == 'succeeded'
+        applied=client.post(path+'/suggestions/review',headers=h,json=expected(original,job_id=queued['id'],outcome='accepted',selected_fields=['preparation'],reason='Explicitly selected AI preparation'))
+        assert applied.status_code == 200,applied.text
+        original=applied.json()
+    def source_permission(enabled):
+        with factory.begin() as db:
+            for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id == ids['reviewer'])):
+                values=[a for a in assignment.actions if a != 'evidence.read']
+                assignment.actions=values+(['evidence.read'] if enabled else [])
+    source_permission(False)
+    assert client.get(path).json()['content'] is None
+    tasks=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items']
+    task=next(t for t in tasks if t['target_type'] == 'session')
+    assert task['dependency_binding']['session_revision_id'] == original['revision_id']
+    source_permission(True)
+    resolve_command=expected(task,resolution='Sensitive historical source interpretation reviewed in the exact original session context')
+    resolved=client.post(base(ids)+f'/teaching/follow-ups/{task["id"]}/resolve',headers=h,json=resolve_command)
+    assert resolved.status_code == 200 and resolved.json()['resolution'],resolved.text
+    if change == 'source_correction':
+        correction={'expected_version':item['version'],'learner_id':ids['b'],'claim_type':'report','reporter':'Synthetic authority','source_type':'imported_document','certainty':'confirmed','occurred_at':item['occurred_at'],'topic':'education','content':'Correct association for the other synthetic pupil','reason':'Correct the original pupil association','excerpt_page':item['source']['page'],'excerpt_start':item['source']['span_start'],'excerpt_end':item['source']['span_end']}
+        changed=client.post(base(ids)+f'/evidence/{item["id"]}/corrections',headers=h,json=correction);assert changed.status_code == 200,changed.text
+    elif change == 'goal_replacement':
+        revised=plan_payload();revised.pop('kind');revised['expected_version']=plan['version']
+        revised['effective_from']=utcnow().isoformat();revised['goals'][0]['effective_from']=revised['effective_from']
+        revised['goals'][0]['title']='Independent replacement goal'
+        changed=client.post(base(ids)+f'/education-plans/{plan["id"]}/revisions',headers=h,json=revised);assert changed.status_code == 201,changed.text
+        replacement=activate(client,ids,h,changed.json());goal=replacement['content']['goals'][0]['id']
+    else:
+        model,record_id=(ModelRelease,release) if change == 'model_recall' else (ProcessingPolicy,policy)
+        with factory() as db:version=db.get(model,record_id).version
+        kind='release' if change == 'model_recall' else 'policy'
+        changed=client.post(base(ids)+f'/ai/configuration/{kind}/{record_id}/revoke',headers=h,json={'expected_version':version});assert changed.status_code == 200,changed.text
+    fresh=basis(client,ids,h,{'a':goal})
+    replaced=client.post(path+'/revisions',headers=h,json=expected(original,basis_id=fresh['id'],owner_id=ids['reviewer'],content=content(),manual_replacements=list(content()),reason='Independent manually selected content with a fresh basis'))
+    assert replaced.status_code == 201 and replaced.json()['content'],replaced.text
+    listed=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items']
+    historical=next(t for t in listed if t['id'] == task['id'])
+    assert historical['dependency_binding']['session_revision_id'] == original['revision_id']
+    assert historical['resolution'] is None and historical['source_status'] == 'review_required'
+    replayed=client.post(base(ids)+f'/teaching/follow-ups/{task["id"]}/resolve',headers=h,json=resolve_command)
+    assert replayed.status_code == 200 and replayed.json()['resolution'] is None,replayed.text
+
+
+def test_forward_migration_keeps_legacy_follow_up_lineage_unknown(env,tmp_path):
+    from alembic import command as migrations
+    from alembic.config import Config
+    from pathlib import Path
+    from sqlalchemy import text,inspect,create_engine
+    from sqlalchemy.engine import make_url
+    from spesped.cli import provision_school
+    from spesped.contexts.identity.models import Learner
+    from spesped.db import make_session_factory
+    _,original_factory,_,_=env
+    admin=None;schema=None
+    if original_factory.kw['bind'].dialect.name == 'postgresql':
+        original_url=original_factory.kw['bind'].url
+        assert original_url.database == 'spesped_test'
+        admin=create_engine(original_url);schema='j06_legacy_'+uuid4().hex
+        with admin.begin() as db:db.execute(text(f'CREATE SCHEMA "{schema}"'))
+        url=original_url.update_query_dict({'options':f'-csearch_path={schema}'}).render_as_string(hide_password=False)
+    else:url=f'sqlite:///{tmp_path}/legacy-migration.db'
+    factory=make_session_factory(url)
+    config=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));config.attributes['database_url']=url
+    try:
+        migrations.upgrade(config,'j06_teaching')
+        task_id=str(uuid4());now=utcnow()
+        with factory.begin() as db:
+            school,leader=provision_school(db,school_name='Synthetic legacy repair',kind='public',timezone='Europe/Oslo',email='legacy@example.invalid',display_name='Synthetic legacy reviewer',password='synthetic-migration-passphrase')
+            learner=Learner(school_id=school.id,display_name='Synthetic legacy pupil',grade=4,group_name='Synthetic');db.add(learner);db.flush()
+            sid,lid,uid=school.id,learner.id,leader.id
+            db.add(AuthorityGrant(school_id=sid,user_id=uid,action='teaching.read',learner_id=lid,valid_from=date.today()-timedelta(days=1),granted_by=uid))
+            db.execute(text('INSERT INTO teaching_follow_ups (id,school_id,learner_id,target_type,target_id,reason_code,owner_id,action,resolution,version,state,created_at,updated_at) VALUES (:id,:school,:learner,:type,:target,:reason,:owner,:action,:resolution,1,:state,:now,:now)'),{'id':task_id,'school':sid,'learner':lid,'type':'session','target':str(uuid4()),'reason':'basis_changed','owner':uid,'action':'Review the historical affected session','resolution':'Legacy sensitive statement with an unknown original basis','state':'resolved','now':now.isoformat()})
+        from sqlalchemy import Table,MetaData
+        delivery_id,actual_revision_id,participation_id=str(uuid4()),str(uuid4()),str(uuid4())
+        with factory.begin() as db:
+            metadata=MetaData()
+            root=Table('teaching_deliveries',metadata,autoload_with=db.connection())
+            actual_revision=Table('teaching_delivery_revisions',metadata,autoload_with=db.connection())
+            participation=Table('teaching_learner_participation',metadata,autoload_with=db.connection())
+            staff=Table('teaching_staff_participation',metadata,autoload_with=db.connection())
+            db.execute(root.insert().values(id=delivery_id,school_id=sid,version=1,state='delivered',current_revision=1,created_at=now,updated_at=now))
+            db.execute(actual_revision.insert().values(id=actual_revision_id,school_id=sid,delivery_id=delivery_id,revision=1,occurred_at=now-timedelta(hours=1),duration_minutes=30,status='delivered',activity='Legacy actual work without qualification evidence',cause_detail='',reason='Original legacy entry',recorded_by=uid,created_at=now))
+            db.execute(participation.insert().values(id=participation_id,school_id=sid,delivery_revision_id=actual_revision_id,learner_id=lid,goal_revision_ids=[],status='participated',minutes=30,category='individually_adapted_education',support='Legacy reported visual support',created_at=now))
+            db.execute(staff.insert().values(id=str(uuid4()),school_id=sid,delivery_revision_id=actual_revision_id,staff_id=uid,minutes=30,role='Legacy claimed professional teacher',category='individually_adapted_education',created_at=now))
+        migrations.upgrade(config,'j06_teaching_repairs')
+        with factory() as db:
+            from spesped.contexts.teaching.models import LearnerParticipation
+            legacy=db.get(LearnerParticipation,participation_id)
+            assert legacy.support_status == 'unassessed' and legacy.qualification_binding is None
+            summary=service.delivery_summary(db,Actor(uid),sid,lid,now-timedelta(days=1),now)
+            assert summary['unassessed_claimed_minutes_by_category']['individually_adapted_education'] == 30
+            assert not summary['assessed_minutes_by_category']
+            task=db.get(TeachingFollowUp,task_id)
+            assert task.dependency_binding is None and task.dependency_key == 'legacy:'+task_id
+            view=service.follow_up_view(db,Actor(uid),task)
+            assert view['resolution'] is None and view['source_status'] == 'review_required'
+            checks=inspect(db.connection()).get_check_constraints('teaching_follow_ups')
+            assert any('resolved' in c['sqltext'] for c in checks)
+            checks=inspect(db.connection()).get_check_constraints('teaching_learner_participation')
+            assert any('minutes' in c['sqltext'] for c in checks)
+        migrations.downgrade(config,'j06_teaching')
+        migrations.upgrade(config,'j06_teaching_repairs')
+        with factory() as db:
+            assert db.get(TeachingFollowUp,task_id).dependency_binding is None
+            assert 'teaching_actual_input_reviews' in inspect(db.connection()).get_table_names()
+        with factory() as db:
+            mutate(db,lambda:service.follow_up(db,Actor(uid),sid,lid,'delivery_revision',actual_revision_id,'staffing_basis_changed',uid,'Review the unassessed historical staffing basis'))
+        with pytest.raises(RuntimeError,match='cannot be discarded'):
+            migrations.downgrade(config,'j06_teaching')
+    finally:
+        factory.kw['bind'].dispose()
+        if admin:
+            with admin.begin() as db:db.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+            admin.dispose()
+
+
+def test_postgres_actual_correction_and_reconciliation_serialize(teaching_env):
+    client,factory,app,ids=teaching_env
+    if factory.kw['bind'].dialect.name != 'postgresql':pytest.skip('PostgreSQL actual/reconciliation lock ordering')
+    h=login(client);goal,_=ordinary_goal(client,ids,h)
+    br=basis(client,ids,h,{'a':goal});row=approve(client,ids,h,session(client,ids,h,br));_,assigned=assigned_brief(client,ids,h,row)
+    ah=login(client,'assistant');when=(utcnow()-timedelta(hours=1)).replace(microsecond=0).isoformat()
+    response=client.post(base(ids)+f'/teaching/brief-assignments/{assigned["id"]}/actual-inputs',headers=ah,json=retry(content={'occurred_at':when,'duration_minutes':30,'status':'participated','category':'ordinary_teaching','activity':'Read the cards','support':'Visual cue'}));assert response.status_code == 201,response.text
+    entry=response.json();h=login(client)
+    payload=actual(ids,{'a':goal},row,occurred_at=when)
+    response=client.post(base(ids)+'/teaching/deliveries',headers=h,json=retry(content=payload));assert response.status_code == 201,response.text
+    delivered=response.json();barrier=Barrier(2)
+    cancelled={**payload,'status':'cancelled','duration_minutes':0,'staff':[],'participants':[{**payload['participants'][0],'status':'absent','minutes':0}],'cause':'learner_absence','follow_up_owner_id':ids['reviewer'],'follow_up':'Review the incorrect actual record'}
+    def correction():
+        barrier.wait()
+        return client.post(base(ids)+f'/teaching/deliveries/{delivered["id"]}/corrections',headers=h,json=expected(delivered,content=cancelled,reason='Verified cancellation'))
+    def review():
+        barrier.wait()
+        return client.post(base(ids)+f'/teaching/actual-inputs/{entry["id"]}/review',headers=h,json=expected(entry,outcome='recorded',delivery_revision_id=delivered['revision_id'],reason='Review the exact original actual revision'))
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a=pool.submit(correction);b=pool.submit(review);changed,reviewed=a.result(),b.result()
+    assert changed.status_code == 200,changed.text
+    assert reviewed.status_code in {200,409},reviewed.text
+    listed=client.get(base(ids)+f'/teaching/brief-assignments/{assigned["id"]}/actual-inputs').json()['items'][0]
+    assert not listed['currently_reconciled'] and listed['state'] != 'recorded'
+    assert client.get(base(ids)+f'/teaching/deliveries/{delivered["id"]}').json()['state'] == 'cancelled'

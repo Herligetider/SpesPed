@@ -19,6 +19,7 @@ router=APIRouter(prefix='/api/v1/schools/{school_id}',tags=['Teaching practice']
 
 def context(request:Request,db:Session=Depends(get_db)):
     db.info['teaching_runtime']=runtime(request)
+    db.info['teaching_qualification_port']=getattr(request.app.state,'teaching_qualification_port',None)
     return db
 
 
@@ -175,7 +176,7 @@ def delivery_history(school_id:UUID,delivery_id:UUID,offset:int=Query(0,ge=0),li
 @router.get('/learners/{learner_id}/teaching-deliveries')
 def learner_deliveries(school_id:UUID,learner_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor:Actor=Depends(get_actor),db:Session=Depends(context)):
     sid,lid=str(school_id),str(learner_id);service.access(db,actor,sid,lid)
-    rows=list(db.scalars(select(SessionDelivery).join(DeliveryRevision,DeliveryRevision.delivery_id == SessionDelivery.id).join(LearnerParticipation,LearnerParticipation.delivery_revision_id == DeliveryRevision.id).where(SessionDelivery.school_id == sid,DeliveryRevision.revision == SessionDelivery.current_revision,LearnerParticipation.learner_id == lid).order_by(DeliveryRevision.occurred_at.desc(),SessionDelivery.id)))
+    rows=list(db.scalars(select(SessionDelivery).join(DeliveryRevision,DeliveryRevision.delivery_id == SessionDelivery.id).join(LearnerParticipation,LearnerParticipation.delivery_revision_id == DeliveryRevision.id).where(SessionDelivery.school_id == sid,DeliveryRevision.revision == SessionDelivery.current_revision,LearnerParticipation.learner_id == lid).order_by(DeliveryRevision.occurred_at.desc(),SessionDelivery.id)).unique())
     return read(db,actor,sid,'teaching.learner_delivery_read','learner',lid,{'items':[service.delivery_view(db,actor,r,learner_id=lid) for r in rows[offset:offset+limit]],'total':len(rows)})
 
 
@@ -238,7 +239,7 @@ def follow_ups(school_id:UUID,learner_id:UUID,offset:int=Query(0,ge=0),limit:int
 
 @router.post('/teaching/follow-ups/{follow_up_id}/resolve')
 def resolve(school_id:UUID,follow_up_id:UUID,command:ResolveFollowUp,actor:Actor=Depends(get_actor),db:Session=Depends(context)):
-    row=mutate(db,lambda:service.resolve_follow_up(db,actor,str(school_id),str(follow_up_id),command));return service.row_json(row,('id','version','state','resolution'))
+    row=mutate(db,lambda:service.resolve_follow_up(db,actor,str(school_id),str(follow_up_id),command));return mutate(db,lambda:service.follow_up_view(db,actor,row))
 
 
 @router.post('/teaching/brief-assignments/{assignment_id}/actual-inputs',status_code=201)
@@ -252,13 +253,13 @@ def actual_inputs(school_id:UUID,assignment_id:UUID,offset:int=Query(0,ge=0),lim
     assigned,guide=service.assignment(db,actor,str(school_id),str(assignment_id))
     rows=list(db.scalars(select(AssistantActualInput).where(AssistantActualInput.school_id == str(school_id),AssistantActualInput.assignment_id == assigned.id).order_by(AssistantActualInput.created_at.desc(),AssistantActualInput.id)))
     current=service.brief_is_current(db,actor,guide,curated=actor.user_id == assigned.assistant_id)
-    value={'items':[service.row_json(r,('id','version','state','author_id','occurred_at','created_at','content','delivery_revision_id','review_reason')) | {'review_reason':r.review_reason if current else None} for r in rows[offset:offset+limit]],'total':len(rows),'counts_as_delivery':False}
+    value={'items':[service.actual_input_view(db,actor,r,guide) for r in rows[offset:offset+limit]],'total':len(rows),'counts_as_delivery':False}
     return read(db,actor,str(school_id),'teaching.actual_inputs_read','brief_assignment',assigned.id,value)
 
 
 @router.post('/teaching/actual-inputs/{input_id}/review')
 def review_actual(school_id:UUID,input_id:UUID,command:ReviewActualInput,actor:Actor=Depends(get_actor),db:Session=Depends(context)):
-    row=mutate(db,lambda:service.review_actual_input(db,actor,str(school_id),str(input_id),command));return service.row_json(row,('id','version','state','delivery_revision_id','review_reason'))
+    row=mutate(db,lambda:service.review_actual_input(db,actor,str(school_id),str(input_id),command));return service.actual_input_view(db,actor,row,service.load(db,AssistantBrief,str(school_id),service.load(db,BriefAssignment,str(school_id),row.assignment_id).brief_id))
 
 
 @router.get('/teaching/sessions/{session_id}/briefs')
