@@ -30,6 +30,7 @@ type Props = WorkspaceProps & {
   zone: string;
   onCreated: (row: Session) => void;
   revise?: Session;
+  active?: boolean;
 };
 export default function CreateSession(props: Props) {
   const { client, schoolId, learnerId, zone, formatError } = props;
@@ -81,7 +82,7 @@ export default function CreateSession(props: Props) {
         ["learners", learnerId, "teaching-staff"],
         new URLSearchParams({ purpose: "owner" }),
       ),
-    [client, schoolId, learnerId],
+    [client, schoolId, learnerId, props.active],
   );
   let plannedAt = "";
   try {
@@ -99,7 +100,7 @@ export default function CreateSession(props: Props) {
             new URLSearchParams({ at: plannedAt }),
           )
         : Promise.resolve([]),
-    [client, schoolId, learnerId, plannedAt],
+    [client, schoolId, learnerId, plannedAt, props.active],
   );
   const profile = useRead(
     () =>
@@ -108,7 +109,7 @@ export default function CreateSession(props: Props) {
         learnerId,
         "support-profile",
       ]),
-    [client, schoolId, learnerId],
+    [client, schoolId, learnerId, props.active],
   );
   const evidence = useRead(
     () =>
@@ -118,7 +119,7 @@ export default function CreateSession(props: Props) {
         ["learners", learnerId, "timeline"],
         new URLSearchParams({ certainty: "confirmed" }),
       ),
-    [client, schoolId, learnerId],
+    [client, schoolId, learnerId, props.active],
   );
   const observations = useRead(
     () =>
@@ -127,18 +128,58 @@ export default function CreateSession(props: Props) {
         learnerId,
         "teaching-observations",
       ]),
-    [client, schoolId, learnerId],
+    [client, schoolId, learnerId, props.active],
   );
   const select = (
     ids: string[],
     id: string,
     onChange: (ids: string[]) => void,
   ) => onChange(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
+  const choicesLoading =
+    goals.loading ||
+    profile.loading ||
+    evidence.loading ||
+    observations.loading ||
+    owners.loading;
+  const unavailableGoals = goalIds.filter(
+    (id) => !goals.value?.some((goal) => goal.id === id),
+  );
+  const unavailableProfiles = profileIds.filter(
+    (id) =>
+      !profile.value?.some(
+        (statement) =>
+          statement.id === id &&
+          statement.state === "confirmed" &&
+          statement.source_status === "current",
+      ),
+  );
+  const unavailableSources = sourceIds.filter(
+    (id) => !evidence.value?.some((source) => source.id === id),
+  );
+  const unavailableObservations = observationIds.filter(
+    (id) =>
+      !observations.value?.some(
+        (note) => note.revision_id === id && note.confirmed && note.current,
+      ),
+  );
+  const unavailableCount =
+    unavailableGoals.length +
+    unavailableProfiles.length +
+    unavailableSources.length +
+    unavailableObservations.length;
   function saveBasis(event: FormEvent) {
     event.preventDefault();
     setLocalError("");
     try {
       const timestamp = instant(planned, zone);
+      if (choicesLoading)
+        throw new LocalValidationError(
+          "Vent til valgte mål og opplysninger er kontrollert på nytt.",
+        );
+      if (unavailableCount)
+        throw new LocalValidationError(
+          "Valgte mål eller opplysninger er endret eller utilgjengelige. Kontroller valgene og fjern utdaterte valg før grunnlaget bekreftes.",
+        );
       const activeGoals = goalIds.filter((id) =>
         goals.value?.some((g) => g.id === id),
       );
@@ -368,7 +409,40 @@ export default function CreateSession(props: Props) {
                 onChange={(e) => setMissing(e.target.value)}
               />
             </Field>
-            <button type="submit">Bekreft valgt grunnlag</button>
+            {!choicesLoading && unavailableCount > 0 && (
+              <div role="alert">
+                <p>
+                  {unavailableCount} tidligere valgte mål eller opplysninger er
+                  endret eller utilgjengelige. Tidligere tekst er skjermet.
+                  Øvrige valg og utkastet beholdes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGoalIds((ids) =>
+                      ids.filter((id) => !unavailableGoals.includes(id)),
+                    );
+                    setProfileIds((ids) =>
+                      ids.filter((id) => !unavailableProfiles.includes(id)),
+                    );
+                    setSourceIds((ids) =>
+                      ids.filter((id) => !unavailableSources.includes(id)),
+                    );
+                    setObservationIds((ids) =>
+                      ids.filter((id) => !unavailableObservations.includes(id)),
+                    );
+                  }}
+                >
+                  Fjern bare utdaterte valg
+                </button>
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={choicesLoading || unavailableCount > 0}
+            >
+              Bekreft valgt grunnlag
+            </button>
           </fieldset>
         </form>
       ) : (

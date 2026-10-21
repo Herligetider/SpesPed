@@ -239,8 +239,14 @@ function CurrentSession(
   props: TeacherProps & { row: Session; onUpdated: (row: Session) => void },
 ) {
   const { row, client, schoolId, formatError } = props;
+  // The edit buffer belongs to the revision the user opened. A fresh server
+  // projection must never become a new buffer merely because its version changed.
+  const [editBase, setEditBase] = useState(row);
   const [commandBase, setCommandBase] = useState(row);
+  const [published, setPublished] = useState<Session>();
   const [draft, setDraft] = useState(row.content);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
   const [reason, setReason] = useState("");
   const [replacements, setReplacements] = useState<SessionField[]>([]);
   const [reviewReason, setReviewReason] = useState("");
@@ -250,18 +256,108 @@ function CurrentSession(
       conflicted
         ? client.schoolGet<Session>(schoolId, ["teaching", "sessions", row.id])
         : Promise.resolve(undefined),
-    [client, schoolId, row.id, conflicted],
+    [client, schoolId, row.id, row.version, row.source_status, conflicted],
   );
   const command = useCommand(client, schoolId, formatError, () => {
     setConflicted(true);
     competing.reload();
   });
-  const dirty = JSON.stringify(draft) !== JSON.stringify(row.content);
-  const withdrawn = competing.value?.content === null;
-  const visibleRow = withdrawn ? competing.value! : row;
+  const observed =
+    row.content === null || !published || row.version >= published.version
+      ? row
+      : published;
+  // A failed conflict read is unknown, not permission to expose the old source.
+  const current = conflicted ? competing.value : observed;
+  const comparisonRequired =
+    !!current &&
+    (current.version !== commandBase.version ||
+      current.revision_id !== commandBase.revision_id);
+  const historicalBuffer =
+    !!current && current.revision_id !== editBase.revision_id;
+  const bufferSource = useRead(
+    () =>
+      current?.content && historicalBuffer && draft
+        ? allPages<Session>(client, schoolId, [
+            "teaching",
+            "sessions",
+            row.id,
+            "revisions",
+          ]).then((revisions) =>
+            revisions.find(
+              (revision) => revision.revision_id === editBase.revision_id,
+            ),
+          )
+        : Promise.resolve(undefined),
+    [
+      client,
+      schoolId,
+      row.id,
+      current?.version,
+      current?.revision_id,
+      current?.source_status,
+      editBase.revision_id,
+      historicalBuffer,
+      row,
+      props.active,
+    ],
+  );
+  const draftAvailable =
+    !!current?.content &&
+    current.source_status === "current" &&
+    (!historicalBuffer ||
+      (!!bufferSource.value?.content &&
+        bufferSource.value.source_status === "current"));
+  const dirty = JSON.stringify(draft) !== JSON.stringify(current?.content);
+  const targetLineage = current?.field_job_ids ?? commandBase.field_job_ids;
+  const lineage = Object.fromEntries(
+    fields.map(({ key }) => [
+      key,
+      [
+        ...new Set([
+          ...(editBase.field_job_ids[key] ?? []),
+          ...(targetLineage[key] ?? []),
+        ]),
+      ],
+    ]),
+  );
+  const independentFields = fields
+    .filter(({ key }) =>
+      (editBase.field_job_ids[key] ?? []).some(
+        (job) => !(targetLineage[key] ?? []).includes(job),
+      ),
+    )
+    .map((field) => field.key);
+  const missingReplacements = independentFields.filter(
+    (field) => !replacements.includes(field),
+  );
+  function useCurrent(next: Session) {
+    setPublished(next);
+    setCommandBase(next);
+    setEditBase(next);
+    setDraft(next.content);
+    setReason("");
+    setReviewReason("");
+    setReplacements([]);
+    setConflicted(false);
+  }
+  function applied(next: Session, submitted = draft) {
+    setPublished(next);
+    // A late success cannot discard edits made after that command was started.
+    if (draftRef.current === submitted && next.content !== null)
+      useCurrent(next);
+    props.onUpdated(next);
+  }
   function save(event: FormEvent) {
     event.preventDefault();
-    if (!draft) return;
+    if (
+      !draft ||
+      !draftAvailable ||
+      comparisonRequired ||
+      conflicted ||
+      missingReplacements.length
+    )
+      return;
+    const submitted = draft;
     command.run<Session>(
       ["teaching", "sessions", row.id, "revisions"],
       {
@@ -272,45 +368,67 @@ function CurrentSession(
         reason,
         manual_replacements: replacements,
       },
-      props.onUpdated,
+      (next) => applied(next, submitted),
     );
   }
   function review(kind: "review" | "approve") {
+    if (
+      !current ||
+      !draftAvailable ||
+      comparisonRequired ||
+      conflicted ||
+      dirty
+    )
+      return;
+    const submitted = draft;
     command.run<Session>(
       ["teaching", "sessions", row.id, kind],
       {
-        expected_version: row.version,
-        revision_id: row.revision_id,
-        content_digest: row.content_digest,
+        expected_version: current.version,
+        revision_id: current.revision_id,
+        content_digest: current.content_digest,
         reason: reviewReason,
       },
-      props.onUpdated,
+      (next) => applied(next, submitted),
     );
   }
   return (
     <section>
-      <SessionView row={visibleRow} zone={props.zone} />
-      <BasisView
-        key={`${visibleRow.id}:${visibleRow.source_status}`}
-        props={props}
-        row={visibleRow}
-      />
-      <SessionHistory
-        key={`${visibleRow.id}:${visibleRow.source_status}`}
-        props={props}
-        row={visibleRow}
-      />
-      {!withdrawn && row.content && draft && (
+      {current ? (
         <>
+          <SessionView row={current} zone={props.zone} />
+          <BasisView
+            key={`basis:${current.id}:${current.revision_id}:${current.source_status}`}
+            props={props}
+            row={current}
+          />
+          <SessionHistory
+            key={`history:${current.id}:${current.revision_id}:${current.source_status}`}
+            props={props}
+            row={current}
+          />
+        </>
+      ) : (
+        <p role="status">
+          Gjeldende økt kontrolleres. Tidligere kildeavledet tekst er skjermet
+          inntil kontrollen er fullført.
+        </p>
+      )}
+      {draft && (
+        <div hidden={!draftAvailable}>
           <details>
             <summary>Rediger økten som ny revisjon</summary>
+            <p>
+              Eget utkast fra revisjon {editBase.revision}. Lagret gjeldende
+              innhold vises over.
+            </p>
             <form onSubmit={save}>
               <fieldset disabled={command.busy || command.uncertain}>
                 <legend>Manuelle endringer</legend>
                 <SessionEditor
                   value={draft}
                   onChange={setDraft}
-                  lineage={row.field_job_ids}
+                  lineage={lineage}
                   replacements={replacements}
                   onReplacements={setReplacements}
                 />
@@ -319,10 +437,25 @@ function CurrentSession(
                     required
                     maxLength={2000}
                     value={reason}
-                    onChange={(e) => setReason(e.target.value)}
+                    onChange={(event) => setReason(event.target.value)}
                   />
                 </Field>
-                <button type="submit" disabled={conflicted}>
+                {missingReplacements.length > 0 && (
+                  <p role="alert">
+                    Tidligere modellavhengighet finnes ikke i gjeldende
+                    revisjon. Skriv selvstendig erstatning og marker de berørte
+                    feltene før lagring.
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={
+                    comparisonRequired ||
+                    conflicted ||
+                    !draftAvailable ||
+                    missingReplacements.length > 0
+                  }
+                >
                   Lagre ny øktrevisjon
                 </button>
               </fieldset>
@@ -333,11 +466,14 @@ function CurrentSession(
               command.busy ||
               command.uncertain ||
               dirty ||
+              comparisonRequired ||
               conflicted ||
-              commandBase.revision_id !== row.revision_id
+              !draftAvailable
             }
           >
-            <legend>Faglig kontroll av lagret revisjon {row.revision}</legend>
+            <legend>
+              Faglig kontroll av lagret revisjon {current?.revision}
+            </legend>
             <p>
               Kontrollen gjelder bare det lagrede innholdet vist over.
               Gjennomgang og godkjenning er separate handlinger.
@@ -346,19 +482,19 @@ function CurrentSession(
               <textarea
                 maxLength={2000}
                 value={reviewReason}
-                onChange={(e) => setReviewReason(e.target.value)}
+                onChange={(event) => setReviewReason(event.target.value)}
               />
             </Field>
             <button
               type="button"
-              disabled={!reviewReason.trim() || row.state !== "draft"}
+              disabled={!reviewReason.trim() || current?.state !== "draft"}
               onClick={() => review("review")}
             >
               Bekreft faglig gjennomgang
             </button>
             <button
               type="button"
-              disabled={!reviewReason.trim() || row.state !== "in_review"}
+              disabled={!reviewReason.trim() || current?.state !== "in_review"}
               onClick={() => review("approve")}
             >
               Godkjenn denne revisjonen for gjennomføring
@@ -370,17 +506,90 @@ function CurrentSession(
               modellvurdering.
             </p>
           )}
-          <Suggestions
-            {...props}
-            session={row}
-            draft={draft}
-            hasUnsaved={dirty || conflicted}
-            onSaved={props.onUpdated}
-            onConflict={() => setConflicted(true)}
-          />
-        </>
+          {current && (
+            <Suggestions
+              {...props}
+              session={current}
+              draft={draft}
+              hasUnsaved={
+                dirty || comparisonRequired || conflicted || !draftAvailable
+              }
+              onSaved={(next) => applied(next, draft)}
+              onConflict={() => setConflicted(true)}
+            />
+          )}
+        </div>
       )}
-      {visibleRow.content === null && (
+      {draft && !draftAvailable && (
+        <button type="button" disabled>
+          Lagre ny øktrevisjon
+        </button>
+      )}
+      {historicalBuffer && (
+        <div>
+          <ReadStatus {...bufferSource} formatError={formatError} />
+          {!draftAvailable && (
+            <p role="alert">
+              Det tidligere utkastets kildegrunnlag er ikke bekreftet
+              tilgjengelig. Egen tekst beholdes, men kildeavledet innhold er
+              skjermet.
+            </p>
+          )}
+          {!!bufferSource.error && (
+            <button type="button" onClick={bufferSource.reload}>
+              Kontroller utkastgrunnlaget igjen
+            </button>
+          )}
+        </div>
+      )}
+      {(comparisonRequired || conflicted) && (
+        <section role="alert">
+          <h4>
+            En annen registrering eller kildeendring konkurrerer med utkastet
+          </h4>
+          <p>
+            Utkastet ditt fra revisjon {editBase.revision} beholdes. Sammenlign
+            med gjeldende lagret revisjon før du velger hvordan endringen skal
+            innarbeides.
+          </p>
+          {conflicted && (
+            <ReadStatus {...competing} formatError={formatError} />
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setConflicted(true);
+              competing.reload();
+            }}
+          >
+            Kontroller gjeldende versjon
+          </button>
+          {current?.content && (
+            <>
+              <button
+                type="button"
+                disabled={!draftAvailable || command.busy || command.uncertain}
+                onClick={() => {
+                  setPublished(current);
+                  setCommandBase(current);
+                  setConflicted(false);
+                }}
+              >
+                Jeg har sammenlignet og vil lagre eget utkast mot denne
+                gjeldende versjonen
+              </button>
+              <button
+                type="button"
+                disabled={command.busy || command.uncertain}
+                onClick={() => useCurrent(current)}
+              >
+                Forkast eget utkast og bruk gjeldende lagret revisjon
+              </button>
+            </>
+          )}
+        </section>
+      )}
+      {current?.content === null && (
         <details>
           <summary>
             Velg gjeldende grunnlag og skriv en ny manuell øktrevisjon
@@ -393,48 +602,17 @@ function CurrentSession(
           </p>
           <CreateSession
             {...props}
-            revise={visibleRow}
-            onCreated={props.onUpdated}
+            revise={current}
+            onCreated={(next) => applied(next, draft)}
           />
         </details>
       )}
       <CommandStatus command={command} />
-      {conflicted && (
-        <section role="alert">
-          <h4>
-            En annen registrering eller kildeendring konkurrerer med utkastet
-          </h4>
-          <p>
-            Utkastet ditt beholdes. Sammenlign med serverens gjeldende versjon
-            før du velger hvordan endringen skal innarbeides.
-          </p>
-          <ReadStatus {...competing} formatError={formatError} />
-          {competing.value && (
-            <SessionView row={competing.value} zone={props.zone} />
-          )}
-          <button type="button" onClick={() => competing.reload()}>
-            Kontroller gjeldende versjon
-          </button>
-          {competing.value?.content && (
-            <button
-              type="button"
-              onClick={() => {
-                setCommandBase(competing.value!);
-                setConflicted(false);
-              }}
-            >
-              Jeg har sammenlignet og vil lagre eget utkast mot denne gjeldende
-              versjonen
-            </button>
-          )}
-        </section>
-      )}
-      {!withdrawn && visibleRow.content && (
-        <Briefs {...props} session={visibleRow} />
-      )}
+      {current?.content && <Briefs {...props} session={current} />}
     </section>
   );
 }
+
 function FollowUpForm({
   props,
   row,
@@ -619,7 +797,13 @@ function TeacherWorkspace(props: TeacherProps) {
             Kontroller lagrede økter på nytt
           </button>
         </div>
-        {creating && <CreateSession {...props} onCreated={updated} />}
+        {creating && (
+          <CreateSession
+            {...props}
+            active={tab === "sessions"}
+            onCreated={updated}
+          />
+        )}
         <ReadStatus {...sessions} formatError={props.formatError} />
         {sessions.value?.length === 0 && (
           <p>Ingen lagrede undervisningsøkter.</p>
@@ -645,7 +829,7 @@ function TeacherWorkspace(props: TeacherProps) {
         {currentRow && (
           <div hidden={current.loading || !!current.error || !current.value}>
             <CurrentSession
-              key={`${currentRow.id}:${currentRow.revision_id}:${currentRow.version}`}
+              key={currentRow.id}
               {...props}
               row={currentRow}
               active={tab === "sessions"}
