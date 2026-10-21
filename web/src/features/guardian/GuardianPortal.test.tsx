@@ -5,18 +5,28 @@ import type { GuardianGrant, GuardianPayload } from "./types";
 
 const grant = (id = "opaque-grant-id", version = 2): GuardianGrant => ({ id, version, state: "active", created_at: "2026-10-20T11:30:00Z", expires_at: "2026-10-30T11:30:00Z" });
 const letter: GuardianPayload = { subject: "Oppsummering", body: "Trygg tekst <script>alert('x')</script>\nNeste avsnitt", attachments: [{ id: "att-1", filename: "notat.txt", content_type: "text/plain", size_bytes: 12 }] };
-function setup(overrides: { schoolId?: string; userId?: string; list?: ReturnType<typeof vi.fn>; command?: ReturnType<typeof vi.fn>; payload?: ReturnType<typeof vi.fn>; blob?: ReturnType<typeof vi.fn> } = {}) {
+function setup(overrides: { schoolId?: string; userId?: string; language?: "nb" | "nn"; list?: ReturnType<typeof vi.fn>; command?: ReturnType<typeof vi.fn>; payload?: ReturnType<typeof vi.fn>; blob?: ReturnType<typeof vi.fn> } = {}) {
   const schoolGet = overrides.list ?? vi.fn(async (_school: string, _segments: readonly string[], query?: URLSearchParams) => {
     if (query) return { items: [grant()], total: 1 };
     return letter;
   });
   const schoolCommand = overrides.command ?? vi.fn(async (_school: string, _path: readonly string[], body: { expected_version: number }) => ({ ...grant("opaque-grant-id", body.expected_version + 1) }));
   const client = { schoolGet, schoolCommand, schoolBlob: overrides.blob ?? vi.fn(async () => new Blob(["attachment"])) } as never;
-  const view = render(<GuardianPortal client={client} schoolId={overrides.schoolId ?? "school-a"} currentUser={{ id: overrides.userId ?? "guardian-a", email: "a@example.test", display_name: "A" }} language="nb" timezone="Europe/Oslo" formatError={(error) => error instanceof Error ? error.message : "Feil"} />);
+  const view = render(<GuardianPortal client={client} schoolId={overrides.schoolId ?? "school-a"} currentUser={{ id: overrides.userId ?? "guardian-a", email: "a@example.test", display_name: "A" }} language={overrides.language ?? "nb"} timezone="Europe/Oslo" formatError={(error) => error instanceof Error ? error.message : "Feil"} />);
   return { ...view, schoolGet, schoolCommand };
 }
 
 describe("GuardianPortal", () => {
+  it("uses Bokmål date formatting when the browser lacks Nynorsk locale data", async () => {
+    const localeSupport = vi.spyOn(Intl.DateTimeFormat, "supportedLocalesOf").mockImplementation((locales) => {
+      const candidates = Array.isArray(locales) ? locales : [locales];
+      return candidates.filter((locale) => locale === "nb-NO");
+    });
+    setup({ language: "nn" });
+    expect(await screen.findByText("20. oktober 2026 kl. 13:30")).toBeInTheDocument();
+    expect(localeSupport).toHaveBeenCalledWith(["nn-NO", "nb-NO"]);
+  });
+
   it("pages metadata and opens one exact letter, with an explicit separate read receipt", async () => {
     const schoolGet = vi.fn(async (_school: string, _segments: readonly string[], query?: URLSearchParams) => query?.has("offset") ? (query.get("offset") === "20" ? { items: [grant("second-id")], total: 21 } : { items: [grant()], total: 21 }) : letter);
     const schoolCommand = vi.fn(async (_school: string, _path: readonly string[], body: { expected_version: number }) => ({ ...grant("second-id", body.expected_version + 1) }));

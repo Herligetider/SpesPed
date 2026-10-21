@@ -16,7 +16,10 @@ function isWithheld(error: unknown) { return typeof error === "object" && error 
 function dateLabel(value: string, timezone: string, language: "nb" | "nn") {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "";
-  return new Intl.DateTimeFormat(language === "nb" ? "nb-NO" : "nn-NO", { dateStyle: "long", timeStyle: "short", timeZone: timezone }).format(date);
+  const locales = language === "nn" ? ["nn-NO", "nb-NO"] : ["nb-NO"];
+  const supported = Intl.DateTimeFormat.supportedLocalesOf(locales);
+  const preferred = supported.length ? supported : ["nb-NO"];
+  return new Intl.DateTimeFormat(preferred, { dateStyle: "long", timeStyle: "short", timeZone: timezone }).format(date);
 }
 function safeName(value: string) {
   const leaf = value.replace(/\\/g, "/").split("/").pop() ?? "vedlegg";
