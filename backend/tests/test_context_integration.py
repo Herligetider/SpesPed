@@ -1,5 +1,5 @@
 """Exercise assembled contexts through authenticated HTTP and real local wire calls."""
-from datetime import date
+from datetime import date, timedelta
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -16,6 +16,7 @@ from spesped.contexts.identity.models import AuthorityGrant, StaffAssignment
 from spesped.contexts.platform.contracts import SourceRef
 from spesped.errors import DomainError
 from spesped.main import create_app
+from spesped.db import utcnow
 
 from test_ai_gateway import wire_server
 from test_evidence import env, login, note, confirm_first, base, attribution
@@ -38,7 +39,8 @@ def integrated(env, wire_server, tmp_path):
                         ai_evaluation_suites=suite, evidence_storage_root=tmp_path / 'assembled-private')
     configure_contexts(app, settings)
     with factory.begin() as db:
-        db.add(AuthorityGrant(school_id=ids['school'], user_id=ids['reviewer'], action='platform.manage', valid_from=date.today(), granted_by=ids['leader']))
+        for action in ['platform.manage', 'governance.rules.manage', 'governance.rules.approve', 'governance.tasks.manage', 'governance.tasks.review']:
+            db.add(AuthorityGrant(school_id=ids['school'], user_id=ids['reviewer'], action=action, valid_from=date.today(), granted_by=ids['leader']))
         for name, pupil in [('reviewer', 'a'), ('teacher', 'a'), ('sibling', 'b')]:
             db.add(StaffAssignment(school_id=ids['school'], user_id=ids[name], learner_id=ids[pupil],
                                    actions=['learner.read', 'ai.teaching_suggestion'], purpose='teaching_suggestion', valid_from=date.today()))
@@ -59,6 +61,10 @@ def reviewed_generation(client, ids, headers):
         'expected_version': release['version'], 'policy_id': policy['id'], 'suite_name': 'integration-v1',
     }, headers)
     assert evaluation['state'] == 'passed'
+    inspected = client.get(prefix + f'/evaluations/{evaluation["id"]}')
+    assert inspected.status_code == 200, inspected.text
+    assert inspected.json()['evidence'][0]['output']['unconfirmed']
+    assert 'Syntetisk elev' in inspected.json()['evidence'][0]['inputs'][0]['content']
     release = post(client, prefix + f'/releases/{release["id"]}/review', {
         'expected_version': release['version'], 'evaluation_id': evaluation['id'],
         'professional_quality_confirmed': True, 'rationale': 'Synthetic fixture output checked by the test operator.',
@@ -143,6 +149,61 @@ def test_trusted_fixture_attestation_is_exact_and_not_an_upload_flag(integrated)
     }, headers, 200)
     with factory() as db:
         with pytest.raises(DomainError): trusted.resolve(db, actor, ids['school'], ids['a'], 'teaching_suggestion', [ref])
+
+
+def test_governance_fulfillment_uses_real_current_evidence(integrated):
+    client, _, _, ids, _ = integrated
+    headers = login(client)
+    source, _ = note(client, ids, headers)
+    item = confirm_first(client, ids, headers, source)
+    prefix = base(ids) + '/governance'
+    definition = post(client, prefix + '/requirements', {
+        'code': 'integration-' + uuid4().hex, 'title': 'Synthetic follow-up procedure',
+        'source_type': 'local_routine', 'source_reference': 'Synthetic integration fixture only',
+    }, headers)
+    version = post(client, prefix + f'/requirements/{definition["id"]}/versions', {
+        'expected_version': definition['version'], 'valid_from': '2020-01-01', 'conditions': [],
+        'trigger_type': 'integration_event', 'deadline': {'kind': 'without_undue_delay', 'legal_basis': 'Synthetic local rule'},
+        'required_action': 'Record and review performed follow-up', 'required_document_types': ['note'],
+        'accountable_role': 'educator', 'interpretation_notes': 'Synthetic test, no legal determination.',
+    }, headers)
+    version = post(client, prefix + f'/requirement-versions/{version["id"]}/review', {
+        'expected_version': version['version'], 'rationale': 'Reviewed synthetic procedure.',
+    }, headers, 200)
+    profile = post(client, prefix + '/profiles', {
+        'label': 'Synthetic integration profile', 'requirement_version_ids': [version['id']], 'valid_from': '2020-01-01',
+    }, headers)
+    impact = client.get(prefix + f'/profiles/{profile["id"]}/impact').json()
+    profile = post(client, prefix + f'/profiles/{profile["id"]}/activate', {
+        'expected_version': profile['version'], 'rationale': 'Reviewed synthetic school setup.', 'impact_digest': impact['impact_digest'],
+    }, headers, 200)
+    task = post(client, prefix + '/triggers', {
+        'event_key': str(uuid4()), 'profile_id': profile['id'], 'event_type': 'integration_event',
+        'occurred_at': (utcnow() - timedelta(days=1)).isoformat(), 'learner_id': ids['a'], 'period_key': 'synthetic-period',
+    }, headers)['items'][0]
+    task_url = prefix + f'/obligations/{task["id"]}'
+    action = {'kind': 'document_upload', 'action_type': 'note', 'description': 'Confirmed synthetic note attached.',
+              'occurred_at': utcnow().isoformat(), 'evidence_references': [item['id']]}
+    task = post(client, task_url + '/actions', {**action, 'expected_version': task['version']}, headers)['obligation']
+    response = client.post(task_url + '/review', json={
+        'expected_version': task['version'], 'decision': 'satisfied', 'rationale': 'Checking actual action requirement.',
+    }, headers=headers)
+    assert response.status_code == 400 and response.json()['error']['code'] == 'performed_action_required'
+    performed = {**action, 'kind': 'performed_action', 'action_type': 'follow_up', 'description': 'Synthetic follow-up actually performed.'}
+    task = post(client, task_url + '/actions', {**performed, 'expected_version': task['version']}, headers)['obligation']
+    post(client, base(ids) + f'/evidence/{item["id"]}/corrections', {
+        **attribution(ids), 'expected_version': item['version'], 'content': 'Corrected synthetic note.', 'reason': 'Correcting test source.',
+    }, headers, 200)
+    response = client.post(task_url + '/review', json={
+        'expected_version': task['version'], 'decision': 'satisfied', 'rationale': 'The old source binding must not pass.',
+    }, headers=headers)
+    assert response.status_code == 409 and response.json()['error']['code'] == 'evidence_changed'
+    for new_action in [action, performed]:
+        task = post(client, task_url + '/actions', {**new_action, 'expected_version': task['version']}, headers)['obligation']
+    task = post(client, task_url + '/review', {
+        'expected_version': task['version'], 'decision': 'satisfied', 'rationale': 'Current evidence and actual action reviewed.',
+    }, headers, 200)
+    assert task['state'] == 'reviewed_satisfied'
 
 
 def test_default_assembly_routes_and_processing_boundary(tmp_path):
