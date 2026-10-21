@@ -92,3 +92,79 @@ The brief's direct evidence metadata queries (`plans/service.py:91-96`) and newe
 The candidate is a manual backend slice. Actual AI-generated IEP/goals and proposal review/apply are absent and remain required J05/F08 follow-on work. Root-owned application/model/goal-validator registration is outside this candidate; the fixtures explicitly install the routers and validator. Full J07 UI, J06 downstream consumers, J18 external connectors, and real transmission are separate work. The ordinary referral endpoint records an actual externally performed contact with proof/reference; it does not send it.
 
 Synthetic fixtures and protocol behavior do not establish school-specific legal correctness, practitioner acceptance, external-system readiness, or production readiness. The September legal register was not reverified in this review. Repair J05-R1–R3 and pin the repair for independent recheck before accepting this manual slice; acceptance must not mark all J05/F08 complete.
+
+## Repair recheck — exact 7088d2bd5dd64a78dd44237606c10e83e914d101
+
+Rechecked 21 October 2026 in a **new immutable archive**, `/Users/lauritz/Programming/SpesPed/var/review-j05/recheck-pinned`. Current bounded verdict: **changes still required**. J05-R2 and J05-R3 are resolved by the exercised repairs; the original J05-R1 reproductions are fixed, but J05-R1 remains open for the separate expert-parent source branch below.
+
+The repair pin intentionally includes the committed `j04_structuring` migration and the root evidence metadata port from `b67bb741c0c8449bca93b3c434812e55415c605e`. It does not use the evolving shared-tree manual-recovery implementation. Reviewed the repair diffs in entitlements common/router/service, plans router/service, plans fixtures/tests, plus `evidence/projections.py` and `tests/test_evidence_projection.py`. Printed imports for `spesped`, entitlements service, plans service and evidence projections; all resolved to the new archive. The conditional fixture upgraded the committed J04 migration, as intended. No production file was changed during recheck.
+
+### J05-R1 remains open — P1: Recommendation-difference clarification omits the expert assessment's parent source
+
+**Repair-pin locations:** `backend/spesped/contexts/entitlements/service.py:352-368`, particularly line 367; `backend/spesped/contexts/entitlements/router.py:65-77`.
+
+An expert assessment and one of its recommendations can legitimately have separate source bindings. Automatic recommendation-difference clarification creation records only `rec.source` and the decision revision reference; it does not retain the originating assessment's source binding or identity for projection. The repaired clarification view adds the decision header/provision sources, but still cannot check the expert assessment's parent source.
+
+Independent public-workflow reproduction, on **both SQLite and PostgreSQL**:
+
+1. Confirm an expert assessment for pupil A using source E, with a recommendation using a separate source R. Confirm a differing decision using source D, producing an automatic `recommendation_difference` clarification.
+2. Resolve the clarification with source-derived details from expert original E.
+3. Correct E's evidence association from pupil A to pupil B through the public evidence-correction endpoint. R and D remain current for A.
+4. GET expert assessments for the A case correctly reports `review_required`, nulls the issuer and omits recommendations. GET clarifications for the same case incorrectly reports `source_status: current` and still returns the full resolution from E.
+
+The reviewer in this reproduction can read both A and B. The defect therefore cannot be hidden by a generic actor-access check: the binding must still match the clarification's **A** scope. An assessment original reassigned to B is not a valid A-case basis. The task's other source bindings remaining valid do not make its expert parent current.
+
+**Evidence:** `var/review-j05/test_recheck_branches.py::test_difference_clarification_checks_expert_parent_source_in_addition_to_recommendation_source`; `var/review-j05/recheck-extra.log`: **2 failures** in 3.91 seconds, one per database. Assertions require the protected behavior and deliberately fail on the repair pin.
+
+**Required repair:** Retain and validate the exact originating expert assessment/recommendation basis, including the assessment's parent source, alongside the decision basis. Apply it to clarification list/mutation/replay projections. Keep immutable records intact and do not widen source permissions. This is the remaining branch of J05-R1, rather than a reopening of the fixed direct profile/clarification redaction paths.
+
+### Rechecked repairs that pass
+
+**J05-R2 — resolved on this pin.** `plans/service.py:259-264` checks `plans.approve` before the replay exit for approval and activation. Decision confirmation and actual referral submission likewise check their specialized authority before replay. The unchanged original approval/decision probes pass; the committed actual-submission replay test passes. An additional independent activation replay probe returns 403 after revocation while the active revision, approval binding and authorized active-goal read remain available. Historical signing records are retained.
+
+**J05-R3 — resolved on this pin.** Plan lifecycle now identifies the pupil without locking the plan, locks pupil then plan, and refreshes the plan under its lock with `populate_existing`. The unchanged original contention probe, committed real row-lock interleaving test, actual PostgreSQL `40P01` deadlock/rollback test and unrelated-database-error test pass. Additional independent tests trigger actual PostgreSQL `40001` serialization failure using concurrent SERIALIZABLE transactions and actual `55P03` using NOWAIT against a held row lock. Both return controlled 409 conflicts, roll back business/audit/outbox/receipt writes, and leave no failed receipt preventing a same-key retry. Nonretryable database errors remain database errors.
+
+**Metadata helper and repaired projections — bounded pass.** The helper returns a strict boolean and uses an exact school/pupil/evidence revision/link/source revision/digest join. J05 authorizes the curated profile brief before invoking it; full source prose still goes through actor-aware evidence access. Root's metadata suite and independent tests cover wrong coordinates, dispute/reassignment, original revision changes, link revocation, digest mismatch and revision-pupil mismatch, including ORM-cache priming. The helper does not grant dossier access or return prose. The independent replacement-source branch confirms that review reasons/history redact when either linked statement source changes, while independently sourced current support remains available through the assistant brief and full profile remains denied to that assistant. The new `decision_bindings`/`projection_bindings` path checks the exact decision, revision, selected provision and case scope before checking dependent source currency. The residual expert-parent defect is in the clarification's incomplete recorded basis, not the boolean helper.
+
+### Exact recheck commands and results
+
+Preparation from `/Users/lauritz/Programming/SpesPed`:
+
+```sh
+mkdir -p var/review-j05/recheck-pinned
+git archive 7088d2bd5dd64a78dd44237606c10e83e914d101 | tar -x -C var/review-j05/recheck-pinned
+```
+
+All commands used the synthetic PostgreSQL DSN from the initial review, unique fixture schemas and the following explicit environment:
+
+```sh
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j05/recheck-pinned/backend:/Users/lauritz/Programming/SpesPed/var/review-j05/recheck-pinned/backend/tests
+SPESPED_TEST_POSTGRES_URL=postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test
+```
+
+From the new archive, with those environment variables supplied to the command:
+
+```sh
+/Users/lauritz/Programming/SpesPed/backend/.venv/bin/python -m pytest \
+  backend/tests/test_plans.py backend/tests/test_evidence_projection.py \
+  /Users/lauritz/Programming/SpesPed/var/review-j05/test_review_probes.py -q --tb=short
+```
+
+**Result:** **80 passed, 4 skipped** in 87.89 seconds; `var/review-j05/recheck-baseline.log`. The original independent probe file was unchanged. Skips are SQLite parameters of PostgreSQL-only contention/deadlock checks. The existing test-client deprecation warning is unchanged.
+
+Additional independent branches, run from the repository with the same explicit environment and interpreter:
+
+```sh
+backend/.venv/bin/python -m pytest var/review-j05/test_recheck_branches.py -q --tb=short
+```
+
+These were executed as targeted selections while writing the probes:
+
+- Expert-parent source branch: **2 failed**, preserved in `recheck-extra.log` as the remaining J05-R1 evidence.
+- `-k 'nowait or serialization'`: **2 passed, 2 SQLite skips**; `recheck-postgres-errors.log`.
+- `-k metadata_helper`: **2 passed**; `recheck-helper.log`.
+- `-k 'replacement_reason or activation_replay'`: **4 passed**; `recheck-history-and-authority.log`.
+
+This recheck does not accept the complete manual slice until the remaining J05-R1 branch is repaired and independently retested. AI-generated IEP/goal suggestions and proposal review/apply, J06/J07 consumers/UI, final assembly and external connectors remain required work under their assigned scopes. Passing synthetic backend tests does not establish legal, school or production readiness.
+
+After all recheck probes completed, a read-only query confirmed `spesped_test` and **zero remaining `j05_%` schemas**. `git diff --check -- docs/reviews/J05-review.md` passed.

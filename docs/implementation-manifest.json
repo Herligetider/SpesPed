@@ -330,7 +330,7 @@
         "J01",
         "J02"
       ],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Multi-pupil source separation, file rejection, provenance, derivative correction",
       "implementationAgent": "/root/j04_evidence",
       "reviewAgent": "/root/review_intake_structuring",
@@ -338,7 +338,9 @@
         "2efa896941aa171d11d28ce7635b7342c64b28be",
         "62446cee4520cb58920a45524c5f4de34fd49c63",
         "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
-        "4599b3411d474317dc6e5f05e96f2fa88c16efde"
+        "4599b3411d474317dc6e5f05e96f2fa88c16efde",
+        "a3488aed170a502e6040dabf654daa897da5d98f",
+        "713f794eb3c8dd34b54782538eb3fdbb699bbfbc"
       ],
       "evidence": [
         {
@@ -369,6 +371,16 @@
           "path": "docs/reviews/J04-structuring-review.md",
           "revision": "4599b3411d474317dc6e5f05e96f2fa88c16efde",
           "result": "183passed8skips; independent8passed2skips including positive reproduction of SR1. Single-head76-table metadata and PostgreSQL roundtrip passed. Original implementer repairing recall leak."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "a3488aed170a502e6040dabf654daa897da5d98f",
+          "result": "Recalled model proposal dedup return gated. Explicit same-span manual recovery creates separate pending lineage with origin-specific partial uniqueness; targeted12SQLite/PostgreSQL tests passed. Final suite and independent recheck pending; original model rows/reviews preserved."
+        },
+        {
+          "type": "integration_candidate",
+          "revision": "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
+          "result": "Root b3 schema merge: one95-table head; SQLite/PostgreSQL head/base/head, clean Alembic metadata, legacy checks/new recovery check and partial indexes verified. Initial PostgreSQL probe syntax assumption corrected for canonical ANY expression. Independent schema recheck pending."
         }
       ],
       "findings": [
@@ -417,7 +429,7 @@
         "J02",
         "J04"
       ],
-      "status": "awaiting_review",
+      "status": "changes_requested",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
@@ -446,6 +458,12 @@
           "type": "repair_candidate",
           "revision": "7088d2bd5dd64a78dd44237606c10e83e914d101",
           "result": "Source projection, specialized replay authority and lock-order repairs; shared-tree80passed/4SQLite skips including unchanged reviewer probes and actual PostgreSQL deadlock rollback. Exact pin uses committed j04_structuring; original independent reviewer rechecking pin and root metadata helper. Findings remain open until verified."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J05-review.md",
+          "revision": "7088d2bd5dd64a78dd44237606c10e83e914d101",
+          "result": "80passed4skips baseline, additional8passed2skips plus2reproduced remainingR1 failures. R2/R3 independently closed; root metadata helper and real PostgreSQL rollback/retry accepted. R1 split expert-parent source provenance still open; original implementer repairing."
         }
       ],
       "findings": [
@@ -459,13 +477,13 @@
           "id": "J05-R2",
           "priority": "P2",
           "description": "Idempotent command replay bypasses revoked specialized signing authority",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J05-R3",
           "priority": "P2",
           "description": "Opposing plan revision/lifecycle locks deadlock with undefined retry response",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
