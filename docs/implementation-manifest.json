@@ -73,12 +73,22 @@
         "F40"
       ],
       "dependsOn": [],
-      "status": "implementing",
+      "status": "awaiting_review",
       "requiredEvidence": "Boundary and adverse domain examples, especially DST, revision and unsupported evidence",
       "implementationAgent": "/root/j02_domain_core",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
+      "reviewAgent": "/root/review_j02",
+      "commits": [
+        "bd207c8c3422a0bf56c742953444ca96a1c5be21",
+        "35c613a765f6dfe43e839b3876278068535cf31f"
+      ],
+      "evidence": [
+        {
+          "type": "test_run",
+          "command": "PYTHONPATH=backend /opt/homebrew/bin/python3.12 -m unittest discover -s backend/tests -p test_domain_core.py -q",
+          "result": "25 tests passed; independent review pending",
+          "revision": "bd207c8c3422a0bf56c742953444ca96a1c5be21"
+        }
+      ],
       "findings": []
     },
     {
@@ -90,13 +100,69 @@
         "F31"
       ],
       "dependsOn": [],
-      "status": "implementing",
+      "status": "changes_requested",
       "requiredEvidence": "Production build, typed client, keyboard flow, real API integration after J01",
       "implementationAgent": "/root/j03_web_shell",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "reviewAgent": "/root/review_j03",
+      "commits": [
+        "7f3d652a20af3465f65fd57cf86c96dd317582d1"
+      ],
+      "evidence": [
+        {
+          "type": "implementer_report",
+          "commands": [
+            "npm test",
+            "npm run typecheck",
+            "npm run build",
+            "npm audit"
+          ],
+          "result": "5 tests passed; build/typecheck passed; zero audit findings; live integration pending",
+          "revision": "7f3d652a20af3465f65fd57cf86c96dd317582d1"
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J03-review.md",
+          "result": "Seven actionable findings; live API/browser gate open",
+          "revision": "7f3d652a20af3465f65fd57cf86c96dd317582d1"
+        }
+      ],
+      "findings": [
+        {
+          "id": "J03-R01",
+          "summary": "Stale profile responses cross learner/session context",
+          "status": "open"
+        },
+        {
+          "id": "J03-R02",
+          "summary": "Stale list retry responses cross school/session context",
+          "status": "open"
+        },
+        {
+          "id": "J03-R03",
+          "summary": "Old unauthorized response invalidates newer login",
+          "status": "open"
+        },
+        {
+          "id": "J03-R04",
+          "summary": "School selector unavailable on mobile",
+          "status": "open"
+        },
+        {
+          "id": "J03-R05",
+          "summary": "Authorized learner pagination missing",
+          "status": "open"
+        },
+        {
+          "id": "J03-R06",
+          "summary": "Supporting text contrast insufficient",
+          "status": "open"
+        },
+        {
+          "id": "J03-R07",
+          "summary": "Error messages ignore selected language",
+          "status": "open"
+        }
+      ]
     },
     {
       "id": "J04",
@@ -785,7 +851,7 @@
       "id": "F01",
       "title": "Skole, brukere og fullmakter",
       "context": "BC01",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J01",
         "J02",
@@ -816,7 +882,7 @@
       "id": "F02",
       "title": "Elevprofil og foresattrelasjoner",
       "context": "BC01",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J01",
         "J02",
@@ -1598,7 +1664,7 @@
       "id": "F27",
       "title": "Personvern, tilgang og innsyn",
       "context": "BC14",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J01",
         "J02",
@@ -1719,7 +1785,7 @@
       "id": "F31",
       "title": "Tilgjengelighet og språk",
       "context": "BC01",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J03",
@@ -1815,7 +1881,7 @@
       "id": "F34",
       "title": "Drift, sikkerhet og beredskap",
       "context": "BC15",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J01",
         "J02",
