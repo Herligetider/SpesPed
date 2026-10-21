@@ -555,6 +555,12 @@
           "type": "implementation_candidate",
           "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
           "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
+        },
+        {
+          "type": "independent_review",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "path": "docs/reviews/suggestion-recovery-review.md",
+          "result": "Bounded backend accepted with no actionable finding:18committed tests plus14independentSQLite/PostgreSQLcases acrossdocumentedruns. New-app durable resume/complete-response recovery,exactbasis/wrongmanifest isolation,livepermission/source/model checks,103-jobpagination,output-freeSQLincludingpriorIEPlineage andper-sessionreviewoutcomes passed. UIrecovery isseparatelyassigned;nofeaturepromoted."
         }
       ],
       "findings": [
@@ -685,6 +691,12 @@
           "type": "implementation_candidate",
           "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
           "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
+        },
+        {
+          "type": "independent_review",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "path": "docs/reviews/suggestion-recovery-review.md",
+          "result": "Bounded backend accepted with no actionable finding:18committed tests plus14independentSQLite/PostgreSQLcases acrossdocumentedruns. New-app durable resume/complete-response recovery,exactbasis/wrongmanifest isolation,livepermission/source/model checks,103-jobpagination,output-freeSQLincludingpriorIEPlineage andper-sessionreviewoutcomes passed. UIrecovery isseparatelyassigned;nofeaturepromoted."
         }
       ],
       "findings": [
@@ -854,6 +866,17 @@
           "revision": "2e3c85184f08f8ac294a0bc2e778eb32f57070ed",
           "path": "docs/reviews/J07-planning-review.md",
           "result": "Bounded planning component accepted. Both original findings independently closed:27unit/transporttests,typecheck,actualRootApp native precision submission/draft recovery,originalrecall/dateprobes,delayedstalesuccess/headvsfreshredactedhistoryrace,normalworkflowand409/rebasepassed. No newfinding. Fullteaching/App integration and remainingJ07scope are separate."
+        },
+        {
+          "type": "independent_review",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "path": "docs/reviews/suggestion-recovery-review.md",
+          "result": "Bounded backend accepted with no actionable finding:18committed tests plus14independentSQLite/PostgreSQLcases acrossdocumentedruns. New-app durable resume/complete-response recovery,exactbasis/wrongmanifest isolation,livepermission/source/model checks,103-jobpagination,output-freeSQLincludingpriorIEPlineage andper-sessionreviewoutcomes passed. UIrecovery isseparatelyassigned;nofeaturepromoted."
+        },
+        {
+          "type": "implementation_assignment",
+          "agent": "/root/j07_planning_ui",
+          "result": "Separate durableproposalrecovery UI job assigned for bothPlanSuggestions andteachingSuggestions usingacceptedc18backend. Dedicatednewrecoverycomponents/tests only; ongoingteachingrepairfilesexcluded. Mustcoverreload/resume,unavailable/expiredstates,unknownoutcome reconciliation,pagination,late-scope/recall suppression,andactualAPIbrowserverification beforeindependentreview."
         }
       ],
       "findings": [
@@ -1066,6 +1089,12 @@
           "type": "implementation_candidate",
           "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
           "result": "Root added durable exact-basis proposal lists to plan and teaching owners. 18 authenticated SQLite/PostgreSQL tests passed, including relogin/resume, source/model recall, denied roles, 103-row pagination, no model invocation/output selection, exact revision/basis isolation and session-scoped review outcomes. Independent review queued to /root/review_j05. UI recovery remains required; no feature promoted."
+        },
+        {
+          "type": "independent_review",
+          "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+          "path": "docs/reviews/suggestion-recovery-review.md",
+          "result": "Bounded backend accepted with no actionable finding:18committed tests plus14independentSQLite/PostgreSQLcases acrossdocumentedruns. New-app durable resume/complete-response recovery,exactbasis/wrongmanifest isolation,livepermission/source/model checks,103-jobpagination,output-freeSQLincludingpriorIEPlineage andper-sessionreviewoutcomes passed. UIrecovery isseparatelyassigned;nofeaturepromoted."
         }
       ],
       "findings": [
