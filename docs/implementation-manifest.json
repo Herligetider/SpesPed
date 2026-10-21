@@ -34,7 +34,8 @@
       "commits": [
         "da754c695bdadf4f031eb2f00ab15b364afd5fda",
         "f38b06142252fea78b7f20c0b094227fade3a230",
-        "1895d8876a15ce9a05a4e7c5f2667244a203e6df"
+        "1895d8876a15ce9a05a4e7c5f2667244a203e6df",
+        "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d"
       ],
       "evidence": [
         {
@@ -75,6 +76,12 @@
           "type": "integration_run",
           "revision": "df8c5d2",
           "result": "Root restarted current backend and verified real Chromium login, learner detail, refresh restoration and logout/me401 through Vite proxy against isolated synthetic PostgreSQL demo. Zero page exceptions. Broader live browser evidence remains in J03-review.md."
+        },
+        {
+          "type": "independent_review",
+          "revision": "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d",
+          "result": "Central identity/assignment freshness extension: cached disabled user/school and narrowed assignment/guardian membership denied. Reviewer248passed10expectedSQLite skips plus6 independent replay probes. These authorization findings closed; separate metadata mutation belongs toJ08.",
+          "path": "docs/reviews/teaching-gateway-review.md"
         }
       ],
       "findings": [
@@ -340,7 +347,8 @@
         "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
         "4599b3411d474317dc6e5f05e96f2fa88c16efde",
         "a3488aed170a502e6040dabf654daa897da5d98f",
-        "713f794eb3c8dd34b54782538eb3fdbb699bbfbc"
+        "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
+        "22fe0b15c6edc36ec604048ac96019f74eb8b97e"
       ],
       "evidence": [
         {
@@ -392,6 +400,11 @@
           "path": "docs/reviews/J04-structuring-review.md",
           "revision": "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
           "result": "Bounded intake structuring/manual recovery accepted; SR1 independently closed. Pinned regression: 195 passed, 8 expected SQLite concurrency skips; independent probes: 12 passed, 2 SQLite skips. SQLite/PostgreSQL single-head 95-table metadata and migration roundtrips passed. UI and downstream correction responsibilities remain required."
+        },
+        {
+          "type": "implementer_report",
+          "revision": "22fe0b15c6edc36ec604048ac96019f74eb8b97e",
+          "result": "Unicode file/revision headers and searchable authorized assignee choices: six SQLite/PostgreSQL transport and access tests passed. Independent backend review is underway; repaired UI has its own browser review."
         }
       ],
       "findings": [
@@ -423,7 +436,8 @@
       "remainingWork": [
         "J05/teaching/downstream consumer integration and J07 UI.",
         "F05 owned follow-up for already shared derivative corrections remains required in disclosure/document consumer integration.",
-        "Protected-case and dictated-audio consumers plus production model/hardware quality remain required under their owning jobs."
+        "Protected-case and dictated-audio consumers plus production model/hardware quality remain required under their owning jobs.",
+        "Independently review 22fe0b1 Unicode transport and authorized assignee contract, then verify with the repaired J07 UI."
       ]
     },
     {
@@ -446,7 +460,8 @@
       "commits": [
         "ac4eea27bdbb38421fe48465269d950f4d37d634",
         "7088d2bd5dd64a78dd44237606c10e83e914d101",
-        "1f0dec00b63289c9cc4c0d5c3c09c2976d285107"
+        "1f0dec00b63289c9cc4c0d5c3c09c2976d285107",
+        "30fe56394d916956ccdb0802726f41c944c04dd2"
       ],
       "evidence": [
         {
@@ -481,6 +496,12 @@
           "path": "docs/reviews/J05-review.md",
           "revision": "1f0dec00b63289c9cc4c0d5c3c09c2976d285107",
           "result": "Manual BC04/BC05 backend core accepted after comparison-lineage repair 1dbcd9035a3426e8aea3a4e7d1f9a37efdf3094e; R1-R3 independently closed. 98 passed, 6 expected SQLite skips plus 6 independent SQLite/PostgreSQL provenance/backfill/schema passes. AI-generated IEP/goal proposals, consumers and application assembly remain required; full J05/F08 not complete."
+        },
+        {
+          "type": "independent_review",
+          "revision": "30fe56394d916956ccdb0802726f41c944c04dd2",
+          "result": "Accepted bounded real application composition: 106 regression tests and 16 independent SQLite/PostgreSQL probes passed; one intentional SQLite skip. Denied optional rule context preserves an authorized dossier/export. Exact protected snapshots and plan goal bindings are rechecked. No full feature acceptance.",
+          "path": "docs/reviews/composition-review.md"
         }
       ],
       "findings": [
@@ -504,7 +525,7 @@
         }
       ],
       "remainingWork": [
-        "Application assembly and J06/J07 integration of the independently accepted manual authored/imported IEP, support-profile and entitlement backend.",
+        "Integrate independently accepted plan/entitlement application composition with J06 teaching and full J07 UI.",
         "F08 generated IEP/goal suggestions from confirmed assessment and decision basis, with source/revision checks and explicit professional selection/apply; implementer confirms this is not yet implemented.",
         "Audit and complete remaining F07/F08 clarification and consumer-impact workflows; full UI acceptance belongs to J07 and later UI jobs."
       ]
@@ -525,13 +546,58 @@
         "J04",
         "J05"
       ],
-      "status": "implementing",
+      "status": "changes_requested",
       "requiredEvidence": "Complete teaching cycle; no scheduled-as-delivered; assistant scope; stale brief",
       "implementationAgent": "/root/j06_teaching",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": [],
+      "reviewAgent": "/root/review_j06",
+      "commits": [
+        "e80380cdf7da10431c18685969351c9b0cf07e48"
+      ],
+      "evidence": [
+        {
+          "type": "implementer_report",
+          "revision": "e80380cdf7da10431c18685969351c9b0cf07e48",
+          "result": "Teaching basis/session/assistant/delivery/observation candidate:23passed1expectedSQLite skip; separatePGconcurrentfollowup passed;18tablemigration roundtrip. Independent reviewer has reproduced5 findings; report and repair handoff pending."
+        },
+        {
+          "type": "independent_review",
+          "revision": "e80380cdf7da10431c18685969351c9b0cf07e48",
+          "path": "docs/reviews/J06-review.md",
+          "result": "Not accepted: one P1 historical follow-up dependency leak and four P2 delivery/reconciliation failures, all reproduced on SQLite and PostgreSQL. Baseline: 23 passed, one skip. Fourteen independent probes include ten defect reproductions. Eighteen-table migration roundtrips and full metadata checks passed on both databases. Repairs assigned to the author."
+        }
+      ],
+      "findings": [
+        {
+          "id": "J06-R1",
+          "priority": "P1",
+          "description": "Historical follow-up resolution inherits newer session permissions and resurfaces revoked source prose.",
+          "status": "open"
+        },
+        {
+          "id": "J06-R2",
+          "priority": "P2",
+          "description": "Absent learner receives positive attributed staff-time delivered support.",
+          "status": "open"
+        },
+        {
+          "id": "J06-R3",
+          "priority": "P2",
+          "description": "Assistant-only staffing can be counted as individually adapted education.",
+          "status": "open"
+        },
+        {
+          "id": "J06-R4",
+          "priority": "P2",
+          "description": "Assistant actual input reconciles against superseded delivery revision after cancellation.",
+          "status": "open"
+        },
+        {
+          "id": "J06-R5",
+          "priority": "P2",
+          "description": "Learner delivery list duplicates events with multiple support categories.",
+          "status": "open"
+        }
+      ],
       "remainingWork": [
         "Implement and independently review the teaching backend, typed AI session planning, exact approvals, assistant scope, actual delivery and observations.",
         "Root gateway and application composition plus J07 UI must exercise the complete persistent teaching workflow."
@@ -559,13 +625,83 @@
         "J05",
         "J06"
       ],
-      "status": "queued",
+      "status": "changes_requested",
       "requiredEvidence": "Browser journey against persistent API with negative paths and usable review",
-      "implementationAgent": null,
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "implementationAgent": "/root/j07_intake_ui",
+      "reviewAgent": "/root/review_j07_intake",
+      "commits": [
+        "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8"
+      ],
+      "evidence": [
+        {
+          "type": "independent_review",
+          "revision": "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8",
+          "result": "Changes required:9 findings independently reproduced using realChromium/PostgreSQL, jsdom and actualAPI.26 webchecks+build and2 recallAPIprobes establish normal path and defects, not acceptance.",
+          "path": "docs/reviews/J07-intake-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "id": "J07-R1",
+          "priority": "P1",
+          "description": "School change retains source content and drafts from prior school.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R2",
+          "priority": "P1",
+          "description": "Late source/page responses and unbound drafts replace current scope.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R3",
+          "priority": "P1",
+          "description": "Confirmation displays proposed value instead of persisted reviewed value.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R4",
+          "priority": "P1",
+          "description": "Model recall hides independent manual recovery through unfiltered proposal list.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R5",
+          "priority": "P1",
+          "description": "Ambiguous note-save retry creates duplicate source identity.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R6",
+          "priority": "P2",
+          "description": "Stale-review409 erases notice and hides unsaved human edit.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R7",
+          "priority": "P2",
+          "description": "Unicode filename/metadata cannot be sent as raw browser headers.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R8",
+          "priority": "P2",
+          "description": "UTF16 default spans do not match backend Unicode character offsets.",
+          "status": "open"
+        },
+        {
+          "id": "J07-R9",
+          "priority": "P2",
+          "description": "Occurrence date silently defaults to now with incorrect local/UTC conversion.",
+          "status": "open"
+        }
+      ],
+      "activeImplementationAgent": "/root/j07_intake_repairs",
+      "remainingWork": [
+        "Repair all9 intake findings and independently recheck exact combined UI/backend revision with real browser and persistence.",
+        "Provide usable source selection, named assignees and pagination; recheck normal and adverse review/recovery paths.",
+        "Implement the remaining complete teaching-cycle UI:timeline/correction history/impact,plan/profile/IOP,AI requests and application,session/assistant/delivery/observation flows."
+      ]
     },
     {
       "id": "J08",
@@ -580,11 +716,15 @@
       "status": "implementing",
       "requiredEvidence": "Real local protocol tests, no production remote fallback, injection/source limits",
       "implementationAgent": "/root/j08_ai_gateway",
-      "reviewAgent": "/root/review_intake_structuring",
+      "reviewAgent": "/root/review_teaching_gateway",
       "commits": [
         "9f8ca976dbf03c261e3e33e2f0ebc04a7a762f2c",
         "69c2572944ebb4a5f8ac2fc7d18cf5e0f24d253d",
-        "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a"
+        "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
+        "5e9afe15094c71de65d5bef3ce08839777c1c6c1",
+        "381b0120c1ab5fa0b70d0049c86a76c3b660036c",
+        "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d",
+        "ac555498c0f8741d77d567075913b2e75a173779"
       ],
       "evidence": [
         {
@@ -620,6 +760,23 @@
           "path": "docs/reviews/J04-structuring-review.md",
           "revision": "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
           "result": "Intake-specific gateway extension accepted in the pinned intake recovery review. Earlier accepted scopes remain pinned; the new J06 session_planning purpose is in progress and requires its own tests/review."
+        },
+        {
+          "type": "independent_review",
+          "revision": "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d",
+          "result": "Typed teaching gateway: both P1 cachedidentity/assignment findings closed.248passed10expectedSQLite skips+6replay probes. Separate P2 metadata predicate discards pending recall reproduced2databases.",
+          "path": "docs/reviews/teaching-gateway-review.md"
+        },
+        {
+          "type": "implementer_report",
+          "revision": "ac555498c0f8741d77d567075913b2e75a173779",
+          "result": "Metadata repair uses fresh column projections and preserves caller pending edits/deletes with false result.48typedgateway tests passed SQLite/PostgreSQL incl16new pending-change cases. Independent recheck pending."
+        },
+        {
+          "type": "independent_review",
+          "revision": "ac555498c0f8741d77d567075913b2e75a173779",
+          "path": "docs/reviews/teaching-gateway-review.md",
+          "result": "Accepted bounded typed gateway and consumer metadata ports; all three findings closed. 104 distinct relevant cases verified on SQLite/PostgreSQL, including unchanged pending-recall probes, explicit flush/commit, deletion preservation and SELECT-only reads. Later actual teaching consumption remains outside this review."
         }
       ],
       "findings": [
@@ -634,11 +791,29 @@
           "priority": "P2",
           "description": "Slow response headers bypass total HTTP wall deadline",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J08-T1",
+          "priority": "P1",
+          "description": "Consumer port accepts cached disabled user/school.",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J08-T2",
+          "priority": "P1",
+          "description": "Consumer port accepts cached narrowed learner/AI assignments.",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J08-T3",
+          "priority": "P2",
+          "description": "Metadata binding predicate discards pending caller policy recall through ORM refresh.",
+          "status": "verified_fixed"
         }
       ],
       "activeImplementationAgent": "/root",
       "remainingWork": [
-        "Complete and independently review the typed session_planning capability and real teaching-basis resolver with J06.",
+        "Integrate the independently accepted typed session_planning gateway with repaired J06 consumers and full teaching-cycle UI.",
         "Complete later document/IEP/dictation consumers and production local-model quality/operations gates; no full F33 acceptance."
       ]
     },
@@ -850,7 +1025,8 @@
       "reviewAgent": "/root/review_j16",
       "commits": [
         "e4c295d66b47cd34f5ab2a0f20314af4021994fb",
-        "30c656f624a32bb4512f4894388f46afcc2e521d"
+        "30c656f624a32bb4512f4894388f46afcc2e521d",
+        "30fe56394d916956ccdb0802726f41c944c04dd2"
       ],
       "evidence": [
         {
@@ -875,6 +1051,12 @@
           "path": "docs/reviews/protected-rule-projection-review.md",
           "revision": "30c656f624a32bb4512f4894388f46afcc2e521d",
           "result": "Root governance case_requirements read port independently accepted: 10 supplied and 16 independent SQLite/PostgreSQL checks. Exact authorized recorded obligations only; no completeness claim or task mutation. Safeguarding adapter remains unimplemented."
+        },
+        {
+          "type": "independent_review",
+          "revision": "30fe56394d916956ccdb0802726f41c944c04dd2",
+          "result": "Accepted bounded real application composition: 106 regression tests and 16 independent SQLite/PostgreSQL probes passed; one intentional SQLite skip. Denied optional rule context preserves an authorized dossier/export. Exact protected snapshots and plan goal bindings are rechecked. No full feature acceptance.",
+          "path": "docs/reviews/composition-review.md"
         }
       ],
       "findings": [
@@ -910,9 +1092,8 @@
         }
       ],
       "remainingWork": [
-        "Root router/model registration and real governance case, source and richer reviewed-rule adapters, with independent integration review.",
-        "Authorized case detail and manual urgent work must remain usable when rule context is unavailable, unresolved or withdrawn.",
-        "J23 UI, reviewed school configuration and full feature acceptance remain required."
+        "J23 protected-case UI, reviewed school-specific rule/contact configuration, and full feature acceptance remain required.",
+        "Real application rule/evidence adapters accepted at30fe563; retain reviewed boundaries when later teaching, disclosure and archival consumers are added."
       ]
     },
     {

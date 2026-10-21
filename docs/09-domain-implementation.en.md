@@ -134,8 +134,12 @@ check its exact learner/source/goal dependencies. A true result never grants
 permission to read sources or confirms factual accuracy. Remote development
 provenance must still match a current operator attestation. Both ports fail
 closed when the relevant runtime or processing binding is unavailable.
+The metadata predicate preserves pending caller edits and deletions. It returns
+false for a binding with pending changes until the owner explicitly flushes or
+rolls them back; it neither flushes nor refreshes those ORM objects.
 
-The new teaching gateway boundary is a candidate awaiting independent review.
+This bounded gateway was independently accepted at `ac55549`; see the
+[gateway review](reviews/teaching-gateway-review.md).
 The teaching consumer, application route composition and UI require their own
 verification; this contract does not declare the complete teaching flow delivered.
 
@@ -150,8 +154,8 @@ rules; the port never classifies a generic action as a notification. Multiple
 source profiles remain distinct. Empty/inaccessible sets are unavailable, and
 legal completeness is always unassessed. Reading creates or fulfills no task.
 The bounded read port was independently accepted at `30c656f`; see
-[the review](reviews/protected-rule-projection-review.md). The application now
-registers a candidate safeguarding adapter that preserves each recorded
+[the review](reviews/protected-rule-projection-review.md). The application
+registers a safeguarding adapter that preserves each recorded
 obligation's source, applicability, deadline and review state. Its strict context
 type rejects contradictory review/actionability claims. Missing or denied optional
 governance context yields an unavailable projection after the owning case's access
@@ -159,8 +163,9 @@ check, so otherwise authorized case detail and manual urgent work remain usable.
 This never grants case access or marks a duty fulfilled. Plans/entitlements and
 safeguarding routes, the evidence-to-goal validator, the protected case resolver
 and exact current snapshot validator are also registered by application assembly.
-This composition awaits its independent integration review; UI and reviewed
-school configuration remain required.
+This bounded composition was independently accepted at `30fe563`; see the
+[composition review](reviews/composition-review.md). UI and reviewed school
+configuration remain required.
 
 Foundation public Python contracts:
 
