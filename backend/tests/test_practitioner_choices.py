@@ -13,6 +13,7 @@ from spesped.contexts.identity.models import AuthorityGrant, SchoolMembership, U
 from spesped.contexts.platform.models import ProcessingPolicy, ModelRelease
 from spesped.contexts.teaching import service
 from spesped.errors import DomainError
+from spesped.db import utcnow
 import pytest
 
 
@@ -144,3 +145,38 @@ def test_actual_correction_can_recover_owned_follow_up_without_group_leak(teachi
     learner = client.get(base(ids) + f'/learners/{ids["a"]}/teaching-deliveries').json()['items'][0]
     assert learner['follow_up_owner_id'] is None and learner['follow_up'] is None
     assert learner['follow_up_source_status'] == 'not_exposed'
+
+
+def test_attributed_history_names_require_existing_teacher_or_assignment_access(teaching_env):
+    client, factory, app, ids = teaching_env
+    h = login(client)
+    goal, _ = ordinary_goal(client, ids, h)
+    row = approve(client, ids, h, session(client, ids, h, basis(client, ids, h, {'a': goal})))
+    _, assigned = assigned_brief(client, ids, h, row)
+    h = login(client, 'assistant')
+    prefix = base(ids)
+    observation = post(client, prefix + '/teaching/observations', h, retry(content={
+        'learner_id':ids['a'], 'assignment_id':assigned['id'],
+        'occurred_at':(utcnow()-timedelta(minutes=30)).isoformat(),
+        'observation':'Synthetic attributed fact', 'support':'Synthetic cue',
+        'interpretation':'Needs another observation', 'next_step':'Repeat'}))
+    assert observation['author_name'] == 'Synthetic assistant'
+    assignment_path = prefix + f'/teaching/brief-assignments/{assigned["id"]}'
+    post(client, assignment_path + '/actual-inputs', h, retry(content={
+        'occurred_at':(utcnow()-timedelta(minutes=30)).isoformat(),
+        'duration_minutes':10, 'status':'participated', 'category':'ordinary_teaching',
+        'activity':'Synthetic actual input', 'support':'Synthetic cue'}))
+    assert client.get(assignment_path + '/actual-inputs').json()['items'][0]['author_name'] == 'Synthetic assistant'
+    observation_path = prefix + f'/teaching/observations/{observation["id"]}'
+    login(client, 'guardian')
+    assert client.get(observation_path).status_code == 403
+    assert client.get(assignment_path + '/actual-inputs').status_code == 403
+    login(client)
+    assert client.get(observation_path + '/revisions').json()['items'][0]['author_name'] == 'Synthetic assistant'
+    assert client.get(assignment_path + '/actual-inputs').json()['items'][0]['author_name'] == 'Synthetic assistant'
+    login(client, 'assistant')
+    with factory.begin() as db:
+        from spesped.contexts.teaching.models import BriefAssignment
+        db.get(BriefAssignment, assigned['id']).state = 'revoked'
+    assert client.get(observation_path).status_code == 403
+    assert client.get(assignment_path + '/actual-inputs').status_code == 403

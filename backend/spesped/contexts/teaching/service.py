@@ -738,7 +738,7 @@ def observation_view(db,actor,row,revision=None):
         assignment(db,actor,row.school_id,rev.assignment_id)
     else:access(db,actor,row.school_id,row.learner_id)
     if not rev.saved and row.author_id != actor.user_id:raise access_denied()
-    return {**observation_snapshot(rev),'id':row.id,'revision_id':rev.id,'version':row.version,'state':row.state,'current':row.current_revision == rev.revision and row.learner_id == rev.learner_id,'confirmed':rev.saved and rev.input_method != 'unconfirmed_transcript','correction_reason':rev.reason}
+    return {**observation_snapshot(rev),'id':row.id,'revision_id':rev.id,'version':row.version,'state':row.state,'current':row.current_revision == rev.revision and row.learner_id == rev.learner_id,'confirmed':rev.saved and rev.input_method != 'unconfirmed_transcript','correction_reason':rev.reason,'author_name':db.scalar(select(UserAccount.display_name).where(UserAccount.id == rev.author_id))}
 
 
 def read_observation(db,actor,school_id,learner_id,revision_id):
@@ -915,6 +915,7 @@ def review_actual_input(db,actor,school_id,identity,command):
 def actual_input_view(db,actor,row,guide):
     current=brief_is_current(db,actor,guide,curated=actor.user_id != row.reviewed_by and actor.user_id == load(db,BriefAssignment,row.school_id,row.assignment_id).assistant_id)
     value=row_json(row,('id','version','state','author_id','occurred_at','created_at','content','delivery_revision_id','review_reason','invalidated_by_revision_id'))
+    value['author_name']=db.scalar(select(UserAccount.display_name).where(UserAccount.id == row.author_id))
     # A historical link is shown as history, never as current reconciled work.
     reconciled=False
     if row.state == 'recorded' and row.delivery_revision_id:
