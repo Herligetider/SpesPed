@@ -42,3 +42,29 @@ Result for the initial four scenarios on both engines: **4 passed, 4 failed**, 1
 The author suite additionally verifies current permission revocation, pupil isolation, source-link recall, exact evidence/observation/result/progress/statement coordinates, human reviewed report coverage, historic goal supersession, actual/future classification, single-pupil future prose, durable suggestion recovery across application restart, review outcomes and model/source recall, and contribution-only access without editor grants. The reviewed implementations resolve through owning services rather than treating metadata selection as authorization to compose or disclose.
 
 PostgreSQL runs used only UUID-named fixture schemas with fixture finalizers. No unrelated schemas or shared database state were cleaned up. Browser/UI and implementation-ledger acceptance remain with the orchestrator. The passing narrow suite does not override the two independent adverse findings or establish F18/F20 completion.
+
+## Repair recheck — b39ecb08e16209d7d99ebbb7747bac90a01750ac
+
+Independent recheck completed 21 October 2026. **Both findings are closed; the bounded document-choice repair is accepted.** This changes the original candidate's review disposition only for the implementation inspected below; it does not establish whole-feature or UI acceptance.
+
+A separate `git archive` extraction at `var/review-document-choices/repair-pin` contains the exact repair revision. All eight archived files match `var/j11-documents/owned-choice-repair-hashes.json`. The manifest SHA-256 is `097a0ed90ad28dfcc3cee7fc891a9b0327f4d313254fb8f4376fe573b81faf42`, matching `choice-repair-results.json`. The repair changes only the documents inventory composition, teaching inventory projection and their focused test file among the eight owned files. Runtime imports of `spesped`, the document choices module and fixture modules were explicitly verified beneath the repair archive, with absolute `PYTHONPATH` entries preventing the editable environment from importing the live checkout.
+
+The actual-delivery inventory now describes only the authorized pupil's category, participation state and minutes. Its typed `participation` field preserves separate category entries, and its label explicitly avoids summing potentially overlapping categories. The original 30-minute group/10-minute pupil reproduction now passes. The date narrowing dispatcher now passes validated category bounds to goals, actuals and future plans before the owner SQL candidate cap. Original one-day future filtering and cap-recovery reproductions both pass. Interval/background/future windows and unsupported date-filter categories reject invalid combinations explicitly, while the response preserves the report's original period.
+
+Using the same Python 3.12 interpreter and assigned localhost PostgreSQL URL, from the repair archive:
+
+```text
+PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-document-choices/repair-pin/backend:/Users/lauritz/Programming/SpesPed/var/review-document-choices/repair-pin/backend/tests
+python -m pytest backend/tests/test_document_choices.py backend/tests/test_documents_authorization.py backend/tests/test_bc10_application_composition.py /Users/lauritz/Programming/SpesPed/var/review-document-choices/review_adverse.py -q --disable-warnings --maxfail=1
+```
+
+Independent result: **52 passed on SQLite and actual PostgreSQL**, 125.30 seconds. This includes all ten executions of the original reviewer probes, including both cap reproductions. Log: `var/review-document-choices/repair-focused.txt`.
+
+Additional independent native HTTP cases in `var/review-document-choices/repair_adverse.py` passed on both engines:
+
+- An absent pupil has typed `absent` participation and zero minutes, and its choice label does not substitute the group's 30-minute duration. The aggregate delivery remains correctly identified as partial.
+- A one-day future-plan range across the Europe/Oslo autumn DST transition includes both distinct 02:30 instants (UTC offsets +02 and +01), excludes the adjacent-day sessions before the candidate cap, preserves the report period, and returns the correct total across two offset pages.
+
+Result: **4 passed**, 10.50 seconds. Log: `var/review-document-choices/repair-adverse.txt`. This run used the same absolute archive backend/test paths, plus the absolute reviewer evidence directory solely to import its helper.
+
+No new actionable finding was found in the changed choice code. All test processes completed normally and fixture finalizers handled their UUID schemas and loopback model servers; no unrelated database cleanup was performed. The separately reported upstream plan approval digest/offset canonicalization issue is outside this choice repair and is not represented as resolved by these checks. UI/browser, implementation ledger and full F18/F20 acceptance remain with the orchestrator.

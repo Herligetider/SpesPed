@@ -568,6 +568,10 @@
           "revision": "e614152784c6962bbcf7076ec875d2b53d8007fd",
           "path": "docs/reviews/reporting-goal-projection-review.md",
           "result": "Accepted bounded historical reporting goal read port: 83 candidate/owner regression tests and 8 independent checks passed on SQLite and actual PostgreSQL; 3 SQLite-only concurrency/deadlock skips with PostgreSQL counterparts passing. Exact historical labels and half-open applicability periods, imported declared validity, current source/case/actor authorization and caller transaction preservation verified. Native annual report consumer and UI remain separately required."
+        },
+        {
+          "type": "work_assignment",
+          "result": "A separate native plan timestamp defect was reproduced while testing document choices: equivalent +02:00 and UTC timestamps produce different review outcomes after database round-trip. Two offset cases failed and two UTC controls passed across SQLite and PostgreSQL. Assigned /root/j05_offset_canonicalization (Sol high) to normalize new typed timestamp writes in the plans owner without changing the shared digest format or existing approved history. Owns plans/service.py, optional plans/schemas.py and a new focused test only; independent review required. Reproduction: var/j11-documents/repro-plan-offset-results.json."
         }
       ],
       "findings": [
@@ -612,6 +616,12 @@
           "priority": "P2",
           "description": "A distinct new profile statement with explicit absent replacement incorrectly invalidated a selected profile binding.",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J05-TZ-R1",
+          "priority": "P2",
+          "description": "New plans with non-UTC offsets fail exact review after database timestamps normalize to UTC",
+          "status": "repair_in_progress"
         }
       ],
       "remainingWork": [
@@ -1449,7 +1459,8 @@
         "ca3279b4e85c013c0998cedd9333a0ba98409192",
         "35845e984e9311b679695a7a7fdf2c270b1ad691",
         "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
-        "955e472598c6cb2a6aa404d944896bf7603026f4"
+        "955e472598c6cb2a6aa404d944896bf7603026f4",
+        "b39ecb08e16209d7d99ebbb7747bac90a01750ac"
       ],
       "evidence": [
         {
@@ -1519,6 +1530,12 @@
           "revision": "955e472598c6cb2a6aa404d944896bf7603026f4",
           "path": "docs/reviews/document-choices-review.md",
           "result": "Typed choice/recovery/inbox candidate frozen across8 verified author files. Separate review:32focused SQLite/PostgreSQL passes and4 independent scope/transaction passes, but two P2 defects reproduced on both engines: actual picker labels group duration as pupil minutes and future lower-date narrowing is ignored before cap. Original author repairing category-specific narrowing and pupil participation projection; native document backend acceptance remains bounded and unchanged."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "b39ecb08e16209d7d99ebbb7747bac90a01750ac",
+          "path": "docs/reviews/document-choices-review.md",
+          "result": "Both document-choice findings closed. The independent reviewer verified all eight frozen file hashes and ran 52 cases, including the original adverse and cap probes, on SQLite and PostgreSQL. Four additional cases verified absent pupil participation and both repeated instants on the DST transition day, with filtering before caps and correct pagination. Bounded choice/recovery/inbox extension accepted; document UI and whole features remain separate."
         }
       ],
       "findings": [
@@ -1550,13 +1567,13 @@
           "id": "J11-DC-R1",
           "priority": "P2",
           "description": "Actual picker substitutes group duration for selected pupil participation",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         },
         {
           "id": "J11-DC-R2",
           "priority": "P2",
           "description": "Future lower-date narrowing ignored before inventory cap",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
         }
       ]
     },
@@ -3906,7 +3923,7 @@
     {
       "date": "2026-10-21",
       "classification": "progress",
-      "result": "Previous goal turn made concrete progress: accepted BC03 coverage and all J11 repairs, pinned native BC11 and its original-author caller-state repair, and started actual document UI/choice work. Current turn accepted independent J12-R1 recheck, assigned guardian portal UI, added root authenticated attachment/guardian shell integration and started full backend integration at frozen91558b2 with actualPG and archive-native imports. Full product remains incomplete; no releasegate or wholefeature promoted. Pinned guardian, native document choices and document workspace candidates; distinct reviewers found1guardianrace,2choiceprojection/narrowing and7documentUI defects. Original authors repairing all findings. Root normal guardian native browser journey passes; document save422/blankeditor reproduced. No full feature promoted. Guardianportal bounded review accepted atf78ca34 afterwithdrawalrace+Norwegiandatefallback repairs;37focused/6independentchecks andfrozenbuild pass.",
+      "result": "Accepted the native communication repair and bounded guardian portal after separate reviews. Pinned document choices and UI candidates; both choice findings are now independently fixed at b39ecb0, while seven document UI findings remain under original-author repair. Native PostgreSQL browser checks exercised guardian opening, attachment download, explicit receipt and reload, and created a chosen-interval guardian draft without dispatch. The browser also reproduced the document revision and blank-editor defects. A separate plan timestamp round-trip defect is assigned for repair. Full backend integration at frozen 91558b2 is still running. All 40 features, 86 acceptance examples and 28 jobs remain tracked; no whole feature or release gate promoted.",
       "verification": {
         "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
