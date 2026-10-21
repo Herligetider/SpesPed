@@ -140,7 +140,10 @@ def test_purpose_matching_assignment_authorizes_generation_lineage_and_revocatio
     response=e.client.post(path(e.ids)+f'/cases/{e.row["id"]}/suggestion-review',headers=e.h,json=selection(e,p));assert response.status_code==200,response.text
     row=response.json();assert row['revision']['content'] is not None and row['revision']['source_status']=='current'
     with e.factory.begin() as db:db.get(StaffAssignment,identity).state='revoked'
-    response=e.client.get(path(e.ids)+f'/cases/{e.row["id"]}');assert response.status_code==200,response.text;assert response.json()['revision']['content'] is None
+    response=e.client.get(path(e.ids)+f'/cases/{e.row["id"]}');assert response.status_code==200,response.text;assert response.json()['revision']['content'] is not None
+    # Revoking generation permission blocks new model work, not authorized
+    # reading of an already human-selected derivative.
+    assert e.client.get(path(e.ids)+f'/cases/{e.row["id"]}/suggestions/{job["id"]}/diff').status_code==403
 
 def test_scheduled_ai_late_source_and_pause_block_frozen_request(generated_documents):
     from datetime import timedelta
@@ -165,3 +168,19 @@ def test_scheduled_ai_provider_failure_visible_manual_draft_and_explicit_same_jo
     draft=e.client.get(path(e.ids)+f'/cases/{request["document_id"]}').json();assert draft['revision']['content'] is not None and draft['state']=='draft'
     e.wire.mode='ok';retried=generation.process_scheduled_generation(e.factory,e.ids['school'],request['id'],e.runtime,retry_failed=True)
     assert retried['state']=='succeeded' and retried['job_id']==failed['job_id'],retried
+
+def test_schedule_pause_during_provider_preserves_execution_fact_but_blocks_request(generated_documents,monkeypatch):
+    from spesped.contexts.documents import generation
+    from spesped.contexts.platform import service as gateway
+    from spesped.contexts.platform.models import GenerationJob
+    e=generated_documents;row,request=run_ai_schedule(e,ai_schedule(e));original=gateway.invoke
+    def pause(*args,**kwargs):
+        response=e.client.post(path(e.ids)+f'/schedules/{row["id"]}/state',headers=e.h,json=expected(row,action='pause'));assert response.status_code==200,response.text
+        return original(*args,**kwargs)
+    monkeypatch.setattr(gateway,'invoke',pause)
+    outcome=generation.process_scheduled_generation(e.factory,e.ids['school'],request['id'],e.runtime)
+    assert outcome['state']=='blocked' and outcome['reason_code']=='schedule_changed' and outcome['job_id'],outcome
+    with e.factory() as db:
+        job=db.get(GenerationJob,outcome['job_id']);assert job.state=='succeeded' and job.output is not None
+    # A pause does not erase the completed model run or silently apply it.
+    draft=e.client.get(path(e.ids)+f'/cases/{request["document_id"]}').json();assert draft['revision']['content']['sections'][0]['text'] is None and draft['revision']['approval'] is None

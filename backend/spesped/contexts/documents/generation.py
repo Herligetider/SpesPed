@@ -84,13 +84,59 @@ def apply(db,actor,school_id,identity,command):
         rev=svc.make_revision(db,actor,row,data,command.reason,lineage=lineage,existing_snapshot=snap)
     db.add(m.ProposalReview(school_id=school_id,document_id=row.id,revision_id=rev.id,job_id=job.id,proposal_digest=command.proposal_digest,outcome=command.outcome,selection={'sections':command.selected_sections,'subject':command.select_subject},reviewer_id=actor.user_id,reason=command.reason));svc.event(db,actor,row,'documents.suggestion.reviewed',job_id=job.id,outcome=command.outcome);return row
 
-def validate_lineage(db,actor,row,rev):
-    for binding in {v['job_id']:v for v in rev.lineage.values()}.values():
-        try:gateway.current_job(db,actor,row.school_id,binding['job_id'],db.info.get('documents_runtime') or db.info.get('ai_gateway_runtime'))
-        except DomainError:raise DomainError('generation_processing_changed','The AI release, processing policy or source authorization requires renewed review.',409) from None
-        owner,original,snapshot=load_basis(db,actor,row.school_id,binding['basis_id'],'documents.read')
-        require_basis(db,actor,owner,original,snapshot)
-        if not gateway.job_binding_is_current(db,row.school_id,binding['job_id'],db.info.get('documents_runtime')):raise DomainError('generation_processing_changed','The exact AI processing policy or reviewed release was recalled; renewed human review is required.',409)
+def validate_lineage(db,actor,row,rev,*,consumer_action='documents.read'):
+    """Validate selected derivative provenance under its consumer's own scope.
+
+    Reading a human-selected document is not another generation request. The
+    gateway metadata port checks processing currency without returning output;
+    source owner reads independently check this actual reader's permissions.
+    """
+    if consumer_action not in {'documents.read','documents.contribute'}:raise access_denied()
+    svc.access(db,actor,row.school_id,row.learner_id,consumer_action)
+    fields=None
+    if consumer_action=='documents.contribute':
+        fields=set(db.scalars(select(m.ContributionAssignment.section_key).where(
+            m.ContributionAssignment.school_id==row.school_id,
+            m.ContributionAssignment.revision_id==rev.id,
+            m.ContributionAssignment.contributor_id==actor.user_id)))
+        if not fields:raise access_denied()
+    return _lineage_dependencies(db,actor,row,rev,consumer_action,fields,{rev.id})
+
+def _lineage_dependencies(db,actor,row,rev,consumer_action,fields,seen):
+    needs_review=False;checked=set()
+    for field,binding in rev.lineage.items():
+        if fields is not None and field not in fields:continue
+        token=(binding['basis_id'],binding['job_id'])
+        review=db.scalar(select(m.ProposalReview).where(
+            m.ProposalReview.school_id==row.school_id,
+            m.ProposalReview.document_id==row.id,
+            m.ProposalReview.job_id==binding['job_id'],
+            m.ProposalReview.proposal_digest==binding['proposal_digest'],
+            m.ProposalReview.outcome=='applied'))
+        if review is None:raise svc.conflict('The selected text has no exact immutable human selection record.')
+        selected=svc.get(db,m.DocumentRevision,row.school_id,review.revision_id)
+        if selected.document_id!=row.id or selected.snapshot_id!=binding['basis_id']:raise access_denied()
+        if field=='subject':permitted=review.selection['subject']
+        else:permitted=field in review.selection['sections']
+        if not permitted:raise svc.conflict('The saved field is not part of the exact reviewed selection.')
+        if token in checked:continue
+        checked.add(token)
+        runtime=db.info.get('documents_runtime') or db.info.get('ai_gateway_runtime')
+        if not gateway.job_binding_is_current(db,row.school_id,binding['job_id'],runtime):
+            raise DomainError('generation_processing_changed','The selected AI processing policy or reviewed release requires renewed review.',409)
+        snapshot=svc.get(db,m.EvidenceSnapshot,row.school_id,binding['basis_id'])
+        if snapshot.document_id!=row.id or snapshot.learner_id!=row.learner_id:raise access_denied()
+        original=db.scalar(select(m.DocumentRevision).where(
+            m.DocumentRevision.school_id==row.school_id,
+            m.DocumentRevision.document_id==row.id,
+            m.DocumentRevision.snapshot_id==snapshot.id).order_by(m.DocumentRevision.number).limit(1))
+        if original is None or original.id in seen:raise svc.conflict('Cyclic or missing original generation provenance is unavailable.')
+        # This never returns original document prose. It rechecks every original
+        # source through its owning context using the current consumer actor.
+        _,status=svc.snapshot_dependencies(db,actor,row,original,consumer_action)
+        needs_review|=status['state']!='current'
+        needs_review|=_lineage_dependencies(db,actor,row,original,consumer_action,None,seen|{original.id})
+    return needs_review
 
 def configured_generation(db,actor,school_id,learner_id,policy_id,release_id,runtime):
     """Owner platform configuration validation; never execute or commit here."""
@@ -111,11 +157,16 @@ def scheduled_binding(db,request,runtime):
     if configuration!=request.configuration_binding:raise DomainError('generation_configuration_changed','The selected processing policy or release changed after this exact draft request.',409)
     return actor,row,revision,snapshot
 
-def _request_outcome(factory,school_id,request_id,state,reason,job_id=None):
+def _request_outcome(factory,school_id,request_id,state,reason,job_id=None,*,runtime=None,revalidate=False):
     from uuid import uuid4
     with factory() as db:
+        db.scalar(select(School.id).where(School.id==school_id).with_for_update())
         request=db.scalar(select(m.ScheduledGenerationRequest).where(m.ScheduledGenerationRequest.school_id==school_id,m.ScheduledGenerationRequest.id==str(request_id)).with_for_update().execution_options(populate_existing=True))
         if request is None:raise access_denied()
+        if revalidate:
+            configure_owner_sources(db,runtime)
+            try:scheduled_binding(db,request,runtime)
+            except DomainError as exc:state='blocked';reason=exc.code
         # A late worker cannot regress a succeeded result or its stable job ID.
         if request.state=='succeeded' and state in {'pending','queued','running'}:return svc.row_json(request)
         if request.job_id and job_id and request.job_id!=job_id:raise svc.conflict('A request cannot bind two gateway jobs.')
@@ -148,7 +199,7 @@ def process_scheduled_generation(factory,school_id,request_id,runtime,*,execute=
                 if exc.status_code!=409:raise
                 with factory() as db:job=gateway.current_job(db,actor,school_id,job.id,runtime)
         state={'unavailable':'failed','cancelled':'failed'}.get(job.state,job.state)
-        return _request_outcome(factory,school_id,request_id,state,job.error_code,job.id)
+        return _request_outcome(factory,school_id,request_id,state,job.error_code,job.id,runtime=runtime,revalidate=True)
     except DomainError as exc:
         return _request_outcome(factory,school_id,request_id,'failed' if exc.status_code==429 else 'blocked',exc.code,job.id if job else None)
     except Exception:

@@ -234,7 +234,7 @@ def revise_document(db,actor,school_id,identity,command):
     row.owner_id=str(data.owner_id);row.current_revision+=1;row.version+=1;row.state='draft'
     db.flush();make_revision(db,actor,row,data,command.reason,lineage=lineage);event(db,actor,row,'documents.revised');return row
 
-def snapshot_status(db,actor,row,rev,recipient_action='documents.read'):
+def snapshot_dependencies(db,actor,row,rev,recipient_action='documents.read'):
     snap=get(db,m.EvidenceSnapshot,row.school_id,rev.snapshot_id)
     if a.digest(snap.content)!=snap.digest:raise conflict('Snapshot content differs from its immutable digest.')
     if a.digest({'configuration':rev.configuration,'content':rev.content,'snapshot_digest':snap.digest,'lineage':rev.lineage})!=rev.digest:raise conflict('Saved content differs from its exact immutable revision digest.')
@@ -247,12 +247,16 @@ def snapshot_status(db,actor,row,rev,recipient_action='documents.read'):
         elif kind=='future_plan':value=a.future_plan(db,actor,row.school_id,row.learner_id,ref['id'])
         else:value=a.reference(db,actor,row.school_id,row.learner_id,s.EvidenceRef.model_validate(ref))['value']
         if a.digest(value)!=v['digest']:raise conflict('Selected source content or authority changed; review a new revision.')
-    from .generation import validate_lineage
-    validate_lineage(db,actor,row,rev)
     current_data=collect(db,actor,row.school_id,command,utcnow(),recipient_action)
     original={v['key'] for v in snap.content['entries']};late=[{'key':v['key'],'digest':v['digest']} for v in current_data['entries'] if v['key'] not in original]
     basis_changed=any(current_data[k]!=snap.content[k] for k in ('template','rule','recipients','period'))
     return snap,{'state':'review_required' if late or basis_changed else 'current','late_sources':late,'basis_changed':basis_changed}
+
+def snapshot_status(db,actor,row,rev,recipient_action='documents.read'):
+    snap,status=snapshot_dependencies(db,actor,row,rev,recipient_action)
+    from .generation import validate_lineage
+    if validate_lineage(db,actor,row,rev,consumer_action=recipient_action):status['state']='review_required'
+    return snap,status
 
 def missing_contributions(db,row,rev):
     assignments=list(db.scalars(select(m.ContributionAssignment).where(m.ContributionAssignment.school_id==row.school_id,m.ContributionAssignment.revision_id==rev.id)))
@@ -523,4 +527,5 @@ def contribution_workspace(db,actor,school_id,identity):
     keys={v.section_key for v in assigned};snap,status=snapshot_status(db,actor,row,rev,'documents.contribute')
     sections=[v for v in rev.content['sections'] if v['key'] in keys];sources={k for v in sections for k in v['source_keys']}
     contributions=[row_json(v) for v in db.scalars(select(m.Contribution).where(m.Contribution.school_id==school_id,m.Contribution.revision_id==rev.id,m.Contribution.section_key.in_(keys)))]
+    status={**status,'late_sources':[v for v in status['late_sources'] if v['key'] in sources]}
     return {'id':row.id,'learner_id':row.learner_id,'version':row.version,'revision_id':rev.id,'content_digest':rev.digest,'assigned_sections':sections,'sources':[v for v in snap.content['entries'] if v['key'] in sources],'source_status':status,'contributions':contributions,'whole_document_access':'requires_documents.read'}

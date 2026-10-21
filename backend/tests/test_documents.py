@@ -1,3 +1,4 @@
+import pytest
 from datetime import date,timedelta
 from uuid import uuid4
 from sqlalchemy import select,func
@@ -164,7 +165,8 @@ def test_selected_other_pupil_evidence_is_denied_and_section_contributor_cannot_
     response=client.post(path(ids)+f'/cases/{row["id"]}/contributions',headers=h,json=expected(row,revision_id=row['revision_id'],section_key='next_steps',kind='comment',text='Unauthorized section comment'));assert response.status_code==403
     response=client.post(path(ids)+f'/cases/{row["id"]}/contributions',headers=h,json=expected(row,revision_id=row['revision_id'],section_key='body',kind='checked',text='Synthetic assigned section checked'));assert response.status_code==201,response.text
 
-def test_native_annual_ito_reviewed_rule_two_historical_goals_actual_missing_outcome(documents_env,monkeypatch):
+@pytest.mark.parametrize('coverage_year',[2026,2025])
+def test_native_annual_ito_reviewed_rule_two_historical_goals_actual_missing_outcome(documents_env,monkeypatch,coverage_year):
     from datetime import datetime
     from plans_fixtures import support_case,confirmed_decision,plan_payload,activate
     from teaching_fixtures import actual
@@ -172,7 +174,7 @@ def test_native_annual_ito_reviewed_rule_two_historical_goals_actual_missing_out
     from spesped.contexts.teaching import service as teaching
     client,factory,app,ids=documents_env;h=login(client)
     with factory.begin() as db:
-        for action in ('governance.rules.manage','governance.rules.approve','governance.tasks.manage'):
+        for action in ('governance.rules.manage','governance.rules.approve','governance.tasks.manage','governance.tasks.review'):
             db.add(AuthorityGrant(school_id=ids['school'],user_id=ids['reviewer'],action=action,valid_from=date(2020,1,1),granted_by=ids['leader']))
     def post(url,data,code=201):
         r=client.post(url,headers=h,json=data);assert r.status_code==code,r.text;return r.json()
@@ -198,6 +200,8 @@ def test_native_annual_ito_reviewed_rule_two_historical_goals_actual_missing_out
     impact=client.get(governance+f'/profiles/{profile["id"]}/impact').json()
     profile=post(governance+f'/profiles/{profile["id"]}/activate',{'expected_version':profile['version'],'rationale':'Synthetic school approval of exact rule profile','impact_digest':impact['impact_digest']},200)
     task=post(governance+'/triggers',{'event_key':key(),'profile_id':profile['id'],'event_type':'annual_ito_review','occurred_at':clock.isoformat(),'period_key':'2026','learner_id':ids['a'],'inputs':{'support_entitlement':'individually_adapted_education'}})['items'][0]
+    period_review=client.get(governance+f'/obligations/{task["id"]}/report-period-reviews',params={'document_kind':'annual_ito_evaluation'});assert period_review.status_code==200,period_review.text
+    post(governance+f'/obligations/{task["id"]}/report-period-reviews',{'request_key':key(),'expected_version':0,'document_kind':'annual_ito_evaluation','starts_on':f'{coverage_year}-10-01','ends_on':f'{coverage_year}-10-21','obligation_basis_digest':period_review.json()['obligation_basis_digest'],'rationale':'Synthetic responsible review binds this exact report interval to the current annual obligation'},200)
     t=template(client,ids,h,'annual_ito_evaluation',requirement_version_id=rule['id'],approval_action='documents.annual_ito.approve',sections=[{'key':'actual_delivery','label':'Actual delivery','required':True},{'key':'outcome','label':'Human evaluated outcome','required':True}])
     row=create(client,ids,h,kind='annual_ito_evaluation',template_revision_id=t['revision_id'],obligation_id=task['id'],selection={'goals':[{'goal_revision_id':first_goal,'applicable_at':old_at.isoformat()},{'goal_revision_id':second_goal,'applicable_at':new_at.isoformat()}],'actual_revision_ids':[record['revision_id']]})
     snapshot=row['revision']['snapshot']['manifest'];goals=[v for v in snapshot['entries'] if v['reference']['kind']=='goal']
@@ -205,6 +209,10 @@ def test_native_annual_ito_reviewed_rule_two_historical_goals_actual_missing_out
     bygoal={v['value']['goal']['id']:v['value'] for v in goals}
     assert datetime.fromisoformat(bygoal[first_goal]['effective_period']['ends_at_exclusive'])==change_at
     assert datetime.fromisoformat(bygoal[second_goal]['effective_period']['starts_at'])==change_at
+    if coverage_year!=2026:
+        assert snapshot['rule']['state']=='unresolved' and 'report_period_mismatch' in snapshot['rule']['unresolved_inputs'] and snapshot['rule']['report_period'] is None
+        row=revised(client,ids,h,row);row=transition(client,ids,h,row,'review');transition(client,ids,h,row,'approve',409)
+        return
     assert snapshot['rule']['state']=='applicable' and snapshot['template']['state']=='reviewed_current'
     assert 'professional_progress_review_not_selected' in snapshot['gaps'] and 'no_confirmed_observations_in_selected_period' in snapshot['gaps']
     assert snapshot['planned_activity_is_delivery'] is False

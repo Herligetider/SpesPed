@@ -326,4 +326,55 @@ def upgrade():
     op.create_index('ix_documents_scheduled_generation_requests_school_id', 'documents_scheduled_generation_requests', ['school_id'], unique=False)
 
 def downgrade():
-    raise RuntimeError('Document histories are retained. Use an explicit reviewed data migration.')
+    # Check every retained row before any DDL, including receipts and outbox.
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_commands LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_outbox LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_templates LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_cases LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_email_schedules LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_template_revisions LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_schedule_revisions LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_snapshots LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_template_reviews LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_draft_runs LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_revisions LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_approvals LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_contribution_assignments LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_contributions LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_proposal_reviews LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_review_records LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    if op.get_bind().execute(sa.text('SELECT 1 FROM documents_scheduled_generation_requests LIMIT 1')).first() is not None:
+        raise RuntimeError('Retained document history exists; downgrade refused.')
+    op.drop_table('documents_scheduled_generation_requests')
+    op.drop_table('documents_review_records')
+    op.drop_table('documents_proposal_reviews')
+    op.drop_table('documents_contributions')
+    op.drop_table('documents_contribution_assignments')
+    op.drop_table('documents_approvals')
+    op.drop_table('documents_revisions')
+    op.drop_table('documents_draft_runs')
+    op.drop_table('documents_template_reviews')
+    op.drop_table('documents_snapshots')
+    op.drop_table('documents_schedule_revisions')
+    op.drop_table('documents_template_revisions')
+    op.drop_table('documents_email_schedules')
+    op.drop_table('documents_cases')
+    op.drop_table('documents_templates')
+    op.drop_table('documents_outbox')
+    op.drop_table('documents_commands')

@@ -93,12 +93,6 @@ def school_sources(db,actor,school_id,refs):
     from spesped.contexts.curriculum.service import sources
     with owner_reader(db) as reader:return encode(sources(reader,actor,school_id,refs,'read'))
 def obligation(db,actor,school_id,learner_id,identity,kind,starts_on,ends_on):
-    from spesped.contexts.governance import service as svc,models as m
-    from spesped.contexts.governance.projections import _source_binding
+    from spesped.contexts.governance.projections import report_obligation_basis
     with owner_reader(db) as reader:
-        task=svc.get_scoped(reader,m.ObligationInstance,school_id,str(identity));svc.task_access(reader,actor,task)
-        if task.learner_id!=learner_id or task.case_id is not None:raise access_denied()
-        binding,rule=_source_binding(reader,task)
-        from dataclasses import asdict
-        valid=(binding and binding.state=='current' and task.applicability=='applicable' and not task.unresolved_inputs and kind in rule.required_document_types and rule.valid_from<=starts_on and (rule.valid_until is None or ends_on<=rule.valid_until))
-        return {'obligation_id':task.id,'requirement_version_id':task.requirement_version_id,'binding':asdict(binding) if binding else None,'state':'applicable' if valid else 'unresolved','unresolved_inputs':task.unresolved_inputs}
+        return encode(report_obligation_basis(reader,actor,school_id,learner_id,str(identity),kind,starts_on,ends_on))
