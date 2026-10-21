@@ -181,14 +181,20 @@ was independently accepted at `8d82b74`; see
 
 Teaching routes obtain the configured optional `QualificationReadPort` from
 `app.state.teaching_qualification_port`. Each request binds school, learner,
-staff member, exact decision revision and provision digest, and actual occurrence.
+staff member, exact decision revision and provision digest, and the actual
+half-open event interval `[occurred_at, ended_at)`. The required end is strictly
+after occurrence and comes from the recorded event duration. Without recorded
+staff placement inside the event, the proof must cover the whole interval.
 A `reviewed_current` result includes effective dates, responsible teaching status,
-an identified reviewer and versioned source references. Missing configuration
+an identified reviewer and versioned source references. Effective dates must
+cover both interval boundaries, and reads recheck the same exact binding.
+Legacy bindings without an end remain unassessed until explicitly corrected.
+Missing configuration
 returns `unavailable`; caller role labels and permissions cannot establish
 qualification. Actual work can still be recorded as unassessed with a cause and
 owned follow-up, separately from assessed support and entitlement comparisons.
 The production qualification source belongs to the remaining J19 work. This
-teaching repair contract at `f5c7e88` is awaiting independent review.
+teaching repair contract at `da503e1` is awaiting independent recheck.
 
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`

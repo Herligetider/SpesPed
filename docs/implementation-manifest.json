@@ -459,7 +459,7 @@
         "J02",
         "J04"
       ],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
@@ -468,7 +468,8 @@
         "7088d2bd5dd64a78dd44237606c10e83e914d101",
         "1f0dec00b63289c9cc4c0d5c3c09c2976d285107",
         "30fe56394d916956ccdb0802726f41c944c04dd2",
-        "2ccc30e499d87efba020068528c70f7e5a382a9a"
+        "2ccc30e499d87efba020068528c70f7e5a382a9a",
+        "2e305db6db62b306ca13a1d1d1265f1b84204257"
       ],
       "evidence": [
         {
@@ -524,6 +525,11 @@
           "revision": "2ccc30e499d87efba020068528c70f7e5a382a9a",
           "path": "docs/reviews/J05-generation-review.md",
           "result": "32 author tests and nine independent checks passed with one expected SQLite skip. Two P2 metadata contract defects reproduced on SQLite/PostgreSQL: outer goal predicate implicitly flushes pending state; new generation helper returns current for a pending source-link revocation. Original author repairing. No additional source/case/replay/selection finding."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "2e305db6db62b306ca13a1d1d1265f1b84204257",
+          "result": "Entire curated goal metadata check and generated-lineage pending dependency guards repaired. All four independent desired-behavior reproductions pass on SQLite/PostgreSQL. Independent exact-pin recheck assigned; shared broad run was handed over without a retrievable root process handle, so no final result is claimed for that run."
         }
       ],
       "findings": [
@@ -549,13 +555,13 @@
           "id": "J05-GEN-R1",
           "priority": "P2",
           "description": "Full curated goal predicate autoflushes pending dependency changes before reaching new no-autoflush lineage helper.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J05-GEN-R2",
           "priority": "P2",
           "description": "New generation metadata helper returns current while an exact source link has a pending revocation.",
-          "status": "open"
+          "status": "awaiting_verification"
         }
       ],
       "remainingWork": [
@@ -581,13 +587,14 @@
         "J04",
         "J05"
       ],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Complete teaching cycle; no scheduled-as-delivered; assistant scope; stale brief",
       "implementationAgent": "/root/j06_teaching",
       "reviewAgent": "/root/review_j06",
       "commits": [
         "e80380cdf7da10431c18685969351c9b0cf07e48",
-        "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0"
+        "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0",
+        "da503e1b87c038a73d64dca433f38ef90c6e2961"
       ],
       "evidence": [
         {
@@ -606,6 +613,11 @@
           "revision": "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0",
           "path": "docs/reviews/J06-review.md",
           "result": "Original five findings closed. 66 passed and two expected SQLite skips, full metadata and 19-table empty roundtrip pass both DBs. Two adjacent P2 findings reproduced on SQLite/PostgreSQL: incomplete qualification interval coverage and downgrade loss of legacy reconciliation recovery state. Author repairing; bounded teaching scope not yet accepted."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "da503e1b87c038a73d64dca433f38ef90c6e2961",
+          "result": "Full actual-event qualification interval and pre-mutation downgrade refusal protect staffing accounting and legacy reconciliation recovery. Author 78 passed and two expected SQLite skips across teaching and independent desired-behavior probes. Independent exact-pin recheck assigned."
         }
       ],
       "findings": [
@@ -643,13 +655,13 @@
           "id": "J06-R6",
           "priority": "P2",
           "description": "Qualification proof valid only at occurrence start counts the entire longer actual support interval.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J06-R7",
           "priority": "P2",
           "description": "Permitted downgrade loses a legacy assistant reconciliation invalidation token and prevents later recovery.",
-          "status": "open"
+          "status": "awaiting_verification"
         }
       ],
       "remainingWork": [
