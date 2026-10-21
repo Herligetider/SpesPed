@@ -1,0 +1,101 @@
+# J07 teaching UI and application composition review
+
+- Candidate: `5a71ed187afb9b0067f08dc3c85b94c3eb53e49e`; its 16-file parent diff plus the shared authenticated transport introduced by `9be7672` as present at the candidate.
+- Reviewer: `/root/review_composition`, independent of the implementation authors.
+- Date: 2026-10-21.
+- Verdict: **changes required** for J07-TE-R1 through J07-TE-R4. Teaching/UI acceptance is withheld. Findings were sent to the orchestrator before this report; no repair is included in this verdict.
+
+## Findings
+
+### J07-TE-R1 — P1: recalled assistant guidance and reconciliation prose remain visible
+
+Locations: `web/src/features/teaching/Assignments.tsx:324`, `:405–418`, `:546–553`.
+
+The message command's conflict handler reloads only `assignment`. A successful fresh assignment response with `content: null` hides the brief but leaves the separately cached `messages` and `actuals` projections rendered. The message text, current review reason and historical review reasons are not gated by that fresh redaction.
+
+Reproduction in actual Chromium against the frozen backend and a unique PostgreSQL schema:
+
+1. Generate and accept a session field through the evaluated local synthetic model; review/approve the session, review/assign its assistant brief, and record guidance plus a reconciled assistant input.
+2. Open the assistant assignment, loading those projections.
+3. Revoke the actual model release using the authenticated backend.
+4. Submit a question from the already open assistant panel. The backend rejects the now-stale brief; the conflict refresh correctly returns a redacted assignment.
+5. The panel says that source-derived instructions are unavailable, yet still shows `INDEPENDENT RECALLED GUIDANCE`, the earlier answer, and the reconciliation review text. An independent backend message read now returns `text: null` for all three messages.
+
+Evidence: `var/review-j07-teaching/independent-evidence.json`, `independent.mjs`, and the visually inspected `recall-assistant-retained.png`. The screenshot also preserves the old reconciliation reason after brief redaction. This is a UI projection-cache defect; the backend correctly redacts fresh reads.
+
+Required behavior: invalidate or suppress every source-derived dependent projection when current assignment/source validation is lost. Refreshing only the main card is insufficient. Preserve independently recorded actual facts and local user input under their own access rules without redisplaying recalled guidance or review prose. Cover both successful redaction and partial refresh failure.
+
+### J07-TE-R2 — P2: correcting an existing observation silently changes its session linkage
+
+Location: `web/src/features/teaching/Observations.tsx:124–129`.
+
+The correction payload prefers `props.session.revision_id` over `existing.session_revision_id`. Thus simply having a session selected changes the factual association of an existing observation, even when the user edits only support text. The form offers no explicit choice or confirmation for that reassociation.
+
+Reproduction: create a saved observation with `session_revision_id: null`, select a teaching session, open Observations, choose “Rett eget notat”, and change only the support description and correction reason. The real correction succeeds and stores the selected session revision ID in place of `null`. The independent probe records the original and new references in `independent-evidence.json` (`observation_rebound`). The same precedence can replace an existing different-session reference or cause an otherwise valid correction to fail against that session's goals.
+
+Required behavior: keep the original observation's session/assignment references during an ordinary correction, including an intentional null. Any association change must be explicit and validated. A selected planning context must not silently rewrite an already recorded fact.
+
+### J07-TE-R3 — P2: internal teaching tabs discard unsaved work
+
+Locations: `web/src/features/teaching/TeachingWorkspace.tsx:585–633`, `:634–647`.
+
+The teaching tabs conditionally mount their complete panels. Moving away from “Undervisningsøkter” unmounts `CurrentSession` and its draft state; returning initializes it from the saved row without warning. The application shell preserves outer learner-workspace drafts, but this does not protect the internal teaching workflow.
+
+Reproduction: open an existing session, change preparation to `INDEPENDENT UNSAVED PREPARATION`, visit “Observasjoner” to consult a note, and return to “Undervisningsøkter”. Preparation has reverted to the saved `Finn frem tre syntetiske kort`. The same probe first switches to “Grunnlag og planer” and back and confirms that outer switching preserves the draft, isolating the failure to the teaching tab lifetime.
+
+Evidence: `independent-evidence.json` (`draft_lost`) and `independent.mjs`.
+
+Required behavior: retain scoped draft/uncertain-command state across internal tabs, or explicitly guard navigation before discarding it. Switching learner, school, identity or API client must still dispose of the previous scope.
+
+### J07-TE-R4 — P2: app integration discards actionable local validation errors
+
+Locations: `web/src/App.tsx:41–44`; callers include `web/src/features/teaching/CreateSession.tsx:186–187` and `runtime.tsx:248–275`.
+
+The newly integrated workspaces receive `App.displayError`, which maps every non-`ApiError` to a generic failure. Teaching's trusted local validators intentionally throw ordinary `Error` values with precise correction instructions, so their messages are lost in the real application even though isolated component tests pass a formatter that displays them.
+
+Reproduction: enter `2027-03-28T02:30` as a planned time in `Europe/Oslo`, provide an arena and confirm the basis. This local time does not exist during the spring transition. `instant` rejects it with an explicit time-zone explanation, but Chromium displays only “Noe gikk galt. Prøv igjen, eller kontakt systemansvarlig.” Retrying the same input cannot resolve it. The same boundary handles other local date and qualification-state guidance.
+
+Evidence: `boundary-evidence.json` (`dstErrors`), `recovery-boundaries.mjs`, `local-validation.png`.
+
+Required behavior: preserve/localize trusted client validation messages through the root formatter, while retaining generic handling for unexpected failures. Test through the actual `App` integration rather than only a permissive test formatter.
+
+## Isolation and completed verification
+
+Read `AGENTS.md`. Created `var/review-j07-teaching/pin` with `git archive` of the exact candidate. Archived `web/node_modules` links only to installed dependencies; application sources are frozen. The reviewer independently built its production bundle and served that bundle with the archived real FastAPI application. Absolute Python imports were:
+
+```text
+/Users/lauritz/Programming/SpesPed/var/review-j07-teaching/pin/backend
+/Users/lauritz/Programming/SpesPed/var/review-j07-teaching/pin/backend/tests
+```
+
+`import-origins.txt` confirms the archived backend. `exact-files.log` confirms all 16 candidate files plus `web/src/api.ts` match the pinned Git blobs byte-for-byte after verification. The backend used the shared Python 3.12 runtime, synthetic identities, actual loopback PostgreSQL, and the reviewer-owned unique schema `j05_860048bcc8ac48f493a87b995ff507c2`. Chromium used `Europe/Oslo`; the model service was the synthetic local loopback fixture. No real pupil data, external model or external messaging was used.
+
+| Verification | Result | Evidence under `var/review-j07-teaching/` |
+| --- | --- | --- |
+| `npm test -- --reporter=verbose` from archived `web` | 67 passed, six files | `web-tests.log` |
+| `npm run build` from archived `web` | TypeScript and production build passed | `build.log` |
+| Real normal browser workflow in fresh reviewer environment | Completed, exit 0 | `normal-replay.mjs`, `normal-replay.log`, `evidence.json` |
+| Independently authored adverse browser probes | Completed; records TE-R1/R2/R3 | `independent.mjs`, `independent.log`, `independent-evidence.json` |
+| Real manual recovery after model recall | Completed, exit 0 | `recovery-replay.mjs`, `recovery-replay.log`, `repair-evidence.json` |
+| Independent retry, unassessed ITO, group-scope and local-validation probes | Completed, exit 0 after reviewer assertion correction; records TE-R4 | `recovery-boundaries.mjs`, `boundary-recheck.log`, `boundary-evidence.json` |
+
+Each browser command used `node var/review-j07-teaching/<script>.mjs`. The normal and manual-recovery scripts replay author scenarios against the reviewer's separately built application/database; they are not represented as independently authored scenarios. The adverse and boundary scripts are independent. Their exit 0 indicates completed evidence collection, not absence of findings. All processes were awaited and logs inspected.
+
+The normal browser run exercised manual exact-goal basis/session creation; a real evaluated model job and support-only field merge; separate exact human review and approval; brief review and dated named-assistant assignment; assistant inbox without ordinary learner reads; question/answer, actual input and observation; exact delivery reconciliation; two pupils with 30 minutes each versus one employee's 30 minutes; observation reuse in the next basis; and a 390px layout without horizontal overflow.
+
+Independent checks additionally established:
+
+- Outer learner workspace switching preserves a teaching draft, and scoped component tests cover late learner responses and client identity replacement.
+- An untouched occurrence containing `.000123` retains all microseconds through a real Chromium correction despite native input normalization. Existing tests cover ambiguous/nonexistent times and inclusive date intervals across DST; TE-R4 concerns their presentation through `App`.
+- A response aborted after the server committed an observation can be retried with identical body/key and produces exactly one saved fact.
+- Actual ITO entered without a qualification adapter remains `unassessed`, requires partial status/cause and a persisted named follow-up, and does not turn a staff role label into qualification evidence.
+- A teacher with only learner A's scope sees neither learner B nor group narrative and receives 403 for full group delivery.
+- After actual model recall, fresh session reads are redacted. Explicit independent manual replacement with a new basis clears only declared model lineage; old historical generated content and the previous assistant brief stay redacted.
+
+One initial browser launch preceded fixture readiness and was rerun after `ids.json` existed. The boundary probe initially expected an unassessed delivery's gated follow-up projection to expose its owner; it was corrected to verify the persisted follow-up task under that task's own authorized endpoint. The rerun passed; no application changes were made. The reviewer listener was stopped. Signal termination left its temporary schema, so the reviewer explicitly removed only that recorded schema and verified its absence (`cleanup.log`). Probes and screenshots remain for repair verification.
+
+## Separate baseline and required remaining work
+
+The planning module's separate review already withholds acceptance for J07-PL-R1 (P2, repeated-hour/microsecond editing) and J07-PL-R2 (P1, recalled current-plan prose in history after partial refresh failure). Those are independent baseline findings, not duplicate teaching findings or repairs covered here. The integrated root UI cannot be accepted while either module's blocking findings remain unresolved.
+
+Passing checks do not establish whole-feature completion. Durable model-job listing/resume, full Nynorsk, timed practitioner/assistant usability, the production qualification adapter, and assessed provision-comparison UI remain required work. Legal sources were not re-researched. No production files were edited, and the reviewer did not commit, push or spawn agents.
