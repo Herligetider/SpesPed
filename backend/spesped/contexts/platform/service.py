@@ -12,7 +12,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from spesped.audit import record_audit
 from spesped.auth import Actor, active_at, require_authority, require_learner_access, school_today
-from spesped.contexts.identity.models import School, StaffAssignment
+from spesped.contexts.identity.models import (
+    AuthorityGrant, Learner, School, SchoolMembership, StaffAssignment, UserAccount,
+)
 from spesped.db import utcnow
 from spesped.errors import DomainError, access_denied
 from .contracts import (GatewayRuntime, GenerationRequest, PolicyCommand, ReleaseCommand,
@@ -171,6 +173,51 @@ def _configuration(db, runtime, job, *, metadata_only=False):
     if release_configuration_digest(current_command, provider) != release.configuration_digest:
         raise ProviderFailure('reviewed_template_required')
     return policy, release, provider
+
+
+def validate_generation_configuration(db, actor, school_id, learner_id, purpose,
+                                      policy_id, release_id, runtime):
+    """Read current authorized configuration without owning the caller transaction.
+
+    This binds a durable request to a policy version and reviewed release digest.
+    It does not resolve sources, permit processing, create a job or invoke a model.
+    The actual gateway must recheck those boundaries when the request is processed.
+    A separate identity map avoids refreshing or overwriting caller-owned objects.
+    """
+    dependencies = (AuthorityGrant, Learner, School, SchoolMembership,
+                    StaffAssignment, UserAccount, ProcessingPolicy,
+                    ModelRelease, ModelEvaluation)
+    if any(isinstance(row, dependencies) for row in db.new | db.dirty | db.deleted):
+        raise DomainError('dependency_pending',
+                          'Flush or roll back pending permission or configuration changes before validation.', 409)
+    with db.no_autoflush:
+        with Session(bind=db.connection(), join_transaction_mode='rollback_only',
+                     autoflush=False, expire_on_commit=False) as reader:
+            reader.info.update(db.info)
+            _authorize(reader, actor, school_id, learner_id, purpose)
+            if runtime is None:
+                raise DomainError('gateway_unavailable', 'The generation runtime is unavailable.', 503)
+            try:
+                policy = _configuration_record(reader, ProcessingPolicy, str(policy_id), school_id,
+                                               metadata_only=True)
+                release = _configuration_record(reader, ModelRelease, str(release_id), school_id,
+                                                metadata_only=True)
+                if policy is None:
+                    raise ProviderFailure('processing_policy_unavailable')
+                if release is None:
+                    raise ProviderFailure('reviewed_release_required')
+                binding = SimpleNamespace(school_id=school_id, purpose=purpose,
+                    policy_id=policy.id, policy_version=policy.version,
+                    release_id=release.id, release_digest=release.configuration_digest)
+                _, _, provider = _configuration(reader, runtime, binding, metadata_only=True)
+                if provider.kind == 'remote_openai':
+                    if runtime.environment != 'development' or not runtime.remote_synthetic_development:
+                        raise ProviderFailure('remote_processing_forbidden')
+                else:
+                    validate_provider(runtime, provider, [])
+            except ProviderFailure as exc:
+                raise DomainError(exc.code, 'The reviewed generation configuration is unavailable.', 503) from None
+            return {'policy_version': policy.version, 'release_digest': release.configuration_digest}
 
 
 def generation_choices(db, actor, school_id, learner_id, purpose, runtime, *, offset=0, limit=50):
