@@ -1442,11 +1442,12 @@
       "status": "implementing",
       "requiredEvidence": "Correct periods/goals, late evidence, cadence deduplication, no auto-send",
       "implementationAgent": "/root/j11_documents",
-      "reviewAgent": null,
+      "reviewAgent": "/root/review_j11_documents",
       "commits": [
         "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
         "e614152784c6962bbcf7076ec875d2b53d8007fd",
-        "ca3279b4e85c013c0998cedd9333a0ba98409192"
+        "ca3279b4e85c013c0998cedd9333a0ba98409192",
+        "35845e984e9311b679695a7a7fdf2c270b1ad691"
       ],
       "evidence": [
         {
@@ -1480,6 +1481,11 @@
           "revision": "ca3279b4e85c013c0998cedd9333a0ba98409192",
           "path": "docs/reviews/generation-configuration-port-review.md",
           "result": "Accepted configuration read port with no actionable finding: 101 candidate/document gateway regressions and 20 independent checks passed on SQLite and actual PostgreSQL. Caller transaction preservation, all nine dependency model types with pending new/dirty/deleted rows, stale cached authority/configuration, purpose-specific evaluation and source-processing separation verified. Scheduled request consumer, its retry/atomicity, UI and full features remain outside this acceptance."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "35845e984e9311b679695a7a7fdf2c270b1ad691",
+          "result": "Native BC10 candidate pinned across 16 files: immutable interval/cutoff evidence snapshots, reviewed templates and annual obligation binding, historical goals/actuals/human assessment sources, scoped contributions and exact approvals, guardian-only interval drafts and optional schedules, typed AI selection/lineage, atomic durable scheduled requests with lost-ack reconciliation, approved frozen-revision owner port, static 17-table migration and production registration. Root verified all 13 author file hashes. Author final 49 tests passed, 1 SQLite-only concurrency skip; actual PostgreSQL concurrency, migration parity/retained prior rows, fresh application restart and loopback generation ran. Distinct reviewer /root/review_j11_documents assigned. Ordinary-report source applicability, generated-content reviewer scope and migration integration are explicit review questions. J20/J21 UI, J12 disclosure/history/portal, J26 worker deployment and configured production model quality remain required; no whole feature acceptance."
         }
       ],
       "findings": []
@@ -3660,6 +3666,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Accepted independent configuration-port review ca3279b (121 final tests) and J19 repair recheck8629585 (109 tests,3SQLite-only concurrency skips). Native optional scheduled document AI handoff is under author verification before its own independent review. Four bounded jobs remain verified; no whole feature promoted, all40 features and28 jobs retained."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Pinned native document candidate35845e9 after 49 author/root composition passes and one deliberate SQLite concurrency skip; dispatched independent full J11 review. Native BC11 communication work started in disjoint files. User-requested detailed catalog and chosen-interval guardian email specification are verified and committed; all40features/86examples/28jobs preserved. Full product goal remains active."
     }
   ]
 }
