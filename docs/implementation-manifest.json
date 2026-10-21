@@ -459,7 +459,7 @@
         "J02",
         "J04"
       ],
-      "status": "awaiting_review",
+      "status": "implementing",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
@@ -469,7 +469,8 @@
         "1f0dec00b63289c9cc4c0d5c3c09c2976d285107",
         "30fe56394d916956ccdb0802726f41c944c04dd2",
         "2ccc30e499d87efba020068528c70f7e5a382a9a",
-        "2e305db6db62b306ca13a1d1d1265f1b84204257"
+        "2e305db6db62b306ca13a1d1d1265f1b84204257",
+        "54f40085911bb56f3fa2b3b38253db7e43d72c00"
       ],
       "evidence": [
         {
@@ -536,6 +537,12 @@
           "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
           "path": "docs/reviews/generated-teaching-composition-review.md",
           "result": "Bounded application composition accepted: five pinned integration cases and four independent fresh-application probes passed. SQLite/PostgreSQL single-head, 115-table metadata and empty roundtrip match; splitting/rejoining parents preserves data. Known consumer findings and absent complete UI prevent overall workflow acceptance."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "54f40085911bb56f3fa2b3b38253db7e43d72c00",
+          "path": "docs/reviews/J05-generation-review.md",
+          "result": "Bounded generated IEP consumer accepted; GEN-R1–R4 closed. Exact archive: 24 focused tests and six additional independent checks passed across SQLite/PostgreSQL, including same-count membership substitution, valid-digest legacy descriptor omission without prose fallback, explicit optional None versus unknown/expired/former owners. Full feature and UI acceptance remain separate."
         }
       ],
       "findings": [
@@ -561,18 +568,30 @@
           "id": "J05-GEN-R1",
           "priority": "P2",
           "description": "Full curated goal predicate autoflushes pending dependency changes before reaching new no-autoflush lineage helper.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
         },
         {
           "id": "J05-GEN-R2",
           "priority": "P2",
           "description": "New generation metadata helper returns current while an exact source link has a pending revocation.",
-          "status": "awaiting_verification"
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J05-GEN-R3",
+          "priority": "P2",
+          "description": "Committed recommendation membership changes were not part of generated-plan metadata currency.",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J05-GEN-R4",
+          "priority": "P2",
+          "description": "A distinct new profile statement with explicit absent replacement incorrectly invalidated a selected profile binding.",
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
         "Integrate independently accepted plan/entitlement application composition with J06 teaching and full J07 UI.",
-        "Independently accept generated IEP/goal selection and exact lineage. Standalone adaptation generation and curriculum integration remain explicitly unavailable and required for full F08.",
+        "Implement standalone adaptation generation and curriculum integration, currently explicitly unavailable and required for full F08; bounded generated IEP/goal selection and lineage are independently accepted.",
         "Audit and complete remaining F07/F08 clarification and consumer-impact workflows; full UI acceptance belongs to J07 and later UI jobs."
       ],
       "activeImplementationAgent": "/root/j05_generation"
