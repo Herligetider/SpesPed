@@ -609,6 +609,68 @@ def test_ito_stafftime_cannot_include_unqualified_assistant_cost(teaching_env):
     assert summary['provisions'][0]['recorded_minutes'] == 30
 
 
+@pytest.mark.parametrize('counting_basis',['learner_time','staff_time'])
+def test_ito_qualification_covers_full_actual_interval_and_rechecks_history(teaching_env,counting_basis):
+    from datetime import datetime
+    from sqlalchemy import update
+    from spesped.contexts.teaching.models import LearnerParticipation
+    from spesped.contexts.teaching.ports import QualificationRequest
+    client,factory,app,ids=teaching_env;h=login(client)
+    binding,_=evidence(client,ids,h);case=support_case(client,factory,ids,h)
+    request=decision_payload(binding);request['provisions'][0]['counting_basis']=counting_basis
+    path=base(ids)+f'/support-cases/{case["id"]}/decisions'
+    response=client.post(path,headers=h,json=request);assert response.status_code == 201,response.text
+    decision=client.post(path+'/'+response.json()['id']+'/confirm',headers=h,json=expected(response.json(),reason='Review exact ITO support counting basis')).json()
+    goal,_=ordinary_goal(client,ids,h)
+    payload=actual(ids,{'a':goal},duration_minutes=60)
+    payload['participants'][0].update(category='individually_adapted_education',counting_basis=counting_basis,attributed_staff_minutes=30 if counting_basis == 'staff_time' else None,provision={'decision_id':decision['id'],'decision_revision_id':decision['content']['id'],'provision_id':decision['provisions'][0]['id']})
+    payload['staff'][0]['category']='individually_adapted_education'
+    class IntervalQualification(SyntheticQualificationPort):
+        interval='complete'
+        def resolve(self,db,actor,request):
+            result=super().resolve(db,actor,request)
+            if self.interval == 'short':return result.model_copy(update={'effective_until':request.occurred_at+timedelta(minutes=1)})
+            if self.interval == 'late':return result.model_copy(update={'effective_from':request.occurred_at+timedelta(minutes=1)})
+            if self.interval == 'mismatched':return result.model_copy(update={'request':request.model_copy(update={'ended_at':request.ended_at-timedelta(minutes=1)})})
+            return result.model_copy(update={'effective_from':request.occurred_at,'effective_until':request.ended_at})
+    port=IntervalQualification(ids);app.state.teaching_qualification_port=port
+    endpoint=base(ids)+'/teaching/deliveries'
+    for mode in ('short','late','mismatched'):
+        port.interval=mode
+        response=client.post(endpoint,headers=h,json=retry(content=payload));assert response.status_code == 409,response.text
+    port.interval='complete'
+    response=client.post(endpoint,headers=h,json=retry(content=payload));assert response.status_code == 201,response.text
+    saved=response.json();request=port.requests[-1]
+    assert request.ended_at == datetime.fromisoformat(payload['occurred_at'])+timedelta(minutes=60)
+    assert request.ended_at-request.occurred_at == timedelta(minutes=60)
+    for end in (request.occurred_at,request.occurred_at-timedelta(minutes=1)):
+        with pytest.raises(ValueError):QualificationRequest.model_validate({**request.model_dump(),'ended_at':end})
+    params={'start':(utcnow()-timedelta(days=1)).isoformat(),'end':utcnow().isoformat()}
+    assert client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params=params).json()['provisions'][0]['assessed_recorded_minutes'] == 30
+    port.interval='short'
+    assert client.get(endpoint+'/'+saved['id']).json()['participants'][0]['support_assessment'] == 'unassessed'
+    summary=client.get(base(ids)+f'/learners/{ids["a"]}/teaching-summary',params=params).json()['provisions'][0]
+    assert summary['assessed_recorded_minutes'] == 0 and summary['unassessed_claimed_minutes'] == 30 and summary['recorded_minutes'] is None
+    assert client.get(base(ids)+f'/learners/{ids["a"]}/teaching-follow-ups').json()['items'][0]['reason_code'] == 'staffing_basis_changed'
+    # A pre-extension binding has no honest end. It remains unknown until an
+    # explicit actual correction records a complete, reviewed interval binding.
+    port.interval='complete'
+    with factory.begin() as db:
+        pupil=db.scalar(select(LearnerParticipation).where(LearnerParticipation.delivery_revision_id == saved['revision_id']))
+        legacy=[dict(value) for value in pupil.qualification_binding]
+        legacy[0]['request']={k:v for k,v in legacy[0]['request'].items() if k != 'ended_at'}
+        db.execute(update(LearnerParticipation).where(LearnerParticipation.id == pupil.id).values(qualification_binding=legacy))
+    assert client.get(endpoint+'/'+saved['id']).json()['participants'][0]['support_assessment'] == 'unassessed'
+    corrected=client.post(endpoint+'/'+saved['id']+'/corrections',headers=h,json=expected(saved,content=payload,reason='Verify full actual interval against the reviewed qualification basis'))
+    assert corrected.status_code == 200,corrected.text
+    assert corrected.json()['participants'][0]['support_assessment'] == 'assessed'
+    port.interval='short'
+    payload['participants'][0]['support_status']='unassessed'
+    payload.update(status='partial',cause='staff_unavailable',follow_up_owner_id=ids['reviewer'],follow_up='Review the insufficient qualification coverage for the actual interval')
+    response=client.post(endpoint,headers=h,json=retry(content=payload));assert response.status_code == 201,response.text
+    assert response.json()['staff_minutes'] == 30 and response.json()['participants'][0]['support_assessment'] == 'unassessed'
+
+
 @pytest.mark.parametrize('change',['source_correction','goal_replacement','model_recall','policy_recall'])
 def test_follow_up_resolution_keeps_original_dependencies_after_independent_revision(teaching_env,teaching_wire_server,change):
     from spesped.contexts.platform import service as gateway
@@ -762,3 +824,69 @@ def test_postgres_actual_correction_and_reconciliation_serialize(teaching_env):
     listed=client.get(base(ids)+f'/teaching/brief-assignments/{assigned["id"]}/actual-inputs').json()['items'][0]
     assert not listed['currently_reconciled'] and listed['state'] != 'recorded'
     assert client.get(base(ids)+f'/teaching/deliveries/{delivered["id"]}').json()['state'] == 'cancelled'
+
+
+def test_downgrade_refuses_loss_of_legacy_reconciliation_recovery(env):
+    from alembic import command as migrations
+    from alembic.config import Config
+    from pathlib import Path
+    from sqlalchemy import Table,MetaData,inspect,text
+    from spesped.contexts.teaching.models import AssistantActualInput,ActualInputReview
+    from spesped.contexts.teaching.schemas import ReviewActualInput
+    client,factory,app,ids=env
+    url=factory.kw['bind'].url.render_as_string(hide_password=False)
+    cfg=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));cfg.attributes['database_url']=url
+    migrations.upgrade(cfg,'j06_teaching')
+    migrations.downgrade(cfg,'j06_teaching')
+    now=utcnow();when=now-timedelta(hours=1)
+    # Seed a pre-repair record with a recorded review pointing to a superseded
+    # delivery. Reflect old tables, avoiding new-model columns before migration.
+    names=['teaching_bases','teaching_sessions','teaching_session_revisions','teaching_briefs','teaching_brief_assignments','teaching_deliveries','teaching_delivery_revisions','teaching_learner_participation','teaching_staff_participation','teaching_assistant_actual_inputs']
+    keys={n:str(uuid4()) for n in names};oldrev=str(uuid4())
+    with factory.begin() as db:
+        tables={n:Table(n,MetaData(),autoload_with=db.connection()) for n in names}
+        def add(name,**kw):
+            values={'id':keys[name],'school_id':ids['school'],'created_at':now,**kw};db.execute(tables[name].insert().values(**values))
+        def root(name,**kw):add(name,version=1,updated_at=now,**kw)
+        add('teaching_bases',planned_at=when,duration_minutes=30,learners=[],theme='',arena='Synthetic',materials=[],missing_information=[],digest='a'*64,created_by=ids['reviewer'])
+        root('teaching_sessions',state='approved',current_revision=1,owner_id=ids['reviewer'])
+        add('teaching_session_revisions',session_id=keys['teaching_sessions'],revision=1,basis_id=keys['teaching_bases'],content={},content_digest='b'*64,reason='Legacy',created_by=ids['reviewer'],generation_job_ids=[],field_job_ids={})
+        root('teaching_briefs',state='approved',session_revision_id=keys['teaching_session_revisions'],learner_id=ids['a'],template='practical',content={},content_digest='c'*64,created_by=ids['reviewer'])
+        root('teaching_brief_assignments',state='active',brief_id=keys['teaching_briefs'],assistant_id=ids['assistant'],valid_from=when-timedelta(hours=1),valid_until=now+timedelta(hours=1),role='Support',assigned_by=ids['reviewer'])
+        root('teaching_deliveries',state='delivered',session_id=keys['teaching_sessions'],current_revision=2)
+        for ident,revision in ((oldrev,1),(keys['teaching_delivery_revisions'],2)):
+            add('teaching_delivery_revisions',id=ident,delivery_id=keys['teaching_deliveries'],revision=revision,session_revision_id=keys['teaching_session_revisions'],occurred_at=when,duration_minutes=30,status='delivered',activity='Synthetic actual',cause_detail='',reason='Legacy correction',recorded_by=ids['reviewer'])
+        add('teaching_learner_participation',delivery_revision_id=keys['teaching_delivery_revisions'],learner_id=ids['a'],goal_revision_ids=[],status='participated',minutes=30,category='ordinary_teaching',support='Visual cue')
+        add('teaching_staff_participation',delivery_revision_id=keys['teaching_delivery_revisions'],staff_id=ids['reviewer'],minutes=30,role='Teacher',category='ordinary_teaching')
+        root('teaching_assistant_actual_inputs',state='recorded',assignment_id=keys['teaching_brief_assignments'],author_id=ids['assistant'],occurred_at=when,content={'duration_minutes':30,'status':'participated','category':'ordinary_teaching'},reviewed_by=ids['reviewer'],review_reason='Original reviewed legacy input',delivery_revision_id=oldrev)
+        for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id==ids['reviewer'])):assignment.actions=list(assignment.actions)+['teaching.read','teaching.write']
+    migrations.upgrade(cfg,'j06_teaching_repairs')
+    with factory() as db:
+        row=db.get(AssistantActualInput,keys['teaching_assistant_actual_inputs'])
+        assert row.state=='needs_clarification' and row.invalidated_by_revision_id==keys['teaching_delivery_revisions']
+    with factory() as db:
+        reviews=list(db.scalars(select(ActualInputReview)))
+        assert len(reviews) == 1 and reviews[0].reviewed_at is None
+        assert reviews[0].delivery_revision_id == oldrev and reviews[0].outcome == 'recorded'
+        review_id=reviews[0].id
+        def columns(connection,name):
+            return [(c['name'],str(c['type']),c['nullable'],c['default']) for c in inspect(connection).get_columns(name)]
+        before_tables=set(inspect(db.connection()).get_table_names())
+        before_columns={name:columns(db.connection(),name) for name in ('teaching_assistant_actual_inputs','teaching_actual_input_reviews','teaching_follow_ups')}
+    with pytest.raises(RuntimeError,match='reconciliation recovery cannot be discarded'):
+        migrations.downgrade(cfg,'j06_teaching')
+    with factory() as db:
+        assert set(inspect(db.connection()).get_table_names()) == before_tables
+        assert before_columns == {name:columns(db.connection(),name) for name in before_columns}
+        row=db.get(AssistantActualInput,keys['teaching_assistant_actual_inputs'])
+        assert row.state == 'needs_clarification' and row.invalidated_by_revision_id == keys['teaching_delivery_revisions']
+        original=db.get(ActualInputReview,review_id)
+        assert original.reviewed_at is None and original.delivery_revision_id == oldrev
+        assert db.scalar(select(func.count()).select_from(ActualInputReview)) == 1
+        assert db.scalar(text('SELECT version_num FROM alembic_version')) == 'j06_teaching_repairs'
+        command=ReviewActualInput.model_validate(expected({'version':row.version},outcome='recorded',delivery_revision_id=keys['teaching_delivery_revisions'],reason='Review the current actual record after the refused destructive downgrade'))
+        result=mutate(db,lambda:service.review_actual_input(db,Actor(ids['reviewer']),ids['school'],row.id,command))
+        assert result.state == 'recorded' and result.delivery_revision_id == keys['teaching_delivery_revisions']
+    with factory() as db:
+        assert db.get(ActualInputReview,review_id).reviewed_at is None
+        assert db.scalar(select(func.count()).select_from(ActualInputReview)) == 2

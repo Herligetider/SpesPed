@@ -476,10 +476,12 @@ def delivery(db,actor,school_id,identity,action='teaching.read',lock=False):
     return row
 
 
-def qualification_request(school_id,pupil,staff_id,occurred_at,provision):
+def qualification_request(school_id,pupil,staff_id,occurred_at,duration_minutes,provision):
     from .ports import QualificationRequest
     ref=pupil.provision
-    return QualificationRequest(school_id=school_id,learner_id=str(pupil.learner_id),staff_id=str(staff_id),decision_id=ref['decision_id'] if isinstance(ref,dict) else ref.decision_id,decision_revision_id=ref['decision_revision_id'] if isinstance(ref,dict) else ref.decision_revision_id,provision_id=ref['provision_id'] if isinstance(ref,dict) else ref.provision_id,occurred_at=occurred_at,provision_digest=canonical_content_digest(row_json(provision,('id','decision_revision_id','category','organization','competence','effective_from','effective_until','source'))))
+    # No finer staff/pupil placement within this event is recorded. Never invent
+    # a qualified subinterval from a minute total; require full event coverage.
+    return QualificationRequest(school_id=school_id,learner_id=str(pupil.learner_id),staff_id=str(staff_id),decision_id=ref['decision_id'] if isinstance(ref,dict) else ref.decision_id,decision_revision_id=ref['decision_revision_id'] if isinstance(ref,dict) else ref.decision_revision_id,provision_id=ref['provision_id'] if isinstance(ref,dict) else ref.provision_id,occurred_at=occurred_at,ended_at=occurred_at+timedelta(minutes=duration_minutes),provision_digest=canonical_content_digest(row_json(provision,('id','decision_revision_id','category','organization','competence','effective_from','effective_until','source'))))
 
 
 def validate_actual(db,actor,school_id,content):
@@ -501,7 +503,7 @@ def validate_actual(db,actor,school_id,content):
             qualified_minutes=0
             for staff in content.staff:
                 if staff.category != p.category:continue
-                request=qualification_request(school_id,p,staff.staff_id,content.occurred_at,provision)
+                request=qualification_request(school_id,p,staff.staff_id,content.occurred_at,content.duration_minutes,provision)
                 result=resolve_qualification(db,actor,request)
                 if result.state == 'reviewed_current':
                     bindings.append(result.model_dump(mode='json'));qualified_minutes+=staff.minutes
@@ -536,7 +538,7 @@ def support_assessment_current(db,actor,revision,pupil):
             staff_id=str(stored.request.staff_id)
             if staff_id in seen or staff_id not in actual_staff:return False
             seen.add(staff_id)
-            request=qualification_request(pupil.school_id,pupil,staff_id,revision.occurred_at,provision)
+            request=qualification_request(pupil.school_id,pupil,staff_id,revision.occurred_at,revision.duration_minutes,provision)
             if stored.request != request or resolve_qualification(db,actor,request) != stored:return False
             total+=actual_staff[staff_id].minutes
         required=pupil.attributed_staff_minutes if pupil.counting_basis == 'staff_time' else pupil.minutes

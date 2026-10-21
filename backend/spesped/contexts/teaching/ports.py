@@ -2,13 +2,13 @@
 
 Only a trusted server adapter may implement this port. It must perform its own
 current actor/school access checks and resolve reviewed qualification/responsibility
-records for the exact staff, provision and occurrence. Calls are read-only: no
+records for the exact staff, provision and full actual event interval. Calls are read-only: no
 commit, rollback, audit or business mutation of the consumer's transaction. Role labels and teaching
 access grants are not qualification evidence. The result never decides fulfilment.
 """
 from typing import Literal,Protocol
 from uuid import UUID
-from pydantic import AwareDatetime,BaseModel,ConfigDict,Field
+from pydantic import AwareDatetime,BaseModel,ConfigDict,Field,model_validator
 from sqlalchemy.orm import Session
 from spesped.auth import Actor
 from spesped.db import utcnow
@@ -28,6 +28,12 @@ class QualificationRequest(Value):
     provision_id: UUID
     provision_digest: str = Field(pattern=r'^[a-f0-9]{64}$')
     occurred_at: AwareDatetime
+    ended_at: AwareDatetime
+
+    @model_validator(mode='after')
+    def actual_interval(self):
+        if self.ended_at <= self.occurred_at:raise ValueError('Qualification coverage requires a positive actual interval')
+        return self
 
 
 class QualificationSource(Value):
@@ -64,7 +70,7 @@ def resolve_qualification(db,actor,request):
     if result.state == 'reviewed_current':
         valid=(result.responsibility == 'responsible_teaching' and result.review_id and result.reviewed_by
                and result.reviewed_at and result.reviewed_at <= utcnow() and result.effective_from
-               and result.effective_until and result.effective_from <= request.occurred_at < result.effective_until
+               and result.effective_until and result.effective_from <= request.occurred_at < request.ended_at <= result.effective_until
                and result.sources and len({(s.kind,s.source_id,s.revision) for s in result.sources}) == len(result.sources))
-        if not valid:raise DomainError('qualification_contract','A current reviewed qualification and responsibility basis with exact source versions is required.',409)
+        if not valid:raise DomainError('qualification_contract','A current reviewed qualification and responsibility basis covering the full actual interval with exact source versions is required.',409)
     return result

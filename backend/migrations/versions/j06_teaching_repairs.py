@@ -71,7 +71,8 @@ def downgrade():
     frozen=has_binding('SELECT dependency_binding FROM teaching_follow_ups')
     qualified=has_binding('SELECT qualification_binding FROM teaching_learner_participation')
     reviewed=bind.execute(sa.text('SELECT 1 FROM teaching_actual_input_reviews WHERE reviewed_at IS NOT NULL')).first()
-    if frozen or qualified or reviewed:raise RuntimeError('Frozen teaching dependencies, qualifications and review history cannot be discarded by a downgrade')
+    invalidated=bind.execute(sa.text('SELECT 1 FROM teaching_assistant_actual_inputs WHERE invalidated_by_revision_id IS NOT NULL')).first()
+    if frozen or qualified or reviewed or invalidated:raise RuntimeError('Frozen teaching dependencies, qualifications, review history and reconciliation recovery cannot be discarded by a downgrade')
     op.drop_index('ix_teaching_actual_input_reviews_school_id',table_name='teaching_actual_input_reviews')
     op.drop_table('teaching_actual_input_reviews')
     with op.batch_alter_table('teaching_assistant_actual_inputs',naming_convention={'ck':'ck_%(table_name)s_state'}) as batch:
