@@ -1,12 +1,14 @@
 """Session authenticated document APIs. No endpoint dispatches external messages."""
 from uuid import UUID
+from datetime import date
+from typing import Literal
 from fastapi import APIRouter,Depends,Request,Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from spesped.auth import Actor,get_actor
 from spesped.db import get_db
 from spesped.contexts.curriculum.adapters import EvidenceSourceReadPort
-from . import service as svc,schemas as s,models as m,generation as gen
+from . import service as svc,schemas as s,models as m,generation as gen,choices as picks
 router=APIRouter(prefix='/api/v1/schools/{school_id}/documents',tags=['documents'])
 def documents_db(request:Request,db:Session=Depends(get_db)):
     db.info['curriculum_source_port']=getattr(request.app.state,'curriculum_source_port',None) or EvidenceSourceReadPort(getattr(request.app.state,'evidence_storage',None))
@@ -62,3 +64,20 @@ def run_schedule(school_id:UUID,identity:UUID,command:s.ScheduleRun,db:Session=D
 def workspace(school_id:UUID,learner_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),db:Session=D,actor:Actor=A):return svc.workspace(db,actor,str(school_id),str(learner_id),offset,limit)
 @router.get('/cases/{identity}/contribution-workspace')
 def contribution_workspace(school_id:UUID,identity:UUID,db:Session=D,actor:Actor=A):return svc.contribution_workspace(db,actor,str(school_id),str(identity))
+
+@router.get('/learners/{learner_id}/choices/{category}',response_model=picks.ChoicePage)
+def choices(school_id:UUID,learner_id:UUID,category:picks.Category,kind:s.Kind,starts_on:date,ends_on:date,
+            offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),requirement_version_id:UUID|None=None,
+            source_mode:Literal['interval','background']='interval',source_starts_on:date|None=None,source_ends_on:date|None=None,
+            query:str|None=Query(None,min_length=1,max_length=100),
+            db:Session=D,actor:Actor=A):
+    return picks.choices(db,actor,str(school_id),str(learner_id),category,kind,starts_on,ends_on,offset=offset,limit=limit,
+        requirement_version_id=requirement_version_id,source_mode=source_mode,source_starts_on=source_starts_on,source_ends_on=source_ends_on,query=query)
+
+@router.get('/cases/{identity}/suggestions',response_model=picks.SuggestionPage)
+def suggestions(school_id:UUID,identity:UUID,request:Request,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),db:Session=D,actor:Actor=A):
+    return picks.suggestions(db,actor,str(school_id),str(identity),request.app.state.ai_gateway,offset,limit)
+
+@router.get('/learners/{learner_id}/contribution-inbox',response_model=picks.ContributionPage)
+def contribution_inbox(school_id:UUID,learner_id:UUID,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),db:Session=D,actor:Actor=A):
+    return picks.contribution_inbox(db,actor,str(school_id),str(learner_id),offset,limit)
