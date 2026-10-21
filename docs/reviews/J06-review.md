@@ -1,5 +1,7 @@
 # J06 independent backend review
 
+**Latest disposition (repair pin `f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0`): original J06-R1–R5 closed; J06-R6/R7 open. Candidate remains unaccepted.** See the appended repair recheck. The original review below is retained as historical evidence.
+
 Reviewed 21 October 2026. **Not accepted: five actionable findings remain.**
 
 ## Pin, scope and method
@@ -203,3 +205,132 @@ were not assessed by this synthetic protocol exercise.
 No legal registry, law, practitioner validation or production readiness was newly
 verified by this code review. Resolve and independently reverify J06-R1–R5 before
 accepting this bounded backend candidate.
+
+## Repair recheck — f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0
+
+Rechecked independently on 21 October 2026 in ignored
+`var/review-j06-repairs/`. Inspected all eight repair paths: teaching models,
+router, schemas, service, new qualification port, fixtures/tests and forward
+`j06_teaching_repairs` migration (parent `j06_teaching`). Python used the existing
+backend venv with explicit absolute
+`PYTHONPATH=/Users/lauritz/Programming/SpesPed/var/review-j06-repairs/backend:/Users/lauritz/Programming/SpesPed/var/review-j06-repairs/backend/tests`.
+SQLite and the assigned synthetic PostgreSQL test database were both exercised;
+PostgreSQL fixtures and migration probes used unique disposable schemas. No
+production code, commit or push was changed by this review.
+
+### Original findings: closed at this repair pin
+
+| Finding | Recheck result |
+|---|---|
+| R1, historical follow-up prose | Closed. Exact immutable revision/basis bindings protect historical resolutions after independent replacement. Source correction/permission withdrawal, goal replacement, model recall and policy recall tests include response/replay redaction. Legacy unknown lineage remains unavailable. |
+| R2, absence counted as delivered support | Closed. Positive absence allocation is rejected. Absence can still record separate actual staff expenditure in a partial record with cause and owned follow-up; delivered entitlement quantity remains zero. |
+| R3, assistant-only ITO counting | Closed for the reviewed boundary. Unconfigured qualification is unavailable; roles, grants and caller labels do not prove competence. Assessed ITO requires an exact reviewed qualification/responsibility binding. Actual claimed work remains recordable as unassessed with an owned deviation. The separate interval defect R6 below remains open. |
+| R4, superseded reconciliation | Closed. New review requires the exact current eligible delivery. Correction invalidates recorded reconciliation and opens follow-up; re-review appends immutable history. PostgreSQL correction/review serialization passes. |
+| R5, duplicate learner delivery listing | Closed. Deduplication precedes pagination/counting; mixed-category events occupy one slot. |
+
+The original retained `review_acceptance_probes.py` is byte-for-byte unchanged
+(SHA-256 `a92c2a50253a9bdd94a3a8b3b56312f76e4e2e4162f4ef8c333eaf1ae8148da0`).
+It passes all **14** cases on this pin, including the five original desired
+behaviors on both engines and the two retained boundary-contract probes.
+
+### J06-R6 — P2 open: qualification coverage checks only the start of delivered support
+
+Locations at this repair pin:
+
+- `backend/spesped/contexts/teaching/ports.py:64–68` checks
+  `effective_from <= occurred_at < effective_until`.
+- `backend/spesped/contexts/teaching/service.py:505–509` then credits all recorded
+  staff minutes; `service.py:539–543` repeats that full-minute assumption at reads.
+
+Independent probe
+`review_repair_adverse.py::test_qualification_expiry_mid_delivery_is_counted`
+reproduces this on SQLite and PostgreSQL. A trusted synthetic port returns an exact,
+reviewed, sourced responsible-teaching qualification for the requested staff,
+learner and provision, but its effective period ends **one minute after occurrence**.
+A 30-minute ITO delivery is accepted with HTTP 201, its participation is shown as
+`support_assessment: assessed`, and the provision summary reports **30 assessed
+recorded minutes**.
+
+The request has no end/duration binding, and neither consumer check limits credited
+minutes to the qualified interval. Require reviewed coverage for the recorded
+support interval, with the exact interval in the request/binding as needed; check
+it again in historical/current projections and summaries. Insufficient coverage
+must not establish assessed ITO minutes. Unassessed actual expenditure and an owned
+deviation should remain recordable. Do not infer continuous coverage from one
+valid instant or manufacture qualification from role/access grants.
+
+### J06-R7 — P2 open: permitted downgrade loses legacy reconciliation recovery state
+
+Locations:
+
+- `backend/migrations/versions/j06_teaching_repairs.py:56–58` preserves a legacy
+  latest review and invalidates recorded input linked to superseded delivery.
+- The downgrade guards at `:71–74` omit `invalidated_by_revision_id`, then drop it
+  at `:77–79`.
+- `backend/spesped/contexts/teaching/service.py:866` permits re-review of an
+  invalidated entry only while that token is present.
+
+Independent reflected-table probe
+`review_repair_adverse.py::test_legacy_invalidation_is_lost_through_permitted_roundtrip`
+reproduces this on both engines:
+
+1. Seed the pre-repair schema with an assistant input marked recorded against an
+   earlier delivery revision, while the same delivery has a newer current revision.
+2. Upgrade. The migration correctly changes it to `needs_clarification` and binds
+   `invalidated_by_revision_id` to the current delivery. Its legacy review has
+   `reviewed_at: null`, preserving the unknown timestamp.
+3. Downgrade is allowed: there are no new frozen follow-ups, qualification bindings
+   or timestamped reviews. This drops the recovery token but leaves the input's
+   state as `needs_clarification`.
+4. Reupgrade leaves the token null because backfill only selects `state = recorded`.
+   A new review against the eligible current actual revision now returns 409,
+   claiming that the entry has already been reviewed. The previously possible
+   recovery path has been lost.
+
+Either preserve/reconstruct the invalidation and immutable review provenance
+through a supported roundtrip, or explicitly refuse the downgrade before discarding
+that state. Empty-schema roundtrips are insufficient to prove safe rollback.
+
+### Recheck verification and limits
+
+- Full pinned teaching suite plus unchanged original desired probes:
+  **66 passed, 2 skipped**, 104.46 s. The skips are the SQLite instances of the
+  PostgreSQL concurrency tests. Command from the repair archive:
+  `.../backend/.venv/bin/python -m pytest backend/tests/test_teaching.py review_acceptance_probes.py -q`,
+  with the absolute repair `PYTHONPATH` above and assigned
+  `SPESPED_TEST_POSTGRES_URL`. Log: `var/review-j06-repairs/baseline.log`.
+- Independent additional probes: **6 passed**, 7.61 s. Four reproduce R6/R7 across
+  both databases. Two verify that an injected failure after reconciliation
+  invalidation rolls back delivery revision, input state/version, command,
+  follow-up, outbox state and review history together; the exact
+  same-key correction retry then succeeds once and replay creates no second
+  revision/history. Files: `review_repair_adverse.py`, `adverse.log` in the repair
+  archive.
+- Desired-behavior R6/R7 probes are retained separately in
+  `var/review-j06-repairs/review_repair_acceptance.py` and
+  `repair-acceptance.log`: **4 expected defect-case failures, 2 passing atomicity
+  cases**, 8.31 s. The R7 guard accepts either explicit downgrade refusal
+  or preserved state with successful current-record re-review.
+- Independent full-head migration/metadata check on both engines:
+  **19 teaching tables, zero merged model/schema differences**, empty downgrade
+  to `j06_teaching` and reupgrade succeed. This includes all eight model modules
+  and both migration heads (`j05_plan_generation`, `j06_teaching_repairs`). Files:
+  `var/review-j06-repairs/review_migrations.py`, `migrations.log`. Legacy unknown
+  follow-up fail-closed behavior and refusal to discard new frozen history are
+  also covered by the pinned tests; R7 identifies the additional populated case.
+- Inspected the qualification port's exact school/learner/staff/decision revision/
+  provision/digest/occurrence equality, reviewed responsibility/source requirements,
+  fail-closed default and recall recheck. The fixture adapter is synthetic;
+  **no production qualification adapter is delivered or accepted** here.
+- Inspected `revision_valid` preference for temporary `ai_gateway_runtime`, ahead
+  of teaching/plans fallback runtime. This avoids selecting a stale outer runtime
+  during nested worker lineage checks. Root's accepted typed gateway `8d82b74`
+  and the separate J05 consumer `2ccc30e` are not independently reaccepted here.
+- Root application registration/joined integration work, including later
+  composition candidate `ae44969`, is outside this exact repair pin and review.
+  No browser/UI, complete J06, practitioner usability or production readiness
+  claim is made. Earlier integration, evidence-write and local-model quality
+  limits remain in force.
+
+**Disposition: original J06-R1–R5 closed; J06-R6 and J06-R7 require repair and
+independent recheck before this bounded backend candidate is accepted.**

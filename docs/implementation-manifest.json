@@ -568,7 +568,8 @@
       "implementationAgent": "/root/j06_teaching",
       "reviewAgent": "/root/review_j06",
       "commits": [
-        "e80380cdf7da10431c18685969351c9b0cf07e48"
+        "e80380cdf7da10431c18685969351c9b0cf07e48",
+        "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0"
       ],
       "evidence": [
         {
@@ -581,6 +582,12 @@
           "revision": "e80380cdf7da10431c18685969351c9b0cf07e48",
           "path": "docs/reviews/J06-review.md",
           "result": "Not accepted: one P1 historical follow-up dependency leak and four P2 delivery/reconciliation failures, all reproduced on SQLite and PostgreSQL. Baseline: 23 passed, one skip. Fourteen independent probes include ten defect reproductions. Eighteen-table migration roundtrips and full metadata checks passed on both databases. Repairs assigned to the author."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0",
+          "path": "docs/reviews/J06-review.md",
+          "result": "Original five findings closed. 66 passed and two expected SQLite skips, full metadata and 19-table empty roundtrip pass both DBs. Two adjacent P2 findings reproduced on SQLite/PostgreSQL: incomplete qualification interval coverage and downgrade loss of legacy reconciliation recovery state. Author repairing; bounded teaching scope not yet accepted."
         }
       ],
       "findings": [
@@ -588,35 +595,47 @@
           "id": "J06-R1",
           "priority": "P1",
           "description": "Historical follow-up resolution inherits newer session permissions and resurfaces revoked source prose.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J06-R2",
           "priority": "P2",
           "description": "Absent learner receives positive attributed staff-time delivered support.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J06-R3",
           "priority": "P2",
           "description": "Assistant-only staffing can be counted as individually adapted education.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J06-R4",
           "priority": "P2",
           "description": "Assistant actual input reconciles against superseded delivery revision after cancellation.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J06-R5",
           "priority": "P2",
           "description": "Learner delivery list duplicates events with multiple support categories.",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J06-R6",
+          "priority": "P2",
+          "description": "Qualification proof valid only at occurrence start counts the entire longer actual support interval.",
+          "status": "open"
+        },
+        {
+          "id": "J06-R7",
+          "priority": "P2",
+          "description": "Permitted downgrade loses a legacy assistant reconciliation invalidation token and prevents later recovery.",
           "status": "open"
         }
       ],
       "remainingWork": [
-        "Implement and independently review the teaching backend, typed AI session planning, exact approvals, assistant scope, actual delivery and observations.",
+        "Close and independently recheck qualification interval and migration recovery findings; then accept the bounded teaching backend. Full dependencies and UI remain separate.",
         "Root gateway and application composition plus J07 UI must exercise the complete persistent teaching workflow."
       ]
     },
@@ -668,6 +687,11 @@
           "revision": "278613efb0fdbef7e93b88d86b542c204a75d671",
           "path": "docs/reviews/J07-intake-review.md",
           "result": "Bounded intake UI accepted; all eleven findings closed. 38 tests and build passed. Independent Chromium/PostgreSQL checks cover original nine workflow/race defects, native file retry clearing without duplicate import, exact File identity, newer draft preservation, pending attribution controls and 100-plus pagination. Full J07 remains incomplete."
+        },
+        {
+          "type": "integration_candidate",
+          "revision": "ae4496916141bca12475b0f60eaf5e462ffcc5e6",
+          "result": "Root registered actual teaching routes and joined migrations into b5_generated_teaching. Fifteen integration checks passed SQLite/PostgreSQL, including generated IEP goal through session, assistant note, unassessed actual record, next session and original source/model recall. Full schema/default comparison and empty downgrade/upgrade passed both databases. Independent composition review pending; this is backend evidence, not UI acceptance."
         }
       ],
       "findings": [
