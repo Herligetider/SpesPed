@@ -1504,6 +1504,10 @@
           "revision": "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
           "path": "docs/reviews/J11-review.md",
           "result": "R1–R4 closed, bounded native document backend accepted. Final candidate71passes1SQLite-onlyskip, originalindependent17passes1SQLite-onlyskip, newcurrent-source/coverage/inflight probes12passes on SQLite+actualPostgreSQL. Both real PG concurrency counterparts passed; archive23unionfiles and author14hashes/imports verified. Explicit paused-plan manual proposal inspection remains available while scheduled request blocks; true historical generation preserved. BC03dependency3be8177 separately accepted. Full F18/F20/F39 UI, authorized disclosure, worker deployment and production quality remain required."
+        },
+        {
+          "type": "work_assignment",
+          "result": "After bounded backend acceptance, assigned separate practitioner choice/recovery extension to original /root/j11_documents: native authorized guardian/staff/template/obligation/source/goal/actual/future-plan pickers, persisted suggestion recovery and assigned-contributor inbox as needed. Coordinates fixed typed contracts with Luna UI author; owns new choices.py, router additions and new tests only. Reuse existing /ai/choices for generation configuration. Independent review required; no UI placeholder or raw UUID form counts as completion."
         }
       ],
       "findings": [
@@ -1547,8 +1551,10 @@
       "status": "implementing",
       "requiredEvidence": "Rights recheck, invalidation, unknown outcome reconciliation, secure recipient view",
       "implementationAgent": "/root/j12_communication",
-      "reviewAgent": null,
-      "commits": [],
+      "reviewAgent": "/root/review_j12_communication",
+      "commits": [
+        "90c93469399c0f91f3c4dce62e57fc885e799518"
+      ],
       "evidence": [
         {
           "type": "work_assignment",
@@ -1557,6 +1563,11 @@
         {
           "type": "integration_in_progress",
           "result": "Root registered candidate communication router/models and default native dispatch-history/portal transport composition in create_app; actual OpenAPI exposes 32 communication paths. Fresh-application restart/history/current-guardian-rights checks are being added in test_bc11_application_composition.py. Candidate author tests and migration checks are in progress; no acceptance or externally deployed delivery claim. Migration chain is j11_documents -> j13_report_period -> j12_communication, with safe empty-only downgrade and retained-history protection."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "90c93469399c0f91f3c4dce62e57fc885e799518",
+          "result": "Pinned19files after root verified15author hashes plus4rootcomposition paths. Native exact reviewed recipient/channel/packages, separate content/disclosure authorization, explicit export/dispatch/reconciliation/read receipts, guardian portal and accepted-period history; static20tablemigration with safeemptydowngrade. Final50passes1SQLite-onlyconcurrency skip includes native fresh-app restart, actualPostgreSQL race, realverifiedTLS oversize/trickle/emptytrust harddeadline, delayed post-lock replay race, localAI model recall, atomic rollback and portal scope. Distinct /root/review_j12_communication (Sol high) assigned exactarchive independentreview. Attachments limited to UTF8 renders ofapproveddocument revisions; arbitraryuploads/PDF,J21UI,namedJ18providers andJ26deployment remain required. No bounded acceptance yet."
         }
       ],
       "findings": []
