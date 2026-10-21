@@ -18,7 +18,14 @@ def integer(value: int, name: str, minimum: int = 0) -> None:
 def instant(value: datetime) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("An aware datetime is required")
-    return value.astimezone(timezone.utc)
+    try:
+        result = value.astimezone(timezone.utc)
+        round_trip = result.astimezone(value.tzinfo)
+    except (OverflowError, ValueError) as error:
+        raise ValueError("Instant exceeds the supported datetime range") from error
+    if round_trip.replace(tzinfo=None) != value.replace(tzinfo=None):
+        raise ValueError("A nonexistent local wall time is not an instant")
+    return result
 
 
 def local_date(value: date) -> None:

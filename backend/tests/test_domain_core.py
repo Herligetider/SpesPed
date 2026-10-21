@@ -81,6 +81,8 @@ class DomainCase(unittest.TestCase):
         for constructor in (OccurrenceTime, RecordedTime, EffectivePeriod):
             with self.subTest(constructor=constructor), self.assertRaises(ValueError):
                 constructor(naive)
+            with self.subTest(constructor=constructor), self.assertRaises(ValueError):
+                constructor(datetime(2026, 3, 29, 2, 30, tzinfo=OSLO))
         with self.assertRaises(ValueError):
             EffectivePeriod(at(10), at(10))
         with self.assertRaises(ValueError):
