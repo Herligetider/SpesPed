@@ -1557,7 +1557,8 @@
       "implementationAgent": "/root/j12_communication",
       "reviewAgent": "/root/review_j12_communication",
       "commits": [
-        "90c93469399c0f91f3c4dce62e57fc885e799518"
+        "90c93469399c0f91f3c4dce62e57fc885e799518",
+        "3dc0de68015632f2108cf7ce5b2ebf6f101c75bc"
       ],
       "evidence": [
         {
@@ -1578,6 +1579,11 @@
           "revision": "90c93469399c0f91f3c4dce62e57fc885e799518",
           "path": "docs/reviews/J12-review.md",
           "result": "Changes required: pending-dependency guard runs inside mutation rollback handler and discards caller-owned pending changes, independently reproduced SQLite/PostgreSQL. Candidate50passes1SQLite-onlyskip,3extra actualTLS adverse deadline/worker-cleanup passes and10priorownerregressionpasses; all19hashes/7archiveimports verified. Originalauthor assigned narrow transaction-precondition repair and representative pending object/replay/atomicity regression checks; independent recheck required."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "3dc0de68015632f2108cf7ce5b2ebf6f101c75bc",
+          "result": "Pinned original-author2file J12-R1 repair with verifiedhashes: staged dependency guard now precedes transaction ownership/rollback/metadata. Focused6dualDB tests cover60rejected boundary calls preserving ORMsets, caller metadata, exact transaction and priorflushedwork withzeroSQL/flush/commit/rollback. Combined43passes1SQLite-onlyrace skip includes originalindependentrepro, workflow/replay/atomicity andfreshHTTPcomposition. Original independent reviewer reactivated at archive-isolated pin; finding remains unclosed pending recheck."
         }
       ],
       "findings": [
@@ -1585,7 +1591,7 @@
           "id": "J12-R1",
           "priority": "P2",
           "description": "Rejected pending-dependency command rolls back and loses caller staged protective relationship changes",
-          "status": "repair_in_progress"
+          "status": "awaiting_recheck"
         }
       ]
     },
@@ -1947,6 +1953,10 @@
         {
           "type": "work_assignment",
           "result": "Assigned fixed-contract BC10 practitioner UI to /root/j20_document_ui using gpt-6-luna medium per plan: exact period/report draft creation, readable source/template/obligation selectors, structured editing/gap/source review, scoped contributions and exact content approval, typed AI review/recovery and optional draftplan controls. Owns only new web/src/features/documents/**. Root owns navigation/backend choiceports and real browser/API integration; missing contracts must be reported, never replaced by UUID/JSON forms or success placeholders. Separate independent review required; other J20 curriculum/assessment screens remain required."
+        },
+        {
+          "type": "integration_in_progress",
+          "result": "Root added learner tab Rapporter og brev / Rapportar og brev in App.tsx, using existing keyed actor/client/school/pupil lifetime. Three root composition tests and TypeScript check pass; tests verify same-pupil hidden-tab draft retention and immediate content removal on identity/client change. Root App paths remain uncommitted pending complete UI candidate; frontend author continues actual manual/AI/schedule/contribution controls while choice owner implements native inventory contracts. No browser/full-feature acceptance claimed."
         }
       ],
       "findings": []
