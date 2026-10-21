@@ -913,6 +913,12 @@
           "type": "implementation_candidate",
           "revision": "79158a84a59fa047f10a58e6e55fd53088b18ea0",
           "result": "Durable IEP/teaching proposal recovery UI pinned with explicit saved-proposal selection, pagination, immutable retries, outcome reconciliation and fresh-metadata running-lease expiry. Author 114 web tests, production build and 10 actual-App Chromium/PostgreSQL workflows passed against accepted c18 backend; includes lost replies, recall, shared-basis per-session outcome and manual-edit conflict paths. Independent review assigned to /root/review_j05; no UI or feature acceptance inferred."
+        },
+        {
+          "type": "independent_review",
+          "revision": "004e19f935450f3260c4c1036530a4cfec8e6742",
+          "path": "docs/reviews/J07-teaching-review.md",
+          "result": "Both remaining R3 gaps independently closed; R1/R2/R4 regressions pass. Exact 88-test suite and build passed, two normal 11-step actual-App browser runs and independent adverse probes completed. Additional P1 J07-TE-R5 reproduced in open saved history after actual model recall with current manual revision unchanged. Original author assigned bounded history-refresh repair; teaching acceptance remains withheld."
         }
       ],
       "findings": [
@@ -1010,20 +1016,26 @@
           "id": "J07-TE-R3",
           "priority": "P2",
           "description": "Ordinary tab changes preserve drafts, but a concurrent saved session revision silently replaces unsaved preparation on tab return; a retained basis draft does not refresh newly confirmed observation choices.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "J07-TE-R4",
           "priority": "P2",
           "description": "Root App formatting discards corrective messages from locally validated teaching dates and ITO input, leaving only a generic failure.",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J07-TE-R5",
+          "priority": "P1",
+          "description": "Saved session history retains recalled generated prose after tab reactivation and explicit refresh when the current independently authored manual revision is unchanged. Fresh backend history correctly redacts it.",
+          "status": "open"
         }
       ],
       "remainingWork": [
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Close and independently recheck J07-TE-R3 concurrent-refresh draft preservation and fresh basis observation choices; finish teaching/App integration acceptance and durable generation recovery UI, plus remaining complete-workflow gaps."
+        "Close and independently recheck J07-TE-R5 historical source recall; complete persisted proposal recovery review/repairs and complete-workflow gaps."
       ]
     },
     {
@@ -1270,9 +1282,10 @@
       "status": "implementing",
       "requiredEvidence": "Scale/condition validity, evidence gaps, human-only grades, scheme differences",
       "implementationAgent": "/root/j10_assessment",
-      "reviewAgent": null,
+      "reviewAgent": "/root/review_j09",
       "commits": [
-        "a0bcab2ac738605fe754ae16d5d4337d810276f5"
+        "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+        "673a0ebe078a31191a529e0947560dd03f6f872e"
       ],
       "evidence": [
         {
@@ -1289,6 +1302,11 @@
           "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
           "path": "docs/reviews/owned-learning-projections-review.md",
           "result": "Bounded native source projections accepted: 14 committed and 4 independent SQLite/PostgreSQL cases passed. Exact reviewed scheme and original authority, complete inclusive period, content digest, pending/cached edits, pupil-only actual participation and correction checks passed. Reads perform no flush, commit, rollback or DML; qualification recall remains unassessed without creating follow-ups. No professional authority or complete assessment workflow inferred."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "673a0ebe078a31191a529e0947560dd03f6f872e",
+          "result": "Native BC09 backend and actual application registration pinned: 16 static tables, reviewed instruments/scales/licenses, actual administrations/results/corrections, source-backed interval progress snapshots, manual subject statements and separate human authority boundaries. Author 39 dual-DB tests passed with one SQLite-only concurrency skip; PostgreSQL race ran. Root 4 fresh-application composition tests passed with native source owners and no synthetic authority. Native J19 authority and typed AI remain absent and explicit; J20 UI and dispatch integrations remain required. Independent review assigned /root/review_j09; no feature accepted."
         }
       ],
       "findings": [],

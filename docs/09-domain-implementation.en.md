@@ -398,3 +398,43 @@ dependency edits before refreshing retained ORM objects. The caller supplies
 the native `curriculum_source_port` and, where configured, the
 `teaching_qualification_port` through its session. Neither projection supplies
 professional finalization authority or proves learning progress from attendance.
+
+## Assessment records and human review
+
+Candidate `673a0eb` registers BC09 in the actual application with a static
+`j10_assessment` migration after `j09_curriculum`. Its independent review is
+assigned to `/root/review_j09`; the following describes implemented contracts
+awaiting that review, not complete F11/F17/F19 delivery.
+
+`/api/v1/schools/{school_id}/assessment` provides versioned instruments,
+administrations and factual results; source-backed progress reviews; and subject
+assessment statements. Instrument versions retain scales, conditions, licensing
+and sourced reassessment guidance. Result corrections append revisions and
+invalidate prior interpretation. A missing documented reassessment interval
+remains an open professional question.
+
+Progress snapshots bind exact goals, evidence, observations, actual participation,
+selected reviewed results and prior reviews within a chosen interval. Confirmed
+reviews remain historical records; late evidence and changed dependencies create
+a visible review need. Recorded activity does not establish progress. Subject
+statements bind the exact reviewed curriculum scheme and human-selected subject
+evidence, keeping IOP context separate. Contributions, finalization and factual
+communication records remain distinct.
+
+The trusted `AssessmentAuthorityPort.resolve(db, actor, AuthorityRequest)` binds
+school, pupil, person, purpose, exact revision/digest, full period and relevant
+subject/scheme. The native J19 authority implementation remains required.
+Missing authority blocks instrument administration, professional result review
+and formal finalization; a role or textual curriculum rule cannot substitute for
+it. Grade setting has a separate human authority check. Synthetic authority exists
+only in tests.
+
+The current manual source-review path persists `drafting=manual_grounded_source_review`
+and `ai_generation=not_integrated`. Typed local AI generation, J20 practitioner
+screens, external task integration and J12 authorized dispatch/receipts remain
+required work. A factual communication entry performs no external send.
+
+Source adapters use fresh owner-service identities on the same database
+transaction, reject pending dependency edits and leave transaction ownership with
+the caller. Root fresh-application tests exercise persistence across app instances,
+native source recall and unavailable authority without fixture-supplied adapters.

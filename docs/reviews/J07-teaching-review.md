@@ -158,3 +158,67 @@ Created a fresh archive at `var/review-j07-teaching-repair/pin` and independentl
 The initial scaffolding-copy command referenced the author's old browser filename; the reviewer corrected it to `normal.mjs` before running the browser. No application change was made. All test/browser processes were awaited. The reviewer listener was stopped, only its recorded temporary schema was removed after signal termination, and a namespace check verified cleanup (`cleanup.log`). Probes, logs and screenshots remain for the next recheck.
 
 The reviewer appended only this report and wrote ignored review artifacts. No production edits, commits, pushes or subagents. Prior planning-review findings and all previously listed whole-feature limitations remain outside this bounded repair acceptance.
+
+## Independent R3 follow-up — `004e19f935450f3260c4c1036530a4cfec8e6742`
+
+Rechecked on 2026-10-21. This section covers the three-file follow-up (`TeachingWorkspace.tsx`, `CreateSession.tsx`, and `TeachingDraftReactivation.test.tsx`) at the exact pin, preserving the earlier findings and recheck. Concurrent proposal-recovery work and later backend projections are excluded.
+
+**Verdict: both remaining J07-TE-R3 gaps are verified fixed. R1/R2/R4 regressions pass. Overall teaching acceptance remains withheld for the additional independently reproduced P1, J07-TE-R5, below.** This does not accept all of J07 or any whole feature.
+
+### J07-TE-R3 closure and regression evidence
+
+The independent real-application probe now verifies:
+
+- The original unsaved session preparation survives a real concurrent revision while another teaching tab is active. The current revision is displayed separately; saving remains disabled until explicit comparison. A second writer then changes the record after that comparison. The ensuing real HTTP 409 still preserves the draft and its explanation. A second explicit comparison saves the retained draft against the latest exact expected version, producing revision 4.
+- A retained new-session basis offers the observation saved through the other tab while preserving arena and the selected exact goal. Correcting that selected observation subsequently makes the old revision unavailable. The form blocks confirmation, retains the other values, and requires explicit removal of the obsolete selection. It does not silently select the replacement observation.
+- An old generated edit buffer is rechecked even when the newer independently authored current revision and its version are unchanged. Actual model release revocation hides the old buffer, including when an earlier authorized history response is released late. Explicit discard adopts the safe current manual content. This verifies the **edit-buffer** gate; the separate saved-history presentation has the R5 defect below.
+- The earlier simple internal session/observation/delivery draft round trips pass. R1's actual recall, failed current-assignment refresh and held old message/input responses remain gated; independently recorded actual facts remain available. R2 corrections retain both original null and exact session/assignment links, including `.000123` occurrence precision. R4's real App shows the trusted nonexistent-time instruction without sending a basis command.
+
+The exact-pin 88-test suite additionally passes the late-own-success buffer test, explicit discard, historical-read failure, stale selected profile/source cases, named staff refresh, and generic unexpected-error handling. The late-own-success test changes local state using the component test harness while a response is pending; it is not represented as a separate physical-browser typing scenario.
+
+Evidence: `var/review-j07-r3-final/independent-recheck.mjs`, `independent-evidence.json` (nine completed checks, no findings in that probe), `draft-freshness.png`, `historical-recall.png`, and `late-recall-redaction.png`.
+
+### J07-TE-R5 — P1: saved revision history retains recalled generated prose when the current manual revision is unchanged
+
+Exact-pin locations: `web/src/features/teaching/TeachingWorkspace.tsx:215–224` and `:405–408`.
+
+`SessionHistory` fetches saved revisions using dependencies that omit tab reactivation and the fresh current-access read. Its component key also remains unchanged when the current revision ID and source status are unchanged. A model dependency can be revoked for an older revision while an independently authored newer revision remains current. Refreshing that current record therefore leaves the old history projection mounted and authorized only by its earlier read.
+
+Independent Chromium/FastAPI/PostgreSQL reproduction:
+
+1. Create a real local-model proposal, merge its support field into session revision 2, and complete the normal exact review/approval workflow.
+2. Save revision 3 with explicitly independent manual support and the `support` manual-replacement declaration. The backend confirms the current support no longer carries the old model lineage.
+3. Select revision 3 and expand **Lagret revisjonshistorikk**. Revision 2 currently shows `Synthetic AI visual support`.
+4. Move to Observasjoner and revoke the actual evaluated model release through the authenticated API.
+5. Return to Undervisningsøkter. Current revision 3 remains available with the same revision ID and version. A fresh authoritative revision-history GET returns `content: null` for revision 2, but the open history panel still visibly renders `Synthetic AI visual support` and its earlier approval presentation.
+6. Click **Kontroller lagrede økter på nytt**. The recalled historical prose remains visible.
+
+This is not an inferred backend defect: fresh backend history is correctly redacted. It is a retained browser projection after a current-access refresh. The reproduction does not require an unsaved edit buffer, so the new buffer-source gate cannot protect this path.
+
+Evidence: `var/review-j07-r3-final/history-edge/history-probe.mjs`, `history-evidence.json`, and visually inspected `history-recall.png`. The evidence records one visible recalled text instance both after reactivation and after explicit refresh, alongside a null authoritative historical content value and unchanged current revision ID/version.
+
+Required repair: revalidate the saved-history projection on the same relevant access/activation refresh boundaries, suppress its previous source-derived rows while validation is pending or fails, and ignore obsolete late responses. Do not infer historical authority from a still-authorized current manual revision. Recheck the original sequence, explicit refresh, partial history-read failure, and a held pre-recall history response; retain the successful R3 draft behavior.
+
+### Exact-pin verification, isolation and cleanup
+
+`var/review-j07-r3-final/pin` is a Git archive of the exact candidate. `exact-files.json` checks all three changed files byte-for-byte against Git. The shared dependency directory supplies installed packages only. The full application production bundle was independently built from the archive. Both actual FastAPI listeners imported the archived backend using absolute paths:
+
+```text
+/Users/lauritz/Programming/SpesPed/var/review-j07-r3-final/pin/backend
+/Users/lauritz/Programming/SpesPed/var/review-j07-r3-final/pin/backend/tests
+```
+
+| Completed check | Result | Evidence under `var/review-j07-r3-final/` |
+| --- | --- | --- |
+| Archived `npm test -- --reporter=verbose` | 88 passed, seven files, 4.11 s | `web-tests.log` |
+| Archived `npm run build` | TypeScript and production build passed, 53 modules | `build.log` |
+| Real normal workflow replay | All 11 steps completed | `normal-replay.log`, `evidence.json` |
+| Independent R3/adverse/regression probe | Nine checks completed | `independent-recheck.log`, `independent-evidence.json` |
+| Fresh second real environment and normal replay | All 11 steps completed | `history-edge/normal-replay.log`, `history-edge/evidence.json` |
+| Independently authored open-history recall probe | Completed; confirms R5 | `history-edge/history-probe.log`, `history-edge/history-evidence.json` |
+
+The normal scripts replay the previously reviewed author scenario against the separately frozen application; the adverse and history probes are independently authored. Initial probe attempts encountered only reviewer selector mismatches: the first expected an alert with different wording, and the history preparation encountered a strict selector matching both a history definition and an edit field. The corrected probes completed without application edits. Preserved `attempt1-*` evidence and `history-edge/README.txt` describe these corrections and the reusable fresh-fixture reproduction. Passing probe exit codes indicate completed checks/evidence collection, not overall acceptance.
+
+All processes were awaited. The reviewer stopped only its listeners on 18894 and 18895 (PIDs 58411 and 60327), then removed only their recorded synthetic PostgreSQL schemas, `j05_b905a222a39a4f55ba11dba481052a21` and `j05_4e1ca7c6a93441cba4fe6f1242557646`. `cleanup.json` confirms both listeners stopped and both namespaces absent. Ports 8000, 5173 and 18878 were untouched. No real pupil data, external model, production edits, commits, pushes or subagents were used.
+
+Earlier whole-feature limitations and separately reviewed planning work remain outside this bounded recheck. The original R3 repair is closed; R5 must be independently verified after repair before teaching acceptance.
