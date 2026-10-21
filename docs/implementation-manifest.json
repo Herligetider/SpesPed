@@ -19,12 +19,21 @@
         "F34"
       ],
       "dependsOn": [],
-      "status": "implementing",
+      "status": "awaiting_review",
       "requiredEvidence": "Login/logout, expiry, cross-school/learner denial, authority and persistence tests",
       "implementationAgent": "/root/j01_foundation",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
+      "reviewAgent": "/root/review_j01",
+      "commits": [
+        "da754c695bdadf4f031eb2f00ab15b364afd5fda"
+      ],
+      "evidence": [
+        {
+          "type": "implementer_report",
+          "command": "SPESPED_TEST_POSTGRES_URL=<isolated-synthetic-development-db> uv run --project backend pytest backend/tests/test_foundation.py -q",
+          "result": "25 foundation tests passed across SQLite and PostgreSQL; independent review pending",
+          "revision": "da754c695bdadf4f031eb2f00ab15b364afd5fda"
+        }
+      ],
       "findings": []
     },
     {
@@ -73,7 +82,7 @@
         "F40"
       ],
       "dependsOn": [],
-      "status": "awaiting_review",
+      "status": "changes_requested",
       "requiredEvidence": "Boundary and adverse domain examples, especially DST, revision and unsupported evidence",
       "implementationAgent": "/root/j02_domain_core",
       "reviewAgent": "/root/review_j02",
@@ -87,9 +96,31 @@
           "command": "PYTHONPATH=backend /opt/homebrew/bin/python3.12 -m unittest discover -s backend/tests -p test_domain_core.py -q",
           "result": "25 tests passed; independent review pending",
           "revision": "bd207c8c3422a0bf56c742953444ca96a1c5be21"
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J02-review.md",
+          "result": "25 required tests and 6 additional checks passed; three actionable findings require repair",
+          "revision": "35c613a765f6dfe43e839b3876278068535cf31f"
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "J02-R01",
+          "summary": "Calendar boundaries fail at midnight DST gaps",
+          "status": "open"
+        },
+        {
+          "id": "J02-R02",
+          "summary": "Entitlement aggregation lacks subject and decision revision identity",
+          "status": "open"
+        },
+        {
+          "id": "J02-R03",
+          "summary": "Ordinary manual draft request requires activating a schedule",
+          "status": "open"
+        }
+      ]
     },
     {
       "id": "J03",
