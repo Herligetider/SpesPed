@@ -40,7 +40,10 @@ def env(request,tmp_path):
     command.upgrade(config,'j05_plans')
     # Shared checkout can contain the parallel evidence branch before the root
     # merge migration lands; exercise both explicit compatible heads.
-    if (Path(__file__).resolve().parents[1]/'migrations/versions/j04_structuring.py').exists():
+    migration_versions=Path(__file__).resolve().parents[1]/'migrations/versions'
+    if (migration_versions/'j04_manual_recovery.py').exists():
+        command.upgrade(config,'j04_manual_recovery')
+    elif (migration_versions/'j04_structuring.py').exists():
         command.upgrade(config,'j04_structuring')
     factory=make_session_factory(url)
     with factory.begin() as db:
@@ -143,3 +146,19 @@ def activate(client,ids,headers,row):
         assert result.status_code == 200,result.text
         row=result.json()
     return row
+
+
+def reviewed_referral(client,ids,headers,case,binding):
+    """Prepare a fully sourced reviewed referral without recording any contact."""
+    path=base(ids)+f'/support-cases/{case["id"]}'
+    consents={}
+    for kind in ('education_action','processing_basis','disclosure_permission'):
+        response=client.post(path+'/consents',headers=headers,json=retry(kind=kind,purpose='Synthetic referral purpose',action_scope='referral_submission',representative='Synthetic authorized representative',representative_capacity='Sourced representation for this action',valid_from=(utcnow()-timedelta(days=30)).isoformat(),source=binding))
+        assert response.status_code == 201,response.text
+        consents[kind]=response.json()
+    payload=retry(concern='Synthetic support concern',prior_measures='Visual support tried',observed_outcomes='Observed learning difficulty',requested_assessment='Educational assessment',learner_view='Wants visual materials',guardian_view='Agrees to referral',recipient='Synthetic expert service',sources=[binding],consent_ids=[consents['education_action']['id']],permission_requirement='required',permission_basis='Separate educational permission checked',disclosure_requirement='required',disclosure_permission_ids=[consents['disclosure_permission']['id']],disclosure_basis='Separate disclosure permission checked',processing_basis_id=consents['processing_basis']['id'])
+    response=client.post(path+'/referrals',headers=headers,json=payload);assert response.status_code == 201,response.text
+    row=response.json()
+    response=client.post(path+f'/referrals/{row["id"]}/review',headers=headers,json=expected(row,content_digest=row['content']['digest'],reason='Synthetic source, permission and recipient review'))
+    assert response.status_code == 200,response.text
+    return response.json(),consents

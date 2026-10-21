@@ -9,8 +9,9 @@ from spesped.db import utcnow
 from spesped.domain import ApprovalBinding, EffectivePeriod, EntitlementQuantity, QuantityUnit, CountingBasis, RevisionId, SubjectScope, SchoolId, LearnerId, UserId, canonical_content_digest
 from spesped.errors import DomainError, access_denied
 from spesped.contexts.identity.models import Learner
+from spesped.contexts.evidence.projections import confirmed_binding_is_current
 from spesped.contexts.entitlements import service as entitlements
-from spesped.contexts.entitlements.common import (audit, conflict, depend, expected, replay, remember, source_binding, sources, source_status, touch)
+from spesped.contexts.entitlements.common import (audit, conflict, depend, expected, replay, remember, source_binding, sources, source_status, authorized_projection, touch)
 from .models import (LearnerSupportProfile, ProfileStatement, ProfileReview, IndividualEducationPlan, PlanRevision, LearningGoal, GoalRevision, Adaptation, PlanContribution, ProvisionAllocation, PlanApproval, PlanImpact, PlanCommand, PlanEvent)
 
 
@@ -88,12 +89,7 @@ def profile_view(db, actor, school_id, learner_id, history=False, brief=False, o
         if brief:
             # The brief is a curated projection. It contains no original excerpt or
             # document path and does not require dossier/evidence-read authority.
-            from spesped.contexts.evidence.models import EvidenceItem, EvidenceRevision, SourceSubjectLink, SourceItem
-            item = db.get(EvidenceItem, row.source['evidence_id'])
-            revision = db.scalar(select(EvidenceRevision).where(EvidenceRevision.school_id == school_id, EvidenceRevision.evidence_id == row.source['evidence_id'], EvidenceRevision.revision == row.source['evidence_revision']))
-            link = db.get(SourceSubjectLink, row.source['link_id'])
-            original = db.get(SourceItem, link.source_id) if link else None
-            current = bool(item and revision and link and original and item.school_id == school_id and item.learner_id == learner_id and item.current_revision == row.source['evidence_revision'] and revision.link_id == link.id and revision.certainty == 'confirmed' and link.revoked_at is None and original.current_revision == link.source_revision)
+            current=confirmed_binding_is_current(db,school_id,learner_id,str(row.source['evidence_id']),row.source['evidence_revision'],str(row.source['link_id']))
             status = 'current' if current else 'review_required'
         else:
             status = source_status(db, actor, school_id, learner_id, [row.source])
@@ -101,7 +97,10 @@ def profile_view(db, actor, school_id, learner_id, history=False, brief=False, o
             clarifications.append({'statement_id':row.id,'reason':'source_changed' if status != 'current' else 'disputed'})
         if brief and status != 'current': continue
         view = {'id':row.id,'version':row.version,'category':row.category,'content':row.content if status == 'current' else None,'state':row.state,'source_status':status,'observed_at':row.observed_at,'confirmed_by':row.confirmed_by,'reviewed_at':row.reviewed_at}
-        if not brief: view.update(source=row.source if status == 'current' else None, replaces_id=row.replaces_id, review_reason=row.review_reason)
+        if not brief:
+            view.update(source=row.source if status == 'current' else None,replaces_id=row.replaces_id)
+            reviewed=profile_review_projection(db,actor,school_id,learner_id,row,{'review_reason':row.review_reason},('review_reason',))
+            view['review_reason']=reviewed['review_reason']
         items.append(view)
     record_audit(db, actor, school_id, 'profile.brief_read' if brief else 'profile.read', 'support_profile', parent.id)
     return {'id':parent.id,'version':parent.version,'items':items[offset:offset+limit],'total':len(items),'clarifications':clarifications[offset:offset+limit]}
@@ -109,7 +108,7 @@ def profile_view(db, actor, school_id, learner_id, history=False, brief=False, o
 
 def plan(db, actor, school_id, plan_id, action='plans.read', lock=False):
     query = select(IndividualEducationPlan).where(IndividualEducationPlan.school_id == school_id, IndividualEducationPlan.id == plan_id)
-    if lock: query = query.with_for_update()
+    if lock: query = query.with_for_update().execution_options(populate_existing=True)
     row = db.scalar(query)
     if row is None: raise access_denied()
     check_access(db, actor, school_id, row.learner_id, action)
@@ -155,7 +154,7 @@ def all_bindings(db, revision):
 
 
 def validate_plan_basis(db, actor, row, revision, *, bounds=True, historical=False):
-    sources(db, actor, row.school_id, row.learner_id, all_bindings(db,revision))
+    sources(db, actor, row.school_id, row.learner_id, projection_bindings(db,actor,row,revision))
     allocations = children(db, ProvisionAllocation, revision)
     if row.kind == 'ordinary_teaching':
         if revision.decision_id or allocations: raise DomainError('ordinary_scope','Ordinary teaching plans must not claim decision entitlements.',422)
@@ -251,8 +250,15 @@ def save_plan(db, actor, school_id, learner_id, command, plan_id=None):
 
 
 def lifecycle(db, actor, school_id, plan_id, command, transition):
-    row=plan(db,actor,school_id,plan_id,'plans.write',lock=True)
+    # Every overlapping plan command takes pupil then plan locks. The first
+    # scoped read identifies the pupil without taking the plan lock. Refresh
+    # after waiting so an earlier ORM identity cannot hide a committed revision.
+    row=plan(db,actor,school_id,plan_id,'plans.write')
     db.scalar(select(Learner).where(Learner.id == row.learner_id,Learner.school_id == school_id).with_for_update())
+    row=plan(db,actor,school_id,plan_id,'plans.write',lock=True)
+    grant=None
+    if transition in {'approve','activate'}:
+        grant=require_authority(db,actor,school_id,'plans.approve',row.learner_id)
     operation='plan.'+transition
     prior,digest=replay(db,actor,school_id,operation,command,plan_id,PlanCommand)
     if prior: return row
@@ -262,9 +268,6 @@ def lifecycle(db, actor, school_id, plan_id, command, transition):
     required={'review':'draft','approve':'in_review','activate':'approved'}[transition]
     if revision.state != required: raise conflict('The plan is not in the required review state.')
     validate_plan_basis(db,actor,row,revision)
-    grant=None
-    if transition in {'approve','activate'}:
-        grant=require_authority(db,actor,school_id,'plans.approve',row.learner_id)
     if transition == 'review':
         revision.state,revision.reviewed_by='in_review',actor.user_id
     elif transition == 'approve':
@@ -349,3 +352,22 @@ def compare(db,row,old_revision,new_revision):
         state='closed' if new is None or new.status == 'closed' else 'added' if old is None else 'continued' if content_row(old,fields)==content_row(new,fields) else 'changed'
         result.append({'goal_id':goal_id,'change':state,'old_revision_id':old.id if old else None,'new_revision_id':new.id if new else None})
     return result
+
+
+def profile_review_projection(db,actor,school_id,learner_id,statement,value,prose_fields):
+    # A replacement review can discuss both statements. Its reason must remain
+    # protected when either linked interpretation becomes stale or inaccessible.
+    related=[statement]
+    if statement.replaces_id:
+        previous=db.scalar(select(ProfileStatement).where(ProfileStatement.school_id == school_id,ProfileStatement.profile_id == statement.profile_id,ProfileStatement.id == statement.replaces_id))
+        if previous: related.append(previous)
+    related.extend(db.scalars(select(ProfileStatement).where(ProfileStatement.school_id == school_id,ProfileStatement.profile_id == statement.profile_id,ProfileStatement.replaces_id == statement.id)))
+    return authorized_projection(db,actor,school_id,learner_id,value,[row.source for row in related],prose_fields)
+
+
+def projection_bindings(db,actor,row,revision):
+    bindings=all_bindings(db,revision)
+    if revision.decision_id:
+        allocations=children(db,ProvisionAllocation,revision)
+        bindings.extend(entitlements.decision_bindings(db,actor,row.school_id,row.learner_id,revision.decision_id,revision.decision_revision_id,[a.provision_id for a in allocations]))
+    return bindings

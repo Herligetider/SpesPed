@@ -8,8 +8,8 @@ from spesped.audit import record_audit
 from spesped.db import get_db
 from spesped.errors import DomainError
 from . import service
-from .common import commit, mutate, source_status
-from .models import SupportCase, EducationConsent, Referral, ReferralContact, ExpertAssessment, Recommendation, EducationDecision, DecisionRevision, DecisionProvision
+from .common import commit, mutate, source_status, authorized_projection
+from .models import SupportCase, EducationConsent, Referral, ReferralRevision, ReferralContact, ExpertAssessment, Recommendation, EducationDecision, DecisionRevision, DecisionProvision
 from .schemas import CreateCase, CaseUpdate, ConsentInput, Reason, CreateReferral, ReviseReferral, ExactReview, ContactInput, AssessmentInput, DecisionInput, DecisionUpdate, ClarificationInput, ResolveClarification
 
 router=APIRouter(prefix='/api/v1/schools/{school_id}',tags=['support entitlements'])
@@ -24,34 +24,57 @@ def case_view(row):
 
 
 def consent_view(db,actor,row):
-    value=row_view(row)
-    value['source_status']=source_status(db,actor,row.school_id,row.learner_id,[row.source])
-    if value['source_status'] != 'current':
-        for key in ('source','representative','representative_capacity'): value[key]=None
-    return value
+    return authorized_projection(db,actor,row.school_id,row.learner_id,row_view(row),[row.source],('source','purpose','representative','representative_capacity','revoked_reason'))
+
+
+def referral_bindings(db,row,revision):
+    bindings=list(revision.sources)
+    ids=[revision.processing_basis_id,*revision.consent_ids,*revision.disclosure_permission_ids]
+    for consent in db.scalars(select(EducationConsent).where(EducationConsent.school_id == row.school_id,EducationConsent.learner_id == row.learner_id,EducationConsent.case_id == row.case_id,EducationConsent.id.in_(ids))):
+        bindings.append(consent.source)
+    return bindings
 
 
 def referral_view(db,actor,row,revision=None):
     value=row_view(row);revision=revision or service.referral_revision(db,row)
-    value['content']=row_view(revision)
-    value['source_status']=source_status(db,actor,row.school_id,row.learner_id,revision.sources)
-    if value['source_status'] != 'current': value['content']={'id':revision.id,'revision':revision.revision,'digest':revision.digest,'issue':'source_review_required'}
+    bindings=referral_bindings(db,row,revision)
+    projected=authorized_projection(db,actor,row.school_id,row.learner_id,{'content':row_view(revision)},bindings,('content',))
+    value['source_status']=projected['source_status']
+    value['content']=projected['content'] if projected['content'] is not None else {'id':revision.id,'revision':revision.revision,'digest':revision.digest,'issue':'source_review_required'}
     contacts=db.scalars(select(ReferralContact).where(ReferralContact.school_id == row.school_id,ReferralContact.referral_id == row.id).order_by(ReferralContact.recorded_at,ReferralContact.id)).all()
     value['contacts']=[]
     for contact in contacts:
-        current=not contact.source or source_status(db,actor,row.school_id,row.learner_id,[contact.source]) == 'current'
-        value['contacts'].append(row_view(contact) if current else {'id':contact.id,'kind':contact.kind,'actual_contact':contact.actual_contact,'issue':'source_review_required'})
+        # A contact note can discuss the submitted referral as well as its own
+        # receipt source. Planned follow-ups remain bound to that referral basis.
+        recorded=db.scalar(select(ReferralRevision).where(ReferralRevision.school_id == row.school_id,ReferralRevision.referral_id == row.id,ReferralRevision.revision == contact.referral_revision))
+        contact_bindings=referral_bindings(db,row,recorded)
+        if contact.source:contact_bindings.append(contact.source)
+        projected=authorized_projection(db,actor,row.school_id,row.learner_id,row_view(contact),contact_bindings,('recipient','external_reference','note','source'))
+        value['contacts'].append(projected)
     return value
 
 
 def assessment_view(db,actor,row):
-    value=row_view(row)
     recommendations=db.scalars(select(Recommendation).where(Recommendation.school_id == row.school_id,Recommendation.assessment_id == row.id).order_by(Recommendation.id)).all()
-    value['source_status']=source_status(db,actor,row.school_id,row.learner_id,[row.source]+[r.source for r in recommendations])
+    value=authorized_projection(db,actor,row.school_id,row.learner_id,row_view(row),[row.source]+[r.source for r in recommendations],('source','issuer'))
     value['recommendations']=[row_view(r) for r in recommendations] if value['source_status'] == 'current' else []
-    if value['source_status'] != 'current': value['source']=None
     value['authority']='expert_recommendation_only'
     return value
+
+
+def clarification_view(db,actor,row):
+    bindings=[row.source] if row.source else []
+    if row.reference_id:
+        # Automatic recommendation-difference tasks also discuss the decision;
+        # their resolution cannot outlive access to that second source basis.
+        revision=db.scalar(select(DecisionRevision).join(EducationDecision,EducationDecision.id == DecisionRevision.decision_id).where(DecisionRevision.school_id == row.school_id,DecisionRevision.id == row.reference_id,EducationDecision.learner_id == row.learner_id,EducationDecision.case_id == row.case_id))
+        if revision is None:
+            value=row_view(row)
+            value.update(description=None,source=None,resolution=None,source_status='review_required')
+            return value
+        provisions=db.scalars(select(DecisionProvision).where(DecisionProvision.school_id == row.school_id,DecisionProvision.decision_revision_id == revision.id)).all()
+        bindings.extend([revision.source,*[p.source for p in provisions]])
+    return authorized_projection(db,actor,row.school_id,row.learner_id,row_view(row),bindings,('description','source','resolution'))
 
 
 def decision_view(db,actor,row,revision=None):
@@ -238,7 +261,7 @@ def referral_history(school_id:UUID,case_id:UUID,referral_id:UUID,offset:int=Que
 
 @router.post('/support-cases/{case_id}/clarifications',status_code=201)
 def clarification(school_id:UUID,case_id:UUID,command:ClarificationInput,actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
-    row=mutate(db,lambda:service.create_clarification(db,actor,str(school_id),str(case_id),command));return row_view(row)
+    row=mutate(db,lambda:service.create_clarification(db,actor,str(school_id),str(case_id),command));return clarification_view(db,actor,row)
 
 
 @router.get('/support-cases/{case_id}/clarifications')
@@ -246,19 +269,14 @@ def clarifications(school_id:UUID,case_id:UUID,offset:int=Query(0,ge=0),limit:in
     from .models import CaseClarification
     case=service.case_access(db,actor,str(school_id),str(case_id))
     rows=db.scalars(select(CaseClarification).where(CaseClarification.school_id == str(school_id),CaseClarification.case_id == case.id).order_by(CaseClarification.created_at.desc(),CaseClarification.id)).all()
-    values=[]
-    for row in rows[offset:offset+limit]:
-        value=row_view(row)
-        if row.source and source_status(db,actor,str(school_id),case.learner_id,[row.source]) != 'current':
-            value['source']=None;value['description']=None;value['source_status']='review_required'
-        values.append(value)
+    values=[clarification_view(db,actor,row) for row in rows[offset:offset+limit]]
     read_audit(db,actor,case)
     return {'items':values,'total':len(rows)}
 
 
 @router.post('/support-cases/{case_id}/clarifications/{clarification_id}/resolve')
 def resolve(school_id:UUID,case_id:UUID,clarification_id:UUID,command:ResolveClarification,actor:Actor=Depends(get_actor),db:Session=Depends(get_db)):
-    row=mutate(db,lambda:service.resolve_clarification(db,actor,str(school_id),str(case_id),str(clarification_id),command));return {'id':row.id,'version':row.version,'state':row.state,'resolution':command.resolution,'resolved_by':actor.user_id,'resolved_at':row.resolved_at}
+    row=mutate(db,lambda:service.resolve_clarification(db,actor,str(school_id),str(case_id),str(clarification_id),command));return clarification_view(db,actor,row)
 
 
 @router.get('/support-cases/{case_id}/timeline')

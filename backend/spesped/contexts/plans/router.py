@@ -18,7 +18,7 @@ def plan_view(db,actor,row,revision=None):
     service.check_access(db,actor,row.school_id,row.learner_id,'plans.read')
     revision=revision or service.current_revision(db,row)
     value={'id':row.id,'learner_id':row.learner_id,'kind':row.kind,'version':row.version,'state':row.state,'current_revision':row.current_revision,'active_revision_id':row.active_revision_id,'revision_state':revision.state,'content_digest':revision.content_digest,'approved_by':revision.approved_by,'approved_at':revision.approved_at,'activated_at':revision.activated_at,'activation_until':revision.activation_until}
-    status=source_status(db,actor,row.school_id,row.learner_id,service.all_bindings(db,revision))
+    status=source_status(db,actor,row.school_id,row.learner_id,service.projection_bindings(db,actor,row,revision))
     issues=[]
     try: service.validate_plan_basis(db,actor,row,revision,historical=revision.state == 'historical')
     except DomainError as exc:
@@ -142,4 +142,5 @@ def statement_history(school_id:UUID,learner_id:UUID,statement_id:UUID,offset:in
     if row is None: raise access_denied()
     reviews=db.scalars(select(ProfileReview).where(ProfileReview.school_id == str(school_id),ProfileReview.statement_id == row.id).order_by(ProfileReview.reviewed_at,ProfileReview.id)).all()
     record_audit(db,actor,str(school_id),'profile.history_read','profile_statement',row.id);commit(db)
-    return {'items':[service.content_row(r,('id','outcome','reason','reviewer_id','reviewed_at')) for r in reviews[offset:offset+limit]],'total':len(reviews)}
+    items=[service.profile_review_projection(db,actor,str(school_id),str(learner_id),row,service.content_row(r,('id','outcome','reason','reviewer_id','reviewed_at')),('reason',)) for r in reviews[offset:offset+limit]]
+    return {'items':items,'total':len(reviews)}

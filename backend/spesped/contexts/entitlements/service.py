@@ -161,6 +161,8 @@ def review_referral(db, actor, school_id, case_id, referral_id, command):
 
 def contact_referral(db, actor, school_id, case_id, referral_id, command):
     case, row = child(db, actor, school_id, case_id, Referral, referral_id, 'support_case.write', lock=True)
+    if command.kind == 'submission':
+        require_authority(db, actor, school_id, 'support_case.submit', case.learner_id, case.id)
     prior, digest = replay(db, actor, school_id, 'referral.contact', command, referral_id)
     if prior: return row
     expected(row, command)
@@ -168,7 +170,6 @@ def contact_referral(db, actor, school_id, case_id, referral_id, command):
     binding = source_binding(db, actor, school_id, case.learner_id, command.source) if command.source else None
     if command.actual_contact and command.occurred_at > utcnow(): raise DomainError('contact_future','An actual contact must already have occurred.',422)
     if command.kind == 'submission':
-        require_authority(db, actor, school_id, 'support_case.submit', case.learner_id, case.id)
         if row.state != 'reviewed' or row.reviewed_digest != revision.digest or command.recipient != revision.recipient:
             raise conflict('Submission must match the exact reviewed referral and recipient.')
         check_referral(db, actor, case, revision)
@@ -259,10 +260,10 @@ def save_decision(db, actor, school_id, case_id, command, decision_id=None):
 
 def confirm_decision(db, actor, school_id, case_id, decision_id, command):
     case, row = child(db, actor, school_id, case_id, EducationDecision, decision_id, 'support_case.confirm', lock=True)
+    require_authority(db, actor, school_id, 'education_decision.confirm', case.learner_id, case.id)
     prior, digest = replay(db, actor, school_id, 'decision.confirm', command, decision_id)
     if prior: return row
     expected(row, command)
-    require_authority(db, actor, school_id, 'education_decision.confirm', case.learner_id, case.id)
     revision = decision_revision(db, row)
     if revision.state != 'proposed': raise conflict('This decision revision has already been reviewed.')
     provisions = db.scalars(select(DecisionProvision).where(DecisionProvision.school_id == school_id, DecisionProvision.decision_revision_id == revision.id)).all()
@@ -365,3 +366,22 @@ def record_recommendation_differences(db,actor,case,decision,revision,provisions
             if differs:
                 row=CaseClarification(school_id=case.school_id,learner_id=case.learner_id,case_id=case.id,kind='recommendation_difference',description='The confirmed expert recommendation and decision provision differ or have different quantity bases. Review each source; the decision remains separately authoritative.',owner_id=case.owner_id,source=rec.source,reference_id=revision.id,state='open')
                 db.add(row);db.flush();audit(db,actor,row,'support_case.recommendation_difference',recommendation_id=rec.id,decision_revision_id=revision.id)
+
+
+def decision_bindings(db,actor,school_id,learner_id,decision_id,revision_id,provision_ids):
+    """Scoped exact source bindings for dependent contexts' authorized views.
+
+    Returning identifiers grants no source-prose access. Consumers still apply
+    the actor-aware evidence check, even for a superseded historical decision.
+    """
+    decision=db.scalar(select(EducationDecision).where(EducationDecision.school_id == school_id,EducationDecision.learner_id == learner_id,EducationDecision.id == decision_id))
+    if decision is None:raise access_denied()
+    case_access(db,actor,school_id,decision.case_id)
+    revision=db.scalar(select(DecisionRevision).where(DecisionRevision.school_id == school_id,DecisionRevision.decision_id == decision.id,DecisionRevision.id == revision_id))
+    if revision is None:raise access_denied()
+    bindings=[revision.source]
+    for provision_id in provision_ids:
+        provision=db.scalar(select(DecisionProvision).where(DecisionProvision.school_id == school_id,DecisionProvision.decision_revision_id == revision.id,DecisionProvision.id == provision_id))
+        if provision is None:raise access_denied()
+        bindings.append(provision.source)
+    return bindings

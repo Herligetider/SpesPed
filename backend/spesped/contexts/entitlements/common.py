@@ -1,6 +1,6 @@
 """Transaction helpers shared by BC04 and BC05, without implicit authority grants."""
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 from spesped.audit import record_audit
 from spesped.auth import require_learner_access
@@ -8,7 +8,7 @@ from spesped.db import utcnow
 from spesped.domain.approval import canonical_content_digest
 from spesped.errors import DomainError
 from spesped.contexts.evidence import service as evidence
-from spesped.contexts.evidence.models import SourceItem
+from spesped.contexts.evidence.projections import confirmed_binding_is_current
 from spesped.contexts.evidence.schemas import RegisterDerivative
 from .models import EntitlementCommand, EntitlementEvent
 
@@ -22,12 +22,23 @@ def expected(row, command):
         raise conflict()
 
 
+def retryable_transaction_error(exc):
+    # PostgreSQL SQLSTATEs: serialization failure, deadlock, lock timeout/NOWAIT.
+    # Other database/connection errors keep their real failure classification.
+    return getattr(exc.orig, 'sqlstate', None) in {'40001', '40P01', '55P03'}
+
+
 def commit(db):
     try:
         db.commit()
     except (IntegrityError, StaleDataError):
         db.rollback()
         raise conflict('A concurrent command changed this record or used this request key. Refresh and retry.') from None
+    except DBAPIError as exc:
+        db.rollback()
+        if retryable_transaction_error(exc):
+            raise conflict('A concurrent transaction interrupted this command. Retry with the same request key.') from None
+        raise
 
 
 def mutate(db, operation):
@@ -35,6 +46,11 @@ def mutate(db, operation):
         value = operation()
         commit(db)
         return value
+    except DBAPIError as exc:
+        db.rollback()
+        if retryable_transaction_error(exc):
+            raise conflict('A concurrent transaction interrupted this command. Retry with the same request key.') from None
+        raise
     except Exception:
         db.rollback()
         raise
@@ -66,9 +82,8 @@ def source_binding(db, actor, school_id, learner_id, binding):
     revision = evidence.current(db, item)
     if item.learner_id != learner_id or item.current_revision != value['evidence_revision'] or revision.link_id != str(value['link_id']) or revision.certainty != 'confirmed':
         raise DomainError('source_changed', 'The source is changed, disputed or belongs to another pupil. Review its current excerpt.', 409)
-    excerpt = evidence.excerpt_view(db, actor, school_id, str(value['link_id']))
-    source = db.get(SourceItem, excerpt['source_id'])
-    if source.current_revision != excerpt['revision']:
+    evidence.excerpt_view(db, actor, school_id, str(value['link_id']))
+    if not confirmed_binding_is_current(db, school_id, learner_id, str(value['evidence_id']), value['evidence_revision'], str(value['link_id'])):
         raise DomainError('source_changed', 'The original source has a newer revision. Review the new source.', 409)
     return value
 
@@ -97,3 +112,19 @@ def depend(db, actor, school_id, learner_id, bindings, target_type, target_id, r
 
 def touch(row):
     row.updated_at = utcnow()
+
+
+def authorized_projection(db, actor, school_id, learner_id, value, bindings, prose_fields):
+    """Reauthorize every source-dependent response, including history and retries.
+
+    Metadata currency alone never authorizes prose. Callers authorize their own
+    aggregate before this actor-aware evidence check. Stored history is retained;
+    only the response loses source-dependent text and bindings when stale/denied.
+    """
+    projected=dict(value)
+    status=source_status(db,actor,school_id,learner_id,bindings)
+    projected['source_status']=status
+    if status != 'current':
+        for name in prose_fields:
+            projected[name]=None
+    return projected
