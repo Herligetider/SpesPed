@@ -221,7 +221,10 @@ function SessionHistory({ props, row }: { props: TeacherProps; row: Session }) {
         row.id,
         "revisions",
       ]),
-    [props.client, props.schoolId, row.id, row.revision_id],
+    // Historical source authority is independent of the current revision. A
+    // fresh current-access projection (even with unchanged version) or a tab
+    // activation starts a new read scope and invalidates retained rows at once.
+    [props.client, props.schoolId, row, props.active],
   );
   return (
     <details>
