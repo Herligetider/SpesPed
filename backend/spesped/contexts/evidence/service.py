@@ -196,9 +196,39 @@ def span(db, row, revision, page, start, end):
     inspected = inspection(db, row, revision)
     if inspected is None or inspected.extraction_state != "ready" or inspected.scan_state not in {"clean", "not_required_note"}:
         raise DomainError("source_not_ready", "The source requires scanning or manual clarification.", 409)
-    if page > len(inspected.pages) or start < 0 or end <= start or end > len(inspected.pages[page - 1]):
+    if page < 1 or page > len(inspected.pages) or start < 0 or end <= start or end > len(inspected.pages[page - 1]):
         raise DomainError("source_span", "Select an exact span within a source page.", 422)
     return inspected.pages[page - 1][start:end]
+
+
+def review_progress(db, row, revision=None):
+    fields = db.scalars(select(ExtractionProposal).where(ExtractionProposal.school_id == row.school_id, ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == (revision or row.current_revision))).all()
+    counts = {"pending": 0, "reviewed_unconfirmed": 0, "confirmed": 0, "rejected": 0}
+    for field in fields:
+        if field.outcome == "rejected":
+            counts["rejected"] += 1
+        elif field.state == "confirmed":
+            counts["confirmed"] += 1
+        elif field.outcome in {"accepted", "edited"}:
+            counts["reviewed_unconfirmed"] += 1
+        else:
+            counts["pending"] += 1
+    return counts
+
+
+def update_intake_completion(db, row):
+    # The source row is locked by the caller. A reviewed interpretation is not a
+    # release to a pupil; accepted/edited fields still require confirmation.
+    counts = review_progress(db, row)
+    if counts["pending"]:
+        row.state = "needs_review"
+    elif counts["reviewed_unconfirmed"]:
+        row.state = "awaiting_confirmation"
+    elif counts["confirmed"] or counts["rejected"]:
+        row.state = "done"
+    else:
+        row.state = "needs_clarification"
+    return counts
 
 
 def propose(db, actor, school_id, source_id, command):
@@ -212,6 +242,7 @@ def propose(db, actor, school_id, source_id, command):
         return existing
     proposal = ExtractionProposal(school_id=school_id, source_id=row.id, source_revision=row.current_revision, **command.model_dump(exclude={"expected_version"}))
     db.add(proposal)
+    update_intake_completion(db, row)
     row.updated_at = utcnow()
     event(db, actor, school_id, "source.field_proposed", row)
     return proposal
@@ -239,9 +270,11 @@ def review(db, actor, school_id, proposal_id, command):
     except ValueError:
         raise DomainError("field_value", "The edited value does not match the field type.", 422) from None
     proposal.outcome = command.outcome
+    proposal.state = "rejected" if command.outcome == "rejected" else "reviewed"
     proposal.reviewed_value = value if command.outcome != "rejected" else None
     proposal.review_reason = command.reason
     proposal.reviewer_id = actor.user_id
+    update_intake_completion(db, row)
     event(db, actor, school_id, "source.field_reviewed", proposal)
     return proposal
 
@@ -289,8 +322,7 @@ def confirm(db, actor, school_id, proposal_id, command, goal_validator=None):
     db.add(EvidenceRevision(school_id=school_id, evidence_id=item.id, revision=1, link_id=link.id, content=proposal.reviewed_value, field_name=proposal.field_name, recorded_by=actor.user_id, **attribution(command)))
     proposal.state = "confirmed"
     event(db, actor, school_id, "evidence.confirmed", item, learner_id=item.learner_id)
-    if not db.scalar(select(ExtractionProposal.id).where(ExtractionProposal.school_id == school_id, ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == row.current_revision, ExtractionProposal.outcome == "pending")):
-        row.state = "done"
+    update_intake_completion(db, row)
     return item
 
 
@@ -340,16 +372,38 @@ def correct(db, actor, school_id, evidence_id, command, goal_validator=None):
         validate_field(previous.field_name, command.content)
     except ValueError:
         raise DomainError("field_value", "Correction does not match the field type.", 422) from None
-    if item.learner_id != str(command.learner_id):
+    reassigned = item.learner_id != str(command.learner_id)
+    old_link = db.get(SourceSubjectLink, previous.link_id)
+    if reassigned:
         intake_access(db, actor, school_id)
+        if command.excerpt_page is None:
+            raise DomainError("excerpt_review_required", "Select and review the exact excerpt for the corrected pupil association.", 422)
+    if command.excerpt_page is not None:
+        page, start, end = command.excerpt_page, command.excerpt_start, command.excerpt_end
+        # A pupil team may retract/narrow its released text. Access to any other
+        # original text still requires the independent restricted intake authority.
+        if page != old_link.page or start < old_link.span_start or end > old_link.span_end:
+            intake_access(db, actor, school_id)
+    else:
+        proposal = db.get(ExtractionProposal, item.proposal_id)
+        page, start, end = old_link.page, old_link.span_start, old_link.span_end
+        # Safe compatibility default: strip incidental surrounding text to the
+        # originally reviewed field, and never widen an already corrected span.
+        if proposal.page == page:
+            overlap_start, overlap_end = max(start, proposal.span_start), min(end, proposal.span_end)
+            if overlap_start < overlap_end:
+                start, end = overlap_start, overlap_end
+    revision = source_revision(db, school_id, old_link.source_id, old_link.source_revision)
+    source_row = db.get(SourceItem, old_link.source_id)
+    excerpt = span(db, source_row, revision.revision, page, start, end)
+    if len(excerpt) > 20000:
+        raise DomainError("excerpt_size", "Choose a smaller learner-specific excerpt.", 422)
     old_learner = item.learner_id
     old_revision = item.current_revision
-    old_link = db.get(SourceSubjectLink, previous.link_id)
     old_link.revoked_at = utcnow()
     item.learner_id = str(command.learner_id)
     item.current_revision += 1
-    revision = source_revision(db, school_id, old_link.source_id, old_link.source_revision)
-    link = new_link(db, item, revision, old_link.excerpt, old_link.page, old_link.span_start, old_link.span_end)
+    link = new_link(db, item, revision, excerpt, page, start, end)
     db.add(EvidenceRevision(school_id=school_id, evidence_id=item.id, revision=item.current_revision, link_id=link.id, content=command.content, field_name=previous.field_name, correction_reason=command.reason, recorded_by=actor.user_id, **attribution(command)))
     for derivative in db.scalars(select(Derivative).where(Derivative.school_id == school_id, Derivative.evidence_id == item.id, Derivative.state.in_(["draft", "shared"]))):
         derivative.state = "shared_review_required" if derivative.state == "shared" else "stale"

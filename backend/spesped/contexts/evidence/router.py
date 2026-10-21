@@ -67,7 +67,7 @@ def source_view(db, row, revision=None):
     number = revision or row.current_revision
     rev = service.source_revision(db, row.school_id, row.id, number)
     inspected = service.inspection(db, row, number)
-    return {"id": row.id, "version": row.version, "state": row.state, "current_revision": row.current_revision, "revision": number, "sender": rev.sender, "document_type": rev.document_type, "received_at": rev.received_at, "original_at": rev.original_at, "filename": rev.filename, "media_type": rev.media_type, "digest": rev.digest, "byte_size": rev.byte_size, "scan_state": inspected.scan_state, "extraction_state": inspected.extraction_state, "issue": inspected.issue, "page_count": len(inspected.pages), "pagination": "logical_page_breaks" if rev.filename.endswith(".docx") else "source_pages"}
+    return {"id": row.id, "version": row.version, "state": row.state, "current_revision": row.current_revision, "revision": number, "sender": rev.sender, "document_type": rev.document_type, "received_at": rev.received_at, "original_at": rev.original_at, "filename": rev.filename, "media_type": rev.media_type, "digest": rev.digest, "byte_size": rev.byte_size, "scan_state": inspected.scan_state, "extraction_state": inspected.extraction_state, "issue": inspected.issue, "page_count": len(inspected.pages), "review_progress": service.review_progress(db, row, number), "pagination": "logical_page_breaks" if rev.filename.endswith(".docx") else "source_pages"}
 
 
 def proposal_view(row):

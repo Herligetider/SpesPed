@@ -208,7 +208,7 @@ def test_correction_reassignment_revokes_links_and_marks_derivatives(env):
     for state in ("draft", "shared"):
         result = client.post(base(ids) + f'/evidence/{item["id"]}/derivatives', json={"evidence_revision": 1, "target_type": "document", "target_id": str(uuid4()), "target_revision": 2, "state": state}, headers=headers)
         assert result.status_code == 201, result.text
-    corrected = client.post(base(ids) + f'/evidence/{item["id"]}/corrections', json={**attribution(ids, "b"), "expected_version": item["version"], "content": "Corrected pupil event", "reason": "Wrong pupil initially selected"}, headers=headers)
+    corrected = client.post(base(ids) + f'/evidence/{item["id"]}/corrections', json={**attribution(ids, "b"), "expected_version": item["version"], "content": "Corrected pupil event", "reason": "Wrong pupil initially selected", "excerpt_page": item["source"]["page"], "excerpt_start": item["source"]["span_start"], "excerpt_end": item["source"]["span_end"]}, headers=headers)
     assert corrected.status_code == 200, corrected.text
     assert corrected.json()["revision"] == 2
     assert client.get(base(ids) + f'/source-excerpts/{item["source"]["link_id"]}').status_code == 403
@@ -481,3 +481,106 @@ def test_goal_references_fail_closed_until_scoped_validator_is_available(env):
     response = client.post(path, json=command_data, headers=headers)
     assert response.status_code == 200 and response.json()["goal_revision_id"] == goal_id
     assert checks == [goal_id]
+
+
+def test_review_completion_counts_partial_confirmation_reject_all_and_reopen(env):
+    client, factory, app, ids = env
+    headers = login(client)
+    source, _ = note(client, ids, headers, "Synthetic first field\nSynthetic second field")
+    source_path = base(ids) + f'/intake/{source["id"]}'
+    proposals = client.get(source_path + '/proposals').json()["items"]
+    reviewed = []
+    for proposal in proposals:
+        response = client.post(base(ids) + f'/extraction-proposals/{proposal["id"]}/review', json={"expected_version": proposal["version"], "outcome": "accepted", "reason": "Synthetic reviewed source"}, headers=headers)
+        assert response.status_code == 200, response.text
+        reviewed.append(response.json())
+    state = client.get(source_path).json()
+    assert state["state"] == "awaiting_confirmation"
+    assert state["review_progress"] == {"pending": 0, "reviewed_unconfirmed": 2, "confirmed": 0, "rejected": 0}
+    for index, proposal in enumerate(reviewed):
+        response = client.post(base(ids) + f'/extraction-proposals/{proposal["id"]}/confirm', json={**attribution(ids), "expected_version": proposal["version"], "excerpt_page": proposal["page"], "excerpt_start": proposal["span_start"], "excerpt_end": proposal["span_end"]}, headers=headers)
+        assert response.status_code == 201, response.text
+        state = client.get(source_path).json()
+        assert state["state"] == ("awaiting_confirmation" if index == 0 else "done")
+        assert state["review_progress"]["confirmed"] == index + 1
+    reopened = client.post(source_path + '/proposals', json={"expected_version": state["version"], "page": 1, "span_start": 0, "span_end": 9, "field_name": "measure", "proposed_value": "Synthetic"}, headers=headers)
+    assert reopened.status_code == 201, reopened.text
+    assert client.get(source_path).json()["state"] == "needs_review"
+    rejected = client.post(base(ids) + f'/extraction-proposals/{reopened.json()["id"]}/review', json={"expected_version": reopened.json()["version"], "outcome": "rejected", "reason": "Duplicate unnecessary measure"}, headers=headers)
+    assert rejected.status_code == 200
+    assert client.get(source_path).json()["state"] == "done"
+    unrelated, _ = note(client, ids, headers, "Synthetic irrelevant source")
+    proposal = client.get(base(ids) + f'/intake/{unrelated["id"]}/proposals').json()["items"][0]
+    response = client.post(base(ids) + f'/extraction-proposals/{proposal["id"]}/review', json={"expected_version": proposal["version"], "outcome": "rejected", "reason": "Irrelevant to pupil work"}, headers=headers)
+    assert response.status_code == 200
+    state = client.get(base(ids) + f'/intake/{unrelated["id"]}').json()
+    assert state["state"] == "done" and state["review_progress"] == {"pending": 0, "reviewed_unconfirmed": 0, "confirmed": 0, "rejected": 1}
+
+
+def test_correction_narrows_overbroad_release_validates_spans_and_reassignment(env):
+    client, factory, app, ids = env
+    headers = login(client)
+    first = "Synthetic pupil A reads well."
+    sibling = "Synthetic sibling B private concern."
+    text = first + "\n" + sibling
+    source, _ = note(client, ids, headers, text)
+    proposal = client.get(base(ids) + f'/intake/{source["id"]}/proposals').json()["items"][0]
+    reviewed = client.post(base(ids) + f'/extraction-proposals/{proposal["id"]}/review', json={"expected_version": proposal["version"], "outcome": "accepted", "reason": "Checked synthetic source"}, headers=headers).json()
+    response = client.post(base(ids) + f'/extraction-proposals/{proposal["id"]}/confirm', json={**attribution(ids), "expected_version": reviewed["version"], "excerpt_page": 1, "excerpt_start": 0, "excerpt_end": len(text)}, headers=headers)
+    assert response.status_code == 201
+    item = response.json()
+    correction = {**attribution(ids), "expected_version": item["version"], "content": first, "reason": "Remove accidentally released sibling paragraph"}
+    path = base(ids) + f'/evidence/{item["id"]}/corrections'
+    # Compatibility correction narrows to the reviewed field instead of copying
+    # accidentally selected surrounding text into the replacement link.
+    result = client.post(path, json=correction, headers=headers)
+    assert result.status_code == 200, result.text
+    fixed = result.json()
+    login(client, "teacher")
+    assert client.get(base(ids) + f'/source-excerpts/{item["source"]["link_id"]}').status_code == 403
+    current_excerpt = client.get(base(ids) + f'/source-excerpts/{fixed["source"]["link_id"]}')
+    assert current_excerpt.status_code == 200 and current_excerpt.json()["excerpt"] == first
+    teacher_headers = login(client, "teacher")
+    # A pupil team can narrow its own excerpt, but cannot use a correction to read
+    # a different portion of the restricted original.
+    expanded = {**correction, "expected_version": fixed["version"], "excerpt_page": 1, "excerpt_start": 0, "excerpt_end": len(text)}
+    assert client.post(path, json=expanded, headers=teacher_headers).status_code == 403
+    narrow = {**expanded, "excerpt_end": 17}
+    narrower = client.post(path, json=narrow, headers=teacher_headers)
+    assert narrower.status_code == 200, narrower.text
+    headers = login(client)
+    version = narrower.json()["version"]
+    # Invalid source spans fail before revocation or creation of a new revision.
+    invalid = {**expanded, "expected_version": version, "excerpt_end": len(text) + 1}
+    assert client.post(path, json=invalid, headers=headers).status_code == 422
+    assert client.get(base(ids) + f'/source-excerpts/{narrower.json()["source"]["link_id"]}').status_code == 200
+    reassign = {**attribution(ids, "b"), "expected_version": version, "content": sibling, "reason": "Correct to sibling with a freshly reviewed source excerpt"}
+    assert client.post(path, json=reassign, headers=headers).status_code == 422
+    moved = client.post(path, json={**reassign, "excerpt_page": 1, "excerpt_start": len(first) + 1, "excerpt_end": len(text)}, headers=headers)
+    assert moved.status_code == 200, moved.text
+    assert client.get(base(ids) + f'/source-excerpts/{narrower.json()["source"]["link_id"]}').status_code == 403
+    login(client, "teacher")
+    assert client.get(base(ids) + f'/source-excerpts/{moved.json()["source"]["link_id"]}').status_code == 403
+    login(client, "sibling")
+    excerpt = client.get(base(ids) + f'/source-excerpts/{moved.json()["source"]["link_id"]}')
+    assert excerpt.status_code == 200 and excerpt.json()["excerpt"] == sibling
+    assert first not in excerpt.text
+
+
+def test_saved_iso88591_8bit_email_is_scanned_preserved_and_charset_decoded(env):
+    client, factory, app, ids = env
+    headers = login(client)
+    raw = b'From: synthetic@example.invalid\r\nTo: school@example.invalid\r\nSubject: Synthetic message\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=iso-8859-1\r\nContent-Transfer-Encoding: 8bit\r\n\r\nSyntetisk elev trenger st\xf8tte.\r\n'
+    result = upload(client, ids, headers, raw, "synthetic.eml")
+    assert result.status_code == 201 and result.json()["scan_state"] == "clean" and result.json()["extraction_state"] == "ready", result.text
+    source = result.json()
+    source_path = base(ids) + f'/intake/{source["id"]}/revisions/1'
+    assert client.get(source_path + '/original').content == raw
+    page = client.get(source_path + '/pages/1').json()["text"]
+    assert "Syntetisk elev trenger støtte." in page
+    # Accepting the MIME charset does not bypass scanner enforcement.
+    infected = raw.replace(b'st\xf8tte.', b'st\xf8tte. Synthetic EICAR')
+    assert upload(client, ids, headers, infected, "infected.eml").json()["state"] == "quarantined"
+    app.state.evidence_scanner = None
+    held = upload(client, ids, headers, raw, "unscanned.eml").json()
+    assert held["state"] == "quarantined" and held["issue"] == "scanner_unavailable"

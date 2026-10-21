@@ -100,6 +100,18 @@ class ConfirmEvidence(Attributed, Expected):
 class CorrectEvidence(Attributed, Expected):
     content: str = Field(min_length=1, max_length=20000)
     reason: str = Field(min_length=1, max_length=1000)
+    excerpt_page: int | None = Field(default=None, ge=1, le=200)
+    excerpt_start: int | None = Field(default=None, ge=0)
+    excerpt_end: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def replacement_span(self):
+        supplied = (self.excerpt_page, self.excerpt_start, self.excerpt_end)
+        if any(value is not None for value in supplied) and not all(value is not None for value in supplied):
+            raise ValueError("A replacement excerpt requires page, start and end")
+        if self.excerpt_start is not None and self.excerpt_start >= self.excerpt_end:
+            raise ValueError("A replacement excerpt requires a nonempty span")
+        return self
 
 
 class RegisterDerivative(Command):

@@ -145,14 +145,18 @@ def inspect_type(filename, content):
         valid = content.startswith(b"\x89PNG\r\n\x1a\n")
     elif extension in {".jpg", ".jpeg"}:
         valid = content.startswith(b"\xff\xd8\xff")
+    elif extension == ".eml":
+        # MIME bodies may be 8-bit bytes in their declared charset. Validate only
+        # the bounded envelope here; parse/decode body parts after malware scan.
+        separator = re.search(rb"\r?\n\r?\n", content)
+        headers = content[:separator.start()] if separator else content
+        valid = len(headers) <= 65536 and b"\x00" not in headers and bool(re.search(rb"(?im)^(from|subject|message-id):", headers))
     else:
         try:
             content.decode("utf-8-sig")
         except UnicodeError:
             valid = False
         valid = valid and b"\x00" not in content
-        if extension == ".eml":
-            valid = valid and bool(re.search(rb"(?im)^(from|subject|message-id):", content))
     if not valid:
         raise DomainError("file_signature", "File contents do not match its declared type.", 422)
     return extension, MEDIA[extension]
@@ -239,6 +243,8 @@ def extract(content, extension, scanner=None, ocr=None, depth=0):
             raise ProcessingUnavailable("plain_text_email_required")
     else:
         raise UnsafeFile("unsupported_type")
+    if any("\x00" in page for page in pages):
+        raise UnsafeFile("invalid_text_encoding")
     if len(pages) > MAX_PAGES or sum(len(page) for page in pages) > MAX_TEXT:
         raise UnsafeFile("text_limit")
     if not pages or not any(page.strip() for page in pages):
