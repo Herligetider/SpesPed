@@ -5,17 +5,18 @@ access checks, including case permissions and remote-development provenance.
 HTTP callers supply references only, never a synthetic-data assertion or endpoint.
 """
 from dataclasses import dataclass, field
-from typing import Literal, Protocol
+from typing import Annotated, Literal, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from sqlalchemy.orm import Session
 from spesped.auth import Actor
 
 Capability = Literal['generation', 'ocr', 'speech', 'embeddings']
-Purpose = Literal['teaching_suggestion', 'evidence_extraction', 'document_draft', 'transcription', 'embedding', 'intake_structuring']
-PURPOSE_CAPABILITIES = {'teaching_suggestion': 'generation', 'document_draft': 'generation', 'evidence_extraction': 'ocr', 'transcription': 'speech', 'embedding': 'embeddings', 'intake_structuring': 'generation'}
+Purpose = Literal['teaching_suggestion', 'evidence_extraction', 'document_draft', 'transcription', 'embedding', 'intake_structuring', 'session_planning']
+PURPOSE_CAPABILITIES = {'teaching_suggestion': 'generation', 'document_draft': 'generation', 'evidence_extraction': 'ocr', 'transcription': 'speech', 'embedding': 'embeddings', 'intake_structuring': 'generation', 'session_planning': 'generation'}
 PURPOSE_INSTRUCTIONS = {
+    'session_planning': 'Propose a practical structured teaching session from the supplied authorized teaching basis. Keep recorded goals, support needs and observations distinct from new proposed activities. Include preparation, materials, concrete steps with time estimates, support, simplification and observation focus. State missing or contradictory evidence. Never change the plan, decide rights, report a proposed activity as performed, or approve the session. Cite the supplied basis reference.',
     'intake_structuring': 'Propose typed document fields from the supplied JSON pages. Return exact page, zero-based character offsets and verbatim quote for every field. Mentioned learner is a name only, never a UUID or resolved attribution. Hours are source content, never legal entitlements. Use missing_evidence for ambiguous or unsupported fields; never invent a span.',
     'teaching_suggestion': 'Propose a feasible teaching activity and support instructions. Distinguish recorded observations from proposed activities.',
     'document_draft': 'Propose draft document paragraphs using only the supplied evidence. Make missing information visible.',
@@ -38,7 +39,7 @@ class StrictModel(BaseModel):
 
 
 class SourceRef(StrictModel):
-    kind: Literal['evidence', 'intake'] = 'evidence'
+    kind: Literal['evidence', 'intake', 'teaching_basis'] = 'evidence'
     source_id: UUID
     revision: int = Field(ge=1)
 
@@ -81,6 +82,11 @@ class GenerationRequest(StrictModel):
                 raise ValueError('Intake structuring requires exactly one intake source and no learner attribution')
         elif self.learner_id is None:
             raise ValueError('This purpose requires a learner')
+        if self.purpose == 'session_planning':
+            if len(self.sources) != 1 or self.sources[0].kind != 'teaching_basis':
+                raise ValueError('Session planning requires exactly one teaching basis')
+        elif any(source.kind == 'teaching_basis' for source in self.sources):
+            raise ValueError('Teaching basis is restricted to session planning')
         return self
 
 
@@ -106,12 +112,46 @@ class IntakeStructure(StrictModel):
     missing_evidence: list[StructuredGap] = Field(max_length=20)
 
 
+def BoundedText(limit):
+    return Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=limit)]
+
+
+class SessionSuggestionStep(StrictModel):
+    instruction: BoundedText(2000)
+    minutes: int = Field(strict=True, ge=0, le=480)
+
+
+class SessionSuggestionContent(StrictModel):
+    title: BoundedText(320)
+    goal: BoundedText(2000)
+    preparation: BoundedText(3000)
+    materials: list[BoundedText(1000)] = Field(max_length=30)
+    steps: list[SessionSuggestionStep] = Field(min_length=1, max_length=12)
+    support: BoundedText(3000)
+    simplification: BoundedText(3000)
+    observation_focus: BoundedText(2000)
+
+
+class TeachingSessionSuggestion(StrictModel):
+    content: SessionSuggestionContent
+    source_refs: list[BoundedText(120)] = Field(min_length=1, max_length=20)
+    missing_evidence: list[BoundedText(2000)] = Field(max_length=20)
+
+
 def release_versions(purpose):
-    return ('intake-structuring.v1', 'intake-structure.v1') if purpose == 'intake_structuring' else (TEMPLATE_VERSION, SCHEMA_VERSION)
+    if purpose == 'intake_structuring':
+        return ('intake-structuring.v1', 'intake-structure.v1')
+    if purpose == 'session_planning':
+        return ('teaching-session.v1', 'teaching-session.v1')
+    return (TEMPLATE_VERSION, SCHEMA_VERSION)
 
 
 def release_schema(schema_version):
-    return IntakeStructure if schema_version == 'intake-structure.v1' else Suggestion
+    if schema_version == 'intake-structure.v1':
+        return IntakeStructure
+    if schema_version == 'teaching-session.v1':
+        return TeachingSessionSuggestion
+    return Suggestion
 
 
 class Statement(StrictModel):
@@ -126,7 +166,7 @@ class Suggestion(StrictModel):
 
 class PolicyCommand(StrictModel):
     provider_key: str = Field(min_length=1, max_length=80)
-    purposes: list[Purpose] = Field(min_length=1, max_length=6)
+    purposes: list[Purpose] = Field(min_length=1, max_length=7)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
     max_input_bytes: int = Field(default=64000, ge=100, le=2_000_000)
     max_output_tokens: int = Field(default=2048, ge=32, le=8192)
@@ -139,16 +179,18 @@ class ReleaseCommand(StrictModel):
     provider_key: str = Field(min_length=1, max_length=80)
     model_version: str = Field(min_length=1, max_length=160, pattern=r'^[A-Za-z0-9_.:/-]+$')
     capability: Capability
-    template_version: Literal['bounded-suggestion.v1', 'intake-structuring.v1'] = TEMPLATE_VERSION
-    output_schema_version: Literal['suggestion.v1', 'intake-structure.v1'] = SCHEMA_VERSION
+    template_version: Literal['bounded-suggestion.v1', 'intake-structuring.v1', 'teaching-session.v1'] = TEMPLATE_VERSION
+    output_schema_version: Literal['suggestion.v1', 'intake-structure.v1', 'teaching-session.v1'] = SCHEMA_VERSION
 
 
     @model_validator(mode='after')
     def matching_schema(self):
-        if (self.template_version == 'intake-structuring.v1') != (self.output_schema_version == 'intake-structure.v1'):
+        expected = {'bounded-suggestion.v1': 'suggestion.v1', 'intake-structuring.v1': 'intake-structure.v1',
+                    'teaching-session.v1': 'teaching-session.v1'}
+        if self.output_schema_version != expected[self.template_version]:
             raise ValueError('Template and schema must match')
-        if self.output_schema_version == 'intake-structure.v1' and self.capability != 'generation':
-            raise ValueError('Structuring requires generation')
+        if self.output_schema_version in {'intake-structure.v1', 'teaching-session.v1'} and self.capability != 'generation':
+            raise ValueError('Structured generation requires generation capability')
         return self
 
 

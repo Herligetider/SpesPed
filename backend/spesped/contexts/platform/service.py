@@ -4,7 +4,8 @@ import hashlib
 import base64
 import json
 import time
-from uuid import uuid4
+from uuid import UUID, uuid4
+from types import SimpleNamespace
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -66,6 +67,11 @@ def _resolve(db, runtime, actor, school_id, learner_id, purpose, references):
         raise access_denied()
     if purpose not in {'evidence_extraction', 'intake_structuring'} and any(r.kind == 'intake' for r in references):
         raise access_denied()
+    if purpose == 'session_planning':
+        if learner_id is None or len(references) != 1 or references[0].kind != 'teaching_basis':
+            raise access_denied()
+    elif any(r.kind == 'teaching_basis' for r in references):
+        raise access_denied()
     sources = runtime.source_resolver.resolve(db, actor, school_id, learner_id, purpose, references)
     by_key = {s.reference.key: s for s in sources}
     if len(sources) != len(references) or len(by_key) != len(references) or set(by_key) != {r.key for r in references}:
@@ -107,14 +113,14 @@ def _configuration(db, runtime, job):
     if (release is None or release.state != 'reviewed' or release.configuration_digest != job.release_digest
             or (release.template_version, release.output_schema_version) != release_versions(job.purpose)):
         raise ProviderFailure('reviewed_release_required')
-    evaluation = db.get(ModelEvaluation, release.evaluation_id)
+    evaluation = db.scalar(select(ModelEvaluation).where(ModelEvaluation.id == release.evaluation_id).execution_options(populate_existing=True))
     if (evaluation is None or evaluation.school_id != job.school_id or evaluation.release_id != release.id
             or evaluation.state != 'passed' or evaluation.release_digest != release.configuration_digest
             or not release.reviewed_by or not release.reviewed_at
             or release.reviewed_evaluation_digest != evaluation.artifact_digest
             or digest(evaluation.evidence) != evaluation.artifact_digest):
         raise ProviderFailure('reviewed_release_required')
-    if job.purpose == 'intake_structuring' and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
+    if job.purpose in {'intake_structuring', 'session_planning'} and not any(case.get('purpose') == job.purpose and case.get('output') is not None and not case.get('failure') for case in evaluation.evidence):
         raise ProviderFailure('purpose_evaluation_required')
     if job.purpose not in policy.configuration['purposes'] or PURPOSE_CAPABILITIES[job.purpose] != release.capability or policy.provider_key != release.provider_key:
         raise ProviderFailure('purpose_not_supported')
@@ -171,8 +177,14 @@ def provider_digest(provider):
 
 
 def release_configuration_digest(command, provider):
-    from .contracts import SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS, Suggestion
-    return digest({'release': command.model_dump(), 'provider_digest': provider_digest(provider), 'template': SYSTEM_PROMPT, 'purpose_instructions': PURPOSE_INSTRUCTIONS, 'schema': release_schema(command.output_schema_version).model_json_schema()})
+    from .contracts import SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS
+    # Distinct new templates must not silently change the digest of existing
+    # evaluated instruction sets. Original template versions retain their input.
+    legacy_purposes = ('intake_structuring', 'teaching_suggestion', 'document_draft', 'evidence_extraction')
+    instructions = ({'session_planning': PURPOSE_INSTRUCTIONS['session_planning']}
+                    if command.template_version == 'teaching-session.v1'
+                    else {purpose: PURPOSE_INSTRUCTIONS[purpose] for purpose in legacy_purposes})
+    return digest({'release': command.model_dump(), 'provider_digest': provider_digest(provider), 'template': SYSTEM_PROMPT, 'purpose_instructions': instructions, 'schema': release_schema(command.output_schema_version).model_json_schema()})
 
 
 def create_release(db: Session, actor: Actor, school_id: str, command: ReleaseCommand, runtime: GatewayRuntime):
@@ -342,9 +354,67 @@ def create_job(db, actor, school_id, command: GenerationRequest, runtime: Gatewa
     return job
 
 
+def current_job(db, actor, school_id, job_id, runtime, *, lock=False):
+    """Validate a result within the caller's transaction without committing.
+
+    The returned aggregate is read-only to consumers. The consuming command
+    owns its audit/outbox and transaction; callers choose consistent lock order.
+    This port never makes generated output confirmed or professionally approved.
+    """
+    job = _load(db, actor, school_id, job_id, lock=lock)
+    if runtime is None:
+        raise DomainError('gateway_unavailable', 'The current result cannot be verified.', 503)
+    return _require_visible(db, actor, job, runtime)
+
+
+def job_binding_is_current(db, school_id, job_id, runtime):
+    """Check only a successful job's current processing/release binding.
+
+    No job output is selected or returned and no source is resolved. A consumer
+    must first authorize its own curated projection and independently validate
+    its exact learner/source/goal dependencies. This is never source permission.
+    Remote fixture attestations are rechecked without retrieving source prose.
+    This port does not commit, audit or mutate the caller's transaction.
+    """
+    if runtime is None:
+        return False
+    try:
+        school_id, job_id = str(UUID(str(school_id))), str(UUID(str(job_id)))
+    except (ValueError, TypeError, AttributeError):
+        return False
+    with db.no_autoflush:
+        row = db.execute(select(
+            GenerationJob.school_id, GenerationJob.learner_id, GenerationJob.purpose,
+            GenerationJob.policy_id, GenerationJob.policy_version, GenerationJob.release_id,
+            GenerationJob.release_digest, GenerationJob.source_manifest,
+        ).where(GenerationJob.school_id == school_id, GenerationJob.id == job_id,
+                GenerationJob.state == 'succeeded')).mappings().first()
+        if row is None:
+            return False
+        job = SimpleNamespace(**row)
+        try:
+            _, _, provider = _configuration(db, runtime, job)
+            manifests = job.source_manifest
+            if not isinstance(manifests, list) or not manifests:
+                return False
+            sources = []
+            for manifest in manifests:
+                provenance = manifest['provenance']
+                if provider.kind == 'remote_openai':
+                    check = getattr(runtime.source_resolver, 'attestation_is_current', None)
+                    if check is None or not check(job.school_id, job.learner_id, job.purpose, manifest):
+                        return False
+                sources.append(SourceInput(SourceRef.model_validate(manifest['reference']),
+                    job.school_id, job.learner_id, job.purpose, '', provenance=provenance,
+                    provenance_reference=manifest['provenance_reference']))
+            validate_provider(runtime, provider, sources)
+        except (ProviderFailure, ValueError, TypeError, KeyError, AttributeError):
+            return False
+        return True
+
+
 def get_job(db, actor, school_id, job_id, runtime):
-    job = _load(db, actor, school_id, job_id)
-    _require_visible(db, actor, job, runtime)
+    job = current_job(db, actor, school_id, job_id, runtime)
     record_audit(db, actor, school_id, 'ai.result_read', 'GenerationJob', job.id)
     db.commit()
     return job

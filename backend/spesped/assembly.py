@@ -29,7 +29,7 @@ class SyntheticAttestation(ConfigurationModel):
     school_id: UUID
     learner_id: UUID | None = None
     reference: SourceRef
-    purposes: list[Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "intake_structuring"]] = Field(min_length=1)
+    purposes: list[Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "intake_structuring", "session_planning"]] = Field(min_length=1)
     content_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
@@ -40,7 +40,7 @@ class SyntheticManifest(ConfigurationModel):
 
 class EvaluationFixture(ConfigurationModel):
     name: str = Field(min_length=1, max_length=100)
-    purpose: Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "transcription", "intake_structuring"]
+    purpose: Literal["teaching_suggestion", "document_draft", "embedding", "evidence_extraction", "transcription", "intake_structuring", "session_planning"]
     text: str | None = Field(default=None, min_length=1, max_length=20000)
     file: Path | None = None
     media_type: Literal["text/plain", "image/png", "image/jpeg", "audio/wav", "audio/mpeg", "audio/webm"] = "text/plain"
@@ -51,7 +51,7 @@ class EvaluationFixture(ConfigurationModel):
     def compatible_fixture(self):
         if (self.text is None) == (self.file is None):
             raise ValueError("An evaluation case requires either text or a synthetic media file")
-        if self.purpose in {"teaching_suggestion", "document_draft", "embedding", "intake_structuring"}:
+        if self.purpose in {"teaching_suggestion", "document_draft", "embedding", "intake_structuring", "session_planning"}:
             if self.text is None or self.media_type != "text/plain":
                 raise ValueError("This evaluation purpose requires plain text")
         elif self.file is None or not self.media_type.startswith("image/" if self.purpose == "evidence_extraction" else "audio/"):
@@ -90,6 +90,19 @@ class EvidenceSourceResolver:
         self.attestations = tuple(attestations)
 
     def resolve(self, db, actor, school_id, learner_id, purpose, references):
+        if purpose == "session_planning":
+            if learner_id is None or len(references) != 1 or references[0].kind != "teaching_basis":
+                raise access_denied()
+            require_learner_access(db, actor, school_id, learner_id)
+            try:
+                from spesped.contexts.teaching.service import resolve_generation_source
+            except ModuleNotFoundError as exc:
+                if exc.name not in {"spesped.contexts.teaching", "spesped.contexts.teaching.service"}:
+                    raise
+                raise DomainError("teaching_context_unavailable", "Teaching source validation is not installed.", 503) from None
+            return [self._attest(resolve_generation_source(db, actor, school_id, learner_id, purpose, references[0]))]
+        if any(reference.kind == "teaching_basis" for reference in references):
+            raise access_denied()
         if purpose == "intake_structuring":
             if learner_id is not None or len(references) != 1 or references[0].kind != "intake":
                 raise access_denied()
@@ -168,6 +181,20 @@ class EvidenceSourceResolver:
                 return replace(resolved, provenance="synthetic_fixture", provenance_reference=entry.fixture_name)
         return resolved
 
+    def attestation_is_current(self, school_id, learner_id, purpose, manifest):
+        """Metadata-only operator attestation check; grants no source access."""
+        if manifest.get("provenance") != "synthetic_fixture":
+            return False
+        reference = SourceRef.model_validate(manifest["reference"])
+        return any(
+            str(entry.school_id) == school_id
+            and (str(entry.learner_id) if entry.learner_id is not None else None) == learner_id
+            and entry.reference == reference and purpose in entry.purposes
+            and entry.content_digest == manifest.get("content_digest")
+            and entry.fixture_name == manifest.get("provenance_reference")
+            for entry in self.attestations
+        )
+
 
 def load_evaluation_suites(path):
     if path is None:
@@ -187,7 +214,8 @@ def load_evaluation_suites(path):
             raise ValueError("Evaluation case names must be unique within a suite")
         cases = []
         for index, fixture in enumerate(fixtures, 1):
-            ref = SourceRef(kind="intake" if fixture.purpose == "intake_structuring" else "evidence", source_id=UUID(int=index), revision=1)
+            source_kind = {"intake_structuring": "intake", "session_planning": "teaching_basis"}.get(fixture.purpose, "evidence")
+            ref = SourceRef(kind=source_kind, source_id=UUID(int=index), revision=1)
             content = fixture.text
             if fixture.file is not None:
                 asset = (path.parent / fixture.file).resolve()

@@ -2,8 +2,8 @@
 from .router import router
 from .contracts import (GatewayRuntime, ProviderSpec, SourceInput, SourceRef, SourceResolver,
                         GenerationRequest, EvaluationCase, PolicyCommand, ReleaseCommand, ReviewCommand)
-from .service import create_job, get_job, run_job, cancel_job
+from .service import create_job, get_job, current_job, job_binding_is_current, run_job, cancel_job
 
 __all__ = ['router', 'GatewayRuntime', 'ProviderSpec', 'SourceInput', 'SourceRef', 'SourceResolver',
            'GenerationRequest', 'EvaluationCase', 'PolicyCommand', 'ReleaseCommand', 'ReviewCommand',
-           'create_job', 'get_job', 'run_job', 'cancel_job']
+           'create_job', 'get_job', 'current_job', 'job_binding_is_current', 'run_job', 'cancel_job']

@@ -112,6 +112,33 @@ revision. It cannot authorize source prose, review reasons, history or original
 documents; those still require the evidence service's actor-aware access checks.
 Contexts must not replace full source authorization with this metadata check.
 
+Teaching session generation has its own `session_planning` purpose and
+`ai.session_planning` authority. A request references exactly one immutable
+`teaching_basis` for the authorized learner. The teaching context validates its
+current goals, sources and support context; application assembly adds any explicit
+operator-owned synthetic provenance attestation. The reviewed template and output
+schema are both `teaching-session.v1`. The output contains practical session
+content, exact supplied source references and missing-evidence notes, and always
+remains unconfirmed pending professional selection and approval. This distinct
+template does not invalidate existing evaluated suggestion/intake template digests.
+
+Consumers use `platform.current_job(db, actor, school_id, job_id, runtime,
+lock=False)` to validate the current source and processing binding inside their
+own transaction. It does not commit or write an audit record; the consuming
+command owns its business change and audit/outbox. `platform.job_binding_is_current
+(db, school_id, job_id, runtime)` is a metadata-only boolean for an existing
+successful job's policy, reviewed release/evaluation and configured provider.
+It selects no job output and does not resolve source prose. Only a previously
+authorized curated projection may use it, and that projection must separately
+check its exact learner/source/goal dependencies. A true result never grants
+permission to read sources or confirms factual accuracy. Remote development
+provenance must still match a current operator attestation. Both ports fail
+closed when the relevant runtime or processing binding is unavailable.
+
+The new teaching gateway boundary is a candidate awaiting independent review.
+The teaching consumer, application route composition and UI require their own
+verification; this contract does not declare the complete teaching flow delivered.
+
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
 requires governance case authority, the owning context's live case resolver and
