@@ -229,3 +229,16 @@ def revoke_profile(school_id: UUID, profile_id: UUID, command: s.Review, actor: 
 @router.post('/workload-studies/{study_id}/close')
 def close_study(school_id: UUID, study_id: UUID, command: s.Review, actor: Actor=Depends(get_actor), db: Session=Depends(governance_db)):
     return view(svc.close_study(db,actor,str(school_id),study_id,command))
+
+
+from . import report_periods
+
+
+@router.get('/obligations/{obligation_id}/report-period-reviews')
+def report_period_reviews(school_id: UUID, obligation_id: UUID, document_kind: str = Query(min_length=1, max_length=100), actor: Actor = Depends(get_actor), db: Session = Depends(governance_db)):
+    return report_periods.report_period_history(db, actor, str(school_id), str(obligation_id), document_kind)
+
+
+@router.post('/obligations/{obligation_id}/report-period-reviews')
+def review_report_period(school_id: UUID, obligation_id: UUID, command: report_periods.ReportPeriodCommand, actor: Actor = Depends(get_actor), db: Session = Depends(governance_db)):
+    return report_periods.review_report_period(db, actor, str(school_id), str(obligation_id), command)

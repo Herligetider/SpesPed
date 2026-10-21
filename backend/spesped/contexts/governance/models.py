@@ -248,3 +248,34 @@ for cls in (RequirementDefinition, RequirementVersion, SchoolRuleProfile, Worklo
 for cls in (ApplicabilityDecision, ObligationReview, ObligationAssignment, ObligationAction, DeviationFollowup, WorkloadMeasurement, LegalImportCandidate, TriggerReceipt):
     event.listen(cls, 'before_update', append_only)
     event.listen(cls, 'before_delete', append_only)
+
+class ReportPeriodReview(Tenant, Base):
+    """Append-only human review and command receipt; no inferred legacy coverage."""
+    __tablename__ = 'governance_report_period_reviews'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    obligation_id: Mapped[str] = mapped_column(String(36))
+    learner_id: Mapped[str] = mapped_column(String(36))
+    document_kind: Mapped[str] = mapped_column(String(100))
+    revision: Mapped[int] = mapped_column(Integer)
+    action: Mapped[str] = mapped_column(String(20))
+    starts_on: Mapped[date] = mapped_column()
+    ends_on: Mapped[date] = mapped_column()
+    obligation_basis_digest: Mapped[str] = mapped_column(String(64))
+    reviewed_binding: Mapped[dict] = mapped_column(JSON)
+    actor_id: Mapped[str] = mapped_column(ForeignKey('identity_users.id'))
+    rationale: Mapped[str] = mapped_column(String(2000))
+    request_key: Mapped[str] = mapped_column(String(200))
+    request_digest: Mapped[str] = mapped_column(String(64))
+    recorded_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    __table_args__ = (
+        UniqueConstraint('school_id', 'id'),
+        UniqueConstraint('school_id', 'request_key'),
+        UniqueConstraint('obligation_id', 'document_kind', 'revision'),
+        ForeignKeyConstraint(['school_id', 'obligation_id'], ['governance_obligations.school_id', 'governance_obligations.id']),
+        ForeignKeyConstraint(['school_id', 'learner_id'], ['identity_learners.school_id', 'identity_learners.id']),
+        CheckConstraint('ends_on >= starts_on'), CheckConstraint('revision >= 1'),
+        CheckConstraint("action IN ('review', 'revoke')"),
+    )
+
+for operation in ('before_update', 'before_delete'):
+    event.listen(ReportPeriodReview, operation, append_only)

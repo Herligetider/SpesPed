@@ -129,3 +129,9 @@ def case_requirements(db, actor, school_id, learner_id, case_id):
     state = ("unavailable" if not result else "review_required"
              if any(item.review_required for item in result) else "available")
     return CaseRequirementProjection(state, tuple(result))
+
+
+def report_obligation_basis(db, actor, school_id, learner_id, obligation_id, document_kind, starts_on, ends_on):
+    """Read the exact human-reviewed reporting interval without caller mutation."""
+    from .report_periods import report_obligation_basis as resolve
+    return resolve(db, actor, school_id, learner_id, obligation_id, document_kind, starts_on, ends_on)
