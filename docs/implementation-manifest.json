@@ -459,7 +459,7 @@
         "J02",
         "J04"
       ],
-      "status": "implementing",
+      "status": "awaiting_review",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
       "reviewAgent": "/root/review_j05",
@@ -467,7 +467,8 @@
         "ac4eea27bdbb38421fe48465269d950f4d37d634",
         "7088d2bd5dd64a78dd44237606c10e83e914d101",
         "1f0dec00b63289c9cc4c0d5c3c09c2976d285107",
-        "30fe56394d916956ccdb0802726f41c944c04dd2"
+        "30fe56394d916956ccdb0802726f41c944c04dd2",
+        "2ccc30e499d87efba020068528c70f7e5a382a9a"
       ],
       "evidence": [
         {
@@ -512,6 +513,11 @@
         {
           "type": "work_assignment",
           "result": "Generated IEP/goal proposal backend assigned to /root/j05_generation. Root owns typed gateway/assembly additions after contract agreement; agent owns plans consumers, exact provenance and human selection, plus forward migration/tests. Existing reviewed manual plan behavior must remain intact. Independent review required before acceptance."
+        },
+        {
+          "type": "implementer_report",
+          "revision": "2ccc30e499d87efba020068528c70f7e5a382a9a",
+          "result": "Generated IEP consumer candidate: 32 SQLite/PostgreSQL tests passed, including active-plan regeneration and imported-origin preservation; earlier broader plans/teaching run 143 passed with five expected SQLite skips. Populated migration roundtrip preserves legacy checks and digests. Independent review assigned."
         }
       ],
       "findings": [
@@ -536,7 +542,7 @@
       ],
       "remainingWork": [
         "Integrate independently accepted plan/entitlement application composition with J06 teaching and full J07 UI.",
-        "F08 generated IEP/goal suggestions from confirmed assessment and decision basis, with source/revision checks and explicit professional selection/apply; implementer confirms this is not yet implemented.",
+        "Independently accept generated IEP/goal selection and exact lineage. Standalone adaptation generation and curriculum integration remain explicitly unavailable and required for full F08.",
         "Audit and complete remaining F07/F08 clarification and consumer-impact workflows; full UI acceptance belongs to J07 and later UI jobs."
       ],
       "activeImplementationAgent": "/root/j05_generation"
@@ -760,7 +766,8 @@
         "381b0120c1ab5fa0b70d0049c86a76c3b660036c",
         "6c96cef0c65a1a12d8c519b4f7237ae65774ad5d",
         "ac555498c0f8741d77d567075913b2e75a173779",
-        "5a76a69923c55ecd2410e1d8599686960ad5e204"
+        "5a76a69923c55ecd2410e1d8599686960ad5e204",
+        "8d82b74908bedecdacac330e71fa430a041c3700"
       ],
       "evidence": [
         {
@@ -818,6 +825,12 @@
           "type": "integration_candidate",
           "revision": "5a76a69923c55ecd2410e1d8599686960ad5e204",
           "result": "Typed iep_drafting purpose, distinct evaluated schema and plan_basis resolver boundary added. Root tests exercise real local wire output, persistence/replay/recall, forbidden rights/date/approval fields, source/purpose limits and purpose-specific reviewed evaluation. Independent review assigned; real plans consumer requires separate acceptance."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "8d82b74908bedecdacac330e71fa430a041c3700",
+          "path": "docs/reviews/iep-gateway-review.md",
+          "result": "Bounded IEP gateway accepted. Initial 206 passed with seven expected SQLite skips; five independent failures exposed missing immutable-basis revision guard. Recheck 79 passed, no skips; all five guards closed, nested trusted-runtime context restoration and fresh-worker/completion rechecks verified. Actual plans/teaching consumers and UI remain separate."
         }
       ],
       "findings": [
@@ -849,6 +862,12 @@
           "id": "J08-T3",
           "priority": "P2",
           "description": "Metadata binding predicate discards pending caller policy recall through ORM refresh.",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J08-I1",
+          "priority": "P2",
+          "description": "Immutable IEP plan basis accepts revision other than one at request/service/assembly boundary.",
           "status": "verified_fixed"
         }
       ],

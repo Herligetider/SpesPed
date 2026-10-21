@@ -165,11 +165,19 @@ references, participation and approval fields are excluded from model output.
 New goal dates and curriculum choices come from explicit human input.
 
 Plans routes supply `db.info['plans_runtime']` from the assembled AI gateway.
+While resolving a source, the gateway also binds its trusted current runtime to
+`db.info['ai_gateway_runtime']`, restoring the previous session entry in a
+`finally` block. Nested source validators prefer that binding over their route
+fallbacks. This lets a fresh worker session recheck generated ancestor plans and
+teaching observations against the same processing configuration used for the
+current job; it does not grant source access or skip any authorization check.
 Selection, regeneration, rejection and activation remain separate commands;
 per-field model lineage survives ordinary manual edits until an explicit human
 replacement severs the selected dependency. Standalone adaptation generation
-and curriculum integration remain recorded F08 work. This new IEP boundary and
-its plans consumer are implementation candidates awaiting independent review.
+and curriculum integration remain recorded F08 work. The typed gateway boundary
+was independently accepted at `8d82b74`; see
+[the IEP gateway review](reviews/iep-gateway-review.md). The plans consumer at
+`2ccc30e` and the combined teaching workflow require separate independent review.
 
 The independently reviewed read port
 `governance.projections.case_requirements(db, actor, school_id, learner_id, case_id)`
