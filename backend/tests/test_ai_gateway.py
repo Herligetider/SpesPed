@@ -93,7 +93,7 @@ def env(request,tmp_path,wire_server):
         url=make_url(dsn).update_query_dict({'options':f'-csearch_path={schema}'}).render_as_string(hide_password=False)
     else: url=f'sqlite:///{tmp_path}/gateway.db'
     cfg=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini')); cfg.attributes['database_url']=url
-    command.upgrade(cfg,'j04_structuring'); factory=make_session_factory(url)
+    command.upgrade(cfg,'j04_manual_recovery'); factory=make_session_factory(url)
     with factory.begin() as db:
         school,leader=provision_school(db,school_name='Synthetic gateway school',kind='public',timezone='Europe/Oslo',email='gateway@example.invalid',display_name='Synthetic operator',password='synthetic-gateway-password')
         learner=Learner(school_id=school.id,display_name='Synthetic learner',grade=4,group_name='Synthetic group'); db.add(learner); db.flush()

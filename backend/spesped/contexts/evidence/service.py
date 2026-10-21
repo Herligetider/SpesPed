@@ -202,10 +202,18 @@ def span(db, row, revision, page, start, end):
 
 
 def review_progress(db, row, revision=None):
-    fields = db.scalars(select(ExtractionProposal).where(ExtractionProposal.school_id == row.school_id, ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == (revision or row.current_revision))).all()
+    fields = db.execute(select(ExtractionProposal.id, ExtractionProposal.outcome, ExtractionProposal.state,
+        ExtractionProposal.generation_job_id, ExtractionProposal.recovery_of_proposal_id).where(
+            ExtractionProposal.school_id == row.school_id, ExtractionProposal.source_id == row.id,
+            ExtractionProposal.source_revision == (revision or row.current_revision))).all()
     counts = {"pending": 0, "reviewed_unconfirmed": 0, "confirmed": 0, "rejected": 0}
+    recovered_ids = {field.recovery_of_proposal_id for field in fields if field.recovery_of_proposal_id}
     for field in fields:
-        if field.outcome == "rejected":
+        # Explicit manual recovery supersedes outstanding extraction work only.
+        # Historical model rows/reviews and any confirmed evidence stay intact.
+        if field.id in recovered_ids and field.generation_job_id is not None and field.state != "confirmed":
+            counts["recovered_model"] = counts.get("recovered_model", 0) + 1
+        elif field.outcome == "rejected":
             counts["rejected"] += 1
         elif field.state == "confirmed":
             counts["confirmed"] += 1
@@ -237,12 +245,16 @@ def update_intake_completion(db, row):
     return counts
 
 
-def propose(db, actor, school_id, source_id, command):
+def propose(db, actor, school_id, source_id, command, runtime=None):
     row = source(db, actor, school_id, source_id, lock=True)
     check_version(row, command.expected_version)
     span(db, row, row.current_revision, command.page, command.span_start, command.span_end)
-    existing = db.scalar(select(ExtractionProposal).where(ExtractionProposal.school_id == school_id, ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == row.current_revision, ExtractionProposal.page == command.page, ExtractionProposal.span_start == command.span_start, ExtractionProposal.span_end == command.span_end, ExtractionProposal.field_name == command.field_name))
+    existing = db.scalar(select(ExtractionProposal).where(ExtractionProposal.school_id == school_id, ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == row.current_revision, ExtractionProposal.page == command.page, ExtractionProposal.span_start == command.span_start, ExtractionProposal.span_end == command.span_end, ExtractionProposal.field_name == command.field_name).order_by(ExtractionProposal.generation_job_id.is_(None)))
     if existing:
+        # A manual command can collide with a model-owned field. Deduplication
+        # must preserve its origin and apply the same current visibility gate as
+        # list/review/confirm before comparing or returning any stored prose.
+        require_proposal_model_access(db, actor, existing, runtime)
         if existing.proposed_value != command.proposed_value:
             raise conflict("A different proposal already uses this source field and span.")
         return existing
@@ -251,6 +263,66 @@ def propose(db, actor, school_id, source_id, command):
     update_intake_completion(db, row)
     row.updated_at = utcnow()
     event(db, actor, school_id, "source.field_proposed", row)
+    return proposal
+
+
+def recover_manual_field(db, actor, school_id, source_id, command, runtime=None):
+    """An explicit human-authored field with independent identity and review.
+
+    Inspect only the referenced model row's identity/scope metadata. Its prose,
+    approvals and reviews stay behind the normal gateway visibility gate.
+    """
+    row = source(db, actor, school_id, source_id, lock=True)
+    span(db, row, row.current_revision, command.page, command.span_start, command.span_end)
+    target = db.execute(select(ExtractionProposal.id, ExtractionProposal.source_id, ExtractionProposal.source_revision,
+        ExtractionProposal.page, ExtractionProposal.span_start, ExtractionProposal.span_end,
+        ExtractionProposal.field_name, ExtractionProposal.generation_job_id).where(
+            ExtractionProposal.school_id == school_id, ExtractionProposal.id == str(command.recovery_of_proposal_id))).one_or_none()
+    if (target is None or target.generation_job_id is None or target.source_id != row.id
+            or target.source_revision != row.current_revision or command.source_revision != row.current_revision or target.page != command.page
+            or target.span_start != command.span_start or target.span_end != command.span_end
+            or target.field_name != command.field_name):
+        raise access_denied()
+    # Resolve the original source using current intake authority, without loading
+    # model output or requiring a recalled model/policy to become available.
+    from spesped.contexts.platform import service as gateway
+    from spesped.contexts.platform.models import GenerationJob
+    from spesped.contexts.platform.contracts import SourceRef
+    from spesped.contexts.platform.providers import ProviderFailure
+    binding = db.execute(select(GenerationJob.learner_id, GenerationJob.purpose, GenerationJob.source_manifest).where(
+        GenerationJob.school_id == school_id, GenerationJob.id == target.generation_job_id)).one_or_none()
+    reference = SourceRef(kind='intake', source_id=row.id, revision=row.current_revision)
+    if (binding is None or binding.purpose != 'intake_structuring' or binding.learner_id is not None
+            or len(binding.source_manifest) != 1 or binding.source_manifest[0]['reference'] != reference.model_dump(mode='json')):
+        raise access_denied()
+    if runtime is None:
+        raise DomainError('source_resolver_unavailable', 'The current source cannot be verified. Continue with ordinary manual intake.', 503)
+    try:
+        current_sources = gateway._resolve(db, runtime, actor, school_id, None, 'intake_structuring', [reference])
+    except ProviderFailure as exc:
+        raise DomainError(exc.code, 'The current source cannot be verified. Continue with ordinary manual intake.', 503) from None
+    current_manifest = gateway._manifest(current_sources)[0]
+    if any(current_manifest[key] != binding.source_manifest[0][key] for key in ('reference', 'content_digest', 'media_type')):
+        raise DomainError('source_revision_changed', 'The source changed. Select a current source field for manual review.', 409)
+    existing = db.scalar(select(ExtractionProposal).where(ExtractionProposal.school_id == school_id,
+        ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == row.current_revision,
+        ExtractionProposal.page == command.page, ExtractionProposal.span_start == command.span_start,
+        ExtractionProposal.span_end == command.span_end, ExtractionProposal.field_name == command.field_name,
+        ExtractionProposal.generation_job_id.is_(None)))
+    if existing is not None:
+        if existing.recovery_of_proposal_id != target.id or existing.proposed_value != command.proposed_value:
+            raise DomainError('idempotency_conflict', 'An independent manual field already exists here. Review that field explicitly.', 409)
+        return existing
+    check_version(row, command.expected_version)
+    proposal = ExtractionProposal(school_id=school_id, source_id=row.id, source_revision=row.current_revision,
+        page=command.page, span_start=command.span_start, span_end=command.span_end,
+        field_name=command.field_name, proposed_value=command.proposed_value,
+        unit='hours' if command.field_name == 'hours' else None,
+        recovery_of_proposal_id=target.id)
+    db.add(proposal)
+    update_intake_completion(db, row)
+    row.updated_at = utcnow()
+    event(db, actor, school_id, 'source.manual_field_recovered', proposal, recovery_of_proposal_id=target.id)
     return proposal
 
 
@@ -577,7 +649,7 @@ def apply_structuring(db, actor, school_id, source_id, command, runtime):
             existing = db.scalar(select(ExtractionProposal).where(ExtractionProposal.school_id == school_id,
                 ExtractionProposal.source_id == row.id, ExtractionProposal.source_revision == row.current_revision,
                 ExtractionProposal.page == field['page'], ExtractionProposal.span_start == field['span_start'],
-                ExtractionProposal.span_end == field['span_end'], ExtractionProposal.field_name == field['field_name']))
+                ExtractionProposal.span_end == field['span_end'], ExtractionProposal.field_name == field['field_name']).order_by(ExtractionProposal.generation_job_id.is_(None)))
             if existing is not None:
                 if existing.proposed_value != field['value']:
                     new_task(db, actor, row, command.assignee_id, 'disagreement', 'A new extraction disagrees with an existing field; review both against the source.', proposal=existing)

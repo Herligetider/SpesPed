@@ -168,3 +168,8 @@ class ResolveClarification(Expected):
 
 class ReopenClarification(Expected):
     reason: str = Field(min_length=1, max_length=1000)
+
+
+class RecoverManualField(ProposeField):
+    recovery_of_proposal_id: UUID
+    source_revision: int = Field(ge=1)

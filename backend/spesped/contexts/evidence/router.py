@@ -16,7 +16,7 @@ from spesped.errors import DomainError
 from . import service
 from .models import CorrectionImpact, Derivative, EvidenceRevision, ExtractionProposal, SourceItem
 from .processing import MAX_BYTES
-from .schemas import ConfirmEvidence, CorrectEvidence, Expected, IntakeMetadata, NoteIntake, ProposeField, RegisterDerivative, ReviewField
+from .schemas import ConfirmEvidence, CorrectEvidence, Expected, IntakeMetadata, NoteIntake, ProposeField, RegisterDerivative, ReviewField, RecoverManualField
 
 router = APIRouter(prefix="/api/v1/schools/{school_id}", tags=["evidence"])
 
@@ -71,7 +71,7 @@ def source_view(db, row, revision=None):
 
 
 def proposal_view(row):
-    return {key: getattr(row, key) for key in ("id", "version", "state", "source_id", "source_revision", "page", "span_start", "span_end", "field_name", "proposed_value", "reviewed_value", "outcome", "review_reason", "reviewer_id", "generation_job_id", "unit")}
+    return {key: getattr(row, key) for key in ("id", "version", "state", "source_id", "source_revision", "page", "span_start", "span_end", "field_name", "proposed_value", "reviewed_value", "outcome", "review_reason", "reviewer_id", "generation_job_id", "unit", "recovery_of_proposal_id")}
 
 
 @router.post("/intake/notes", status_code=201)
@@ -193,9 +193,30 @@ def proposals(school_id: UUID, source_id: UUID, request: Request, revision: int 
     return {"items": [proposal_view(p) for p in rows], "total": total}
 
 
+@router.get("/intake/{source_id}/proposals/recovery-candidates")
+def recovery_candidates(school_id: UUID, source_id: UUID, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100), actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    row = service.source(db, actor, str(school_id), str(source_id))
+    # Explicit metadata-only projection: never select generated/reviewed prose.
+    query = select(ExtractionProposal.id, ExtractionProposal.source_id, ExtractionProposal.source_revision,
+        ExtractionProposal.page, ExtractionProposal.span_start, ExtractionProposal.span_end, ExtractionProposal.field_name).where(
+            ExtractionProposal.school_id == row.school_id, ExtractionProposal.source_id == row.id,
+            ExtractionProposal.source_revision == row.current_revision, ExtractionProposal.generation_job_id.is_not(None))
+    total = db.scalar(select(func.count()).select_from(query.subquery()))
+    rows = db.execute(query.order_by(ExtractionProposal.page, ExtractionProposal.span_start, ExtractionProposal.id).offset(offset).limit(limit)).mappings().all()
+    record_audit(db, actor, row.school_id, 'source.recovery_candidates_read', 'source', row.id)
+    commit(db)
+    return {'items': [dict(r) for r in rows], 'total': total}
+
+
 @router.post("/intake/{source_id}/proposals", status_code=201)
-def propose(school_id: UUID, source_id: UUID, command: ProposeField, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
-    row = mutate(db, lambda: service.propose(db, actor, str(school_id), str(source_id), command))
+def propose(school_id: UUID, source_id: UUID, command: ProposeField, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    row = mutate(db, lambda: service.propose(db, actor, str(school_id), str(source_id), command, getattr(request.app.state, 'ai_gateway', None)))
+    return proposal_view(row)
+
+
+@router.post("/intake/{source_id}/proposals/manual-recovery", status_code=201)
+def recover_manual_field(school_id: UUID, source_id: UUID, command: RecoverManualField, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    row = mutate(db, lambda: service.recover_manual_field(db, actor, str(school_id), str(source_id), command, getattr(request.app.state, 'ai_gateway', None)))
     return proposal_view(row)
 
 

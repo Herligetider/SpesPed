@@ -27,7 +27,7 @@ def integrated(env, wire_server, tmp_path):
     client, factory, app, ids = env
     cfg = Config(str(Path(__file__).resolve().parents[1] / 'alembic.ini'))
     cfg.attributes['database_url'] = factory.kw['bind'].url.render_as_string(hide_password=False)
-    command.upgrade(cfg, 'j04_structuring')
+    command.upgrade(cfg, 'j04_manual_recovery')
     suite = tmp_path / 'synthetic-suite.json'
     suite.write_text(json.dumps({'version': 1, 'suites': {'integration-v1': [{
         'name': 'synthetic-norwegian-observation', 'purpose': 'teaching_suggestion',

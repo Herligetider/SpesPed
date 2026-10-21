@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from spesped.db import Base, UTCDateTime, utcnow
@@ -76,8 +76,9 @@ class ExtractionProposal(Aggregate, SchoolRow, Base):
     reviewer_id: Mapped[str | None] = mapped_column(ForeignKey("identity_users.id"), nullable=True)
     generation_job_id: Mapped[str | None] = mapped_column(ForeignKey("platform_generation_jobs.id", name="fk_evidence_proposal_job"), nullable=True)
     unit: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    recovery_of_proposal_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     review_reason: Mapped[str | None] = mapped_column(String(1000), nullable=True)
-    __table_args__ = (ForeignKeyConstraint(["school_id", "source_id", "source_revision"], ["evidence_source_revisions.school_id", "evidence_source_revisions.source_id", "evidence_source_revisions.revision"]), UniqueConstraint("school_id", "id"), UniqueConstraint("school_id", "source_id", "source_revision", "page", "span_start", "span_end", "field_name"), CheckConstraint("page >= 1 AND span_start >= 0 AND span_end > span_start"), CheckConstraint("outcome IN ('pending','accepted','edited','rejected')"))
+    __table_args__ = (ForeignKeyConstraint(["school_id", "source_id", "source_revision"], ["evidence_source_revisions.school_id", "evidence_source_revisions.source_id", "evidence_source_revisions.revision"]), UniqueConstraint("school_id", "id"), ForeignKeyConstraint(["school_id", "recovery_of_proposal_id"], ["evidence_proposals.school_id", "evidence_proposals.id"], name="fk_proposal_manual_recovery"), Index("uq_proposals_manual_span", "school_id", "source_id", "source_revision", "page", "span_start", "span_end", "field_name", unique=True, sqlite_where=text("generation_job_id IS NULL"), postgresql_where=text("generation_job_id IS NULL")), Index("uq_proposals_model_span", "school_id", "source_id", "source_revision", "page", "span_start", "span_end", "field_name", unique=True, sqlite_where=text("generation_job_id IS NOT NULL"), postgresql_where=text("generation_job_id IS NOT NULL")), CheckConstraint("recovery_of_proposal_id IS NULL OR generation_job_id IS NULL", name="ck_proposal_manual_recovery"), CheckConstraint("page >= 1 AND span_start >= 0 AND span_end > span_start"), CheckConstraint("outcome IN ('pending','accepted','edited','rejected')"))
 
 
 class EvidenceItem(Aggregate, SchoolRow, Base):

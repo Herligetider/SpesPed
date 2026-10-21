@@ -370,3 +370,213 @@ def test_apply_assignee_conflicting_replay_and_atomic_rollback(structured):
     apply(s, job)
     response = s.client.post(base(s.ids) + f'/intake/{s.source["id"]}/structuring/apply', json={'expected_version': s.source['version'], 'job_id': job['id'], 'assignee_id': s.ids['leader']}, headers=s.headers)
     assert response.status_code == 409 and response.json()['error']['code'] == 'idempotency_conflict'
+
+
+def reviewed_goal(s):
+    apply(s, run(s, request_job(s)[0]))
+    proposal = next(p for p in s.client.get(base(s.ids) + f'/intake/{s.source["id"]}/proposals').json()['items'] if p['field_name'] == 'goal')
+    reviewed = post(s.client, base(s.ids) + f'/extraction-proposals/{proposal["id"]}/review', {
+        'expected_version': proposal['version'], 'outcome': 'edited',
+        'value': 'Synthetic private reviewed replacement canary', 'reason': 'Independent review reason canary',
+    }, s.headers, 200)
+    current = s.client.get(base(s.ids) + f'/intake/{s.source["id"]}').json()
+    command = {'expected_version': current['version'], **{k: proposal[k] for k in ('page', 'span_start', 'span_end', 'field_name', 'proposed_value')}}
+    return proposal, reviewed, command
+
+
+@pytest.mark.parametrize('kind', ['release', 'policy'])
+def test_manual_model_proposal_replay_honors_recall_and_independent_manual_recovery(structured, kind):
+    """Corrected expectations for independent review finding J04-SR1."""
+    s = structured
+    proposal, reviewed, command = reviewed_goal(s)
+    url = base(s.ids) + f'/intake/{s.source["id"]}/proposals'
+    visible_replay = post(s.client, url, command, s.headers)
+    assert visible_replay['id'] == proposal['id'] and visible_replay['generation_job_id'] == proposal['generation_job_id']
+    assert visible_replay['reviewed_value'] == reviewed['reviewed_value']
+    record = getattr(s, kind)
+    post(s.client, base(s.ids) + f'/ai/configuration/{kind}/{record["id"]}/revoke', {'expected_version': record['version']}, s.headers, 200)
+    assert s.client.get(url).status_code == 503
+    candidates = s.client.get(url + '/recovery-candidates')
+    assert candidates.status_code == 200 and proposal['id'] in {p['id'] for p in candidates.json()['items']}
+    assert reviewed['reviewed_value'] not in candidates.text and reviewed['review_reason'] not in candidates.text
+    assert all(set(p) == {'id', 'source_id', 'source_revision', 'page', 'span_start', 'span_end', 'field_name'} for p in candidates.json()['items'])
+    # Neither an identical command nor a conflicting value can return the
+    # independently edited value/reason or launder its model origin.
+    for body in (command, command | {'proposed_value': 'Other explicit manual text'}):
+        replay = s.client.post(url, json=body, headers=s.headers)
+        assert replay.status_code == 503, replay.text
+        assert reviewed['reviewed_value'] not in replay.text and reviewed['review_reason'] not in replay.text
+        assert 'generation_job_id' not in replay.text
+    review_retry = s.client.post(base(s.ids) + f'/extraction-proposals/{proposal["id"]}/review', json={'expected_version': reviewed['version'], 'outcome': 'rejected', 'reason': 'A new review cannot bypass recall.'}, headers=s.headers)
+    assert review_retry.status_code == 503 and reviewed['reviewed_value'] not in review_retry.text
+    confirmation = s.client.post(base(s.ids) + f'/extraction-proposals/{proposal["id"]}/confirm', json={**attribution(s.ids), 'expected_version': reviewed['version'], 'excerpt_page': proposal['page'], 'excerpt_start': proposal['span_start'], 'excerpt_end': proposal['span_end']}, headers=s.headers)
+    assert confirmation.status_code == 503 and reviewed['reviewed_value'] not in confirmation.text
+    # Recovery explicitly re-enters the identical canonical source span/field.
+    # No alternative span or historical model approval is needed or reused.
+    recovery_url = url + '/manual-recovery'
+    recovery_command = command | {'recovery_of_proposal_id': proposal['id'], 'source_revision': proposal['source_revision']}
+    manual = post(s.client, recovery_url, recovery_command, s.headers)
+    assert manual['id'] != proposal['id'] and manual['generation_job_id'] is None
+    assert manual['outcome'] == 'pending' and manual['reviewed_value'] is None and manual['review_reason'] is None
+    assert manual['recovery_of_proposal_id'] == proposal['id']
+    progress = s.client.get(base(s.ids) + f'/intake/{s.source["id"]}').json()['review_progress']
+    assert progress['recovered_model'] == 1 and progress['reviewed_unconfirmed'] == 0
+    assert (manual['page'], manual['span_start'], manual['span_end'], manual['field_name']) == (proposal['page'], proposal['span_start'], proposal['span_end'], proposal['field_name'])
+    assert s.client.post(url, json=command | {'expected_version': s.client.get(base(s.ids) + f'/intake/{s.source["id"]}').json()['version']}, headers=s.headers).status_code == 503
+    refreshed = s.client.get(base(s.ids) + f'/intake/{s.source["id"]}').json()
+    manual_replay = post(s.client, recovery_url, recovery_command | {'expected_version': refreshed['version']}, s.headers)
+    assert manual_replay['id'] == manual['id'] and manual_replay['generation_job_id'] is None
+    manual = post(s.client, base(s.ids) + f'/extraction-proposals/{manual["id"]}/review', {'expected_version': manual['version'], 'outcome': 'accepted', 'reason': 'Reviewed the explicit manual source field.'}, s.headers, 200)
+    evidence_item = post(s.client, base(s.ids) + f'/extraction-proposals/{manual["id"]}/confirm', {**attribution(s.ids), 'expected_version': manual['version'], 'excerpt_page': manual['page'], 'excerpt_start': manual['span_start'], 'excerpt_end': manual['span_end']}, s.headers)
+    assert evidence_item['content'] == 'lese tre ord'
+    with s.factory() as db:
+        original = db.get(ExtractionProposal, proposal['id'])
+        assert original.generation_job_id == proposal['generation_job_id'] and original.reviewed_value == reviewed['reviewed_value']
+    login(s.client, 'teacher')
+    excerpt = s.client.get(base(s.ids) + f'/source-excerpts/{evidence_item["source"]["link_id"]}')
+    assert excerpt.status_code == 200 and excerpt.json()['excerpt'] == 'Mål: lese tre ord'
+    assert 'Bea' not in excerpt.text
+    assert s.client.get(url).status_code == 403
+
+
+def test_manual_dedup_is_bound_to_current_source_revision_and_intake_authority(structured):
+    s = structured
+    proposal, reviewed, command = reviewed_goal(s)
+    url = base(s.ids) + f'/intake/{s.source["id"]}/proposals'
+    # Identical coordinates in a different source never return another source's
+    # reviewed model field, even while its model is available.
+    other, _ = note(s.client, s.ids, s.headers, TEXT)
+    other_manual = post(s.client, base(s.ids) + f'/intake/{other["id"]}/proposals', command | {'expected_version': other['version']}, s.headers)
+    assert other_manual['source_id'] == other['id'] and other_manual['generation_job_id'] is None
+    assert other_manual['reviewed_value'] is None and other_manual['review_reason'] is None
+    with s.factory.begin() as db:
+        grant = db.scalar(select(AuthorityGrant).where(AuthorityGrant.user_id == s.ids['reviewer'], AuthorityGrant.action == 'evidence.intake'))
+        grant.state = 'revoked'
+    denied = s.client.post(url, json=command, headers=s.headers)
+    assert denied.status_code == 403 and reviewed['reviewed_value'] not in denied.text
+    with s.factory.begin() as db:
+        grant = db.scalar(select(AuthorityGrant).where(AuthorityGrant.user_id == s.ids['reviewer'], AuthorityGrant.action == 'evidence.intake'))
+        grant.state = 'active'
+    # Changing extracted pages without changing the original revision must also
+    # invalidate the model-owned collision path, rather than returning its prose.
+    with s.factory.begin() as db:
+        source = db.get(SourceItem, s.source['id'])
+        inspected = evidence.inspection(db, source)
+        inspected.pages = [TEXT + '\nAdditional synthetic source correction.']
+    stale_model = s.client.post(url, json=command, headers=s.headers)
+    assert stale_model.status_code == 409 and reviewed['reviewed_value'] not in stale_model.text
+    # A real new source revision has independent manual proposal identity.
+    metadata = {k: v for k, v in s.metadata.items() if k != 'text'}
+    metadata['request_key'] = str(uuid4())
+    response = s.client.post(base(s.ids) + f'/intake/{s.source["id"]}/revisions', content=(TEXT + '\nNew revision.').encode(), headers={**s.headers, 'X-Expected-Version': str(command['expected_version']), 'X-Evidence-Filename': 'revised.txt', 'X-Evidence-Metadata': json.dumps(metadata)})
+    assert response.status_code == 201, response.text
+    new_source = response.json()
+    stale_command = s.client.post(url, json=command, headers=s.headers)
+    assert stale_command.status_code == 409 and reviewed['reviewed_value'] not in stale_command.text
+    fresh_manual = post(s.client, url, command | {'expected_version': new_source['version']}, s.headers)
+    assert fresh_manual['source_revision'] == 2 and fresh_manual['id'] != proposal['id']
+    assert fresh_manual['generation_job_id'] is None and fresh_manual['reviewed_value'] is None
+
+
+def test_identical_span_manual_recovery_scope_binding_and_origin_uniqueness(structured):
+    from sqlalchemy.exc import IntegrityError
+    s = structured
+    proposal, reviewed, command = reviewed_goal(s)
+    post(s.client, base(s.ids) + f'/ai/configuration/release/{s.release["id"]}/revoke', {'expected_version': s.release['version']}, s.headers, 200)
+    prefix = base(s.ids) + f'/intake/{s.source["id"]}'
+    url = prefix + '/proposals/manual-recovery'
+    body = command | {'recovery_of_proposal_id': proposal['id'], 'source_revision': proposal['source_revision'], 'proposed_value': 'Independent human-entered correction'}
+    for change in ({'source_revision': 2}, {'span_start': command['span_start'] + 1}, {'field_name': 'measure'}):
+        invalid = s.client.post(url, json=body | change, headers=s.headers)
+        assert invalid.status_code == 403, invalid.text
+        assert reviewed['reviewed_value'] not in invalid.text
+    manual = post(s.client, url, body, s.headers)
+    assert manual['proposed_value'] == body['proposed_value'] and manual['reviewed_value'] is None
+    assert post(s.client, url, body, s.headers)['id'] == manual['id']
+    changed = s.client.post(url, json=body | {'proposed_value': 'Changed idempotent request'}, headers=s.headers)
+    assert changed.status_code == 409
+    manual_target = s.client.post(url, json=body | {'recovery_of_proposal_id': manual['id']}, headers=s.headers)
+    assert manual_target.status_code == 403
+    other, _ = note(s.client, s.ids, s.headers, TEXT)
+    wrong_subject = s.client.post(base(s.ids) + f'/intake/{other["id"]}/proposals/manual-recovery', json=body | {'expected_version': other['version']}, headers=s.headers)
+    assert wrong_subject.status_code == 403
+    # Both origin-specific uniqueness constraints are enforced by each actual
+    # database, while the manual/model pair is allowed at the identical span.
+    with s.factory() as db:
+        keys = {k: proposal[k] for k in ('source_id', 'source_revision', 'page', 'span_start', 'span_end', 'field_name', 'proposed_value')}
+        for job_id in (None, proposal['generation_job_id']):
+            with pytest.raises(IntegrityError):
+                with db.begin_nested():
+                    db.add(ExtractionProposal(school_id=s.ids['school'], generation_job_id=job_id, **keys))
+                    db.flush()
+        canonical = db.scalars(select(ExtractionProposal).where(ExtractionProposal.school_id == s.ids['school'],
+            ExtractionProposal.source_id == s.source['id'], ExtractionProposal.source_revision == 1,
+            ExtractionProposal.page == proposal['page'], ExtractionProposal.span_start == proposal['span_start'],
+            ExtractionProposal.span_end == proposal['span_end'], ExtractionProposal.field_name == 'goal')).all()
+        assert {p.id for p in canonical} == {proposal['id'], manual['id']}
+        assert db.get(ExtractionProposal, proposal['id']).reviewed_value == reviewed['reviewed_value']
+    with s.factory.begin() as db:
+        grant = db.scalar(select(AuthorityGrant).where(AuthorityGrant.user_id == s.ids['reviewer'], AuthorityGrant.action == 'evidence.intake')); grant.state = 'revoked'
+    assert s.client.post(url, json=body, headers=s.headers).status_code == 403
+    with s.factory.begin() as db:
+        grant = db.scalar(select(AuthorityGrant).where(AuthorityGrant.user_id == s.ids['reviewer'], AuthorityGrant.action == 'evidence.intake')); grant.state = 'active'
+        source = db.get(SourceItem, s.source['id'])
+        inspection = evidence.inspection(db, source)
+        inspection.pages = [TEXT + '\nAltered extraction without a new source revision.']
+    altered = s.client.post(url, json=body, headers=s.headers)
+    assert altered.status_code == 409 and reviewed['reviewed_value'] not in altered.text
+
+
+def test_manual_recovery_is_atomic_and_checks_preserved_source_bytes(structured):
+    from spesped.contexts.evidence.schemas import RecoverManualField
+    s = structured
+    proposal, reviewed, command = reviewed_goal(s)
+    post(s.client, base(s.ids) + f'/ai/configuration/release/{s.release["id"]}/revoke', {'expected_version': s.release['version']}, s.headers, 200)
+    body = command | {'recovery_of_proposal_id': proposal['id'], 'source_revision': 1}
+    with s.factory() as db:
+        manual = evidence.recover_manual_field(db, Actor(s.ids['reviewer']), s.ids['school'], s.source['id'], RecoverManualField(**body), s.app.state.ai_gateway)
+        manual_id = manual.id
+        db.rollback()
+    with s.factory() as db:
+        assert db.get(ExtractionProposal, manual_id) is None
+        assert db.scalar(select(EvidenceEvent).where(EvidenceEvent.aggregate_id == manual_id)) is None
+        assert db.get(ExtractionProposal, proposal['id']).reviewed_value == reviewed['reviewed_value']
+        original = evidence.source_revision(db, s.ids['school'], s.source['id'], 1)
+        storage_path = s.app.state.evidence_storage.path(original.storage_key)
+    storage_path.write_bytes(b'Changed preserved source bytes')
+    response = s.client.post(base(s.ids) + f'/intake/{s.source["id"]}/proposals/manual-recovery', json=body, headers=s.headers)
+    assert response.status_code == 409 and response.json()['error']['code'] == 'source_integrity'
+    assert reviewed['reviewed_value'] not in response.text
+
+
+def test_all_identical_span_recoveries_can_finish_without_rewriting_model_history(structured):
+    s = structured
+    apply(s, run(s, request_job(s)[0]))
+    source_url = base(s.ids) + f'/intake/{s.source["id"]}'
+    original_models = s.client.get(source_url + '/proposals?origin=model').json()['items']
+    post(s.client, base(s.ids) + f'/ai/configuration/release/{s.release["id"]}/revoke', {'expected_version': s.release['version']}, s.headers, 200)
+    candidates = s.client.get(source_url + '/proposals/recovery-candidates').json()['items']
+    explicit_source_values = {name: value for name, value, _ in VALUES}
+    for candidate in candidates:
+        version = s.client.get(source_url).json()['version']
+        manual = post(s.client, source_url + '/proposals/manual-recovery', {
+            'expected_version': version, 'recovery_of_proposal_id': candidate['id'],
+            **{key: candidate[key] for key in ('source_revision', 'page', 'span_start', 'span_end', 'field_name')},
+            'proposed_value': explicit_source_values[candidate['field_name']],
+        }, s.headers)
+        post(s.client, base(s.ids) + f'/extraction-proposals/{manual["id"]}/review', {'expected_version': manual['version'], 'outcome': 'rejected', 'reason': 'Human selected no reusable fact for this manual field.'}, s.headers, 200)
+    for manual in s.client.get(source_url + '/proposals?origin=manual').json()['items']:
+        if manual['outcome'] == 'pending':
+            post(s.client, base(s.ids) + f'/extraction-proposals/{manual["id"]}/review', {'expected_version': manual['version'], 'outcome': 'rejected', 'reason': 'Human completed remaining literal source review.'}, s.headers, 200)
+    # Recovery does not silently resolve attribution or ambiguous sibling tasks.
+    assert s.client.get(source_url).json()['state'] == 'needs_clarification'
+    for task in task_list(s):
+        post(s.client, source_url + f'/clarifications/{task["id"]}/resolve', {'expected_version': task['version'], 'resolution': 'Human completed this specific remaining clarification.'}, s.headers, 200)
+    complete = s.client.get(source_url).json()
+    assert complete['state'] == 'done' and complete['review_progress']['recovered_model'] == len(original_models)
+    assert complete['review_progress']['pending'] == complete['review_progress']['reviewed_unconfirmed'] == 0
+    with s.factory() as db:
+        for original in original_models:
+            saved = db.get(ExtractionProposal, original['id'])
+            assert saved.proposed_value == original['proposed_value'] and saved.version == original['version']
+            assert saved.outcome == original['outcome'] and saved.generation_job_id == original['generation_job_id']
