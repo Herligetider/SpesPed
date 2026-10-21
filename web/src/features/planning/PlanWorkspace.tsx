@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { Context, Decision, List, Plan } from "./types";
 import {
   Field,
@@ -122,6 +122,42 @@ function PlanDetail({
   decision: Decision | null;
 }) {
   const load = useRead<Plan>(ctx, ["education-plans", planId]);
+  const historyHead = useRead<List<Plan>>(
+    ctx,
+    ["education-plans", planId, "revisions"],
+    new URLSearchParams({ offset: "0", limit: "1" }),
+  );
+  const [refuted, setRefuted] = useState<{
+    revisionId: string;
+    refresh: number;
+  }>();
+  const noteRefuted = useCallback(
+    (revisionId: string, refresh: number) =>
+      setRefuted((previous) =>
+        previous?.revisionId === revisionId && previous.refresh === refresh
+          ? previous
+          : { revisionId, refresh },
+      ),
+    [],
+  );
+  const latestHistory = historyHead.value?.items[0];
+  const historyContradiction = Boolean(
+    historyHead.value &&
+      (!latestHistory ||
+        latestHistory.content.id !== load.value?.content.id ||
+        latestHistory.source_status !== "current"),
+  );
+  // Retention keeps an independent editor alive; it is never a fresh authority
+  // projection. A newer history check can also refute an earlier current read.
+  const current =
+    load.value?.source_status === "current" &&
+    !historyContradiction &&
+    !(
+      refuted?.revisionId === load.value.content.id &&
+      refuted?.refresh === ctx.refresh
+    )
+      ? load.value
+      : undefined;
   const [editing, setEditing] = useState<Plan | null>(null);
   const retained = useRef<Plan | null>(null);
   if (load.value) retained.current = load.value;
@@ -138,13 +174,17 @@ function PlanDetail({
       <button type="button" onClick={ctx.changed}>
         Hent gjeldende plan og kildekontroll
       </button>
-      <PlanState plan={plan} />
-      <State value={plan.source_status} />
+      {load.value ? (
+        <PlanState plan={load.value} />
+      ) : (
+        <p>Gjeldende planstatus er ikke kontrollert.</p>
+      )}
+      <State value={current ? "current" : "review_required"} />
       {load.error !== undefined && (
         <p role="alert">{ctx.formatError(load.error)}</p>
       )}
       {!load.value && <p role="status">Kontrollerer gjeldende grunnlag …</p>}
-      <div hidden={!load.value || load.value.source_status !== "current"}>
+      <div hidden={!current}>
         <PlanView ctx={ctx} plan={plan} />
         <Lifecycle
           key={`${plan.content.id}:${plan.revision_state}`}
@@ -173,7 +213,7 @@ function PlanDetail({
           />
         )}
       </div>
-      {load.value?.source_status !== "current" && load.value && (
+      {!current && (load.value || load.error !== undefined) && (
         <p className="planning-warning">
           Planens grunnlag må vurderes på nytt. Tidligere kildetekst og
           modelltekst er skjult. Du kan opprette en egen manuell plan fra
@@ -190,7 +230,13 @@ function PlanDetail({
           </ul>
         </div>
       )}
-      <History ctx={ctx} plan={plan} />
+      <History
+        ctx={ctx}
+        planId={plan.id}
+        revisionId={plan.content.id!}
+        current={current}
+        onRefuted={noteRefuted}
+      />
     </section>
   );
 }
@@ -387,24 +433,70 @@ function Lifecycle({ ctx, plan }: { ctx: Context; plan: Plan }) {
     </p>
   );
 }
-function History({ ctx, plan }: { ctx: Context; plan: Plan }) {
+function History({
+  ctx,
+  planId,
+  revisionId,
+  current,
+  onRefuted,
+}: {
+  ctx: Context;
+  planId: string;
+  revisionId: string;
+  current?: Plan;
+  onRefuted: (revisionId: string, refresh: number) => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <details onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>Revisjonshistorikk og sammenligning</summary>
-      {open && <HistoryContent ctx={ctx} plan={plan} />}
+      {open && (
+        <HistoryContent
+          ctx={ctx}
+          planId={planId}
+          revisionId={revisionId}
+          current={current}
+          onRefuted={onRefuted}
+        />
+      )}
     </details>
   );
 }
-function HistoryContent({ ctx, plan }: { ctx: Context; plan: Plan }) {
+function HistoryContent({
+  ctx,
+  planId,
+  revisionId,
+  current,
+  onRefuted,
+}: {
+  ctx: Context;
+  planId: string;
+  revisionId: string;
+  current?: Plan;
+  onRefuted: (revisionId: string, refresh: number) => void;
+}) {
   const [offset, setOffset] = useState(0),
     [selected, setSelected] = useState("");
   const load = useRead<List<Plan>>(
     ctx,
-    ["education-plans", plan.id, "revisions"],
+    ["education-plans", planId, "revisions"],
     new URLSearchParams({ offset: String(offset), limit: "50" }),
   );
+  const latestStatus = load.value?.items.find(
+    (p) => p.content.id === revisionId,
+  )?.source_status;
+  useLayoutEffect(() => {
+    if (latestStatus && latestStatus !== "current")
+      onRefuted(revisionId, ctx.refresh);
+  }, [latestStatus, revisionId, ctx.refresh, onRefuted]);
   const old = load.value?.items.find((p) => p.content.id === selected);
+  const currentHistory =
+    current &&
+    load.value?.items.find((p) => p.content.id === current.content.id);
+  const comparableCurrent =
+    current && (!currentHistory || currentHistory.source_status === "current")
+      ? currentHistory || current
+      : undefined;
   return load.error ? (
     <p role="alert">{ctx.formatError(load.error)}</p>
   ) : !load.value ? (
@@ -436,14 +528,16 @@ function HistoryContent({ ctx, plan }: { ctx: Context; plan: Plan }) {
       />
       {old && (
         <>
-          <GoalComparison
-            ctx={ctx}
-            planId={plan.id}
-            oldId={old.content.id!}
-            newId={plan.content.id!}
-            old={old}
-            current={plan}
-          />
+          {comparableCurrent && (
+            <GoalComparison
+              ctx={ctx}
+              planId={planId}
+              oldId={old.content.id!}
+              newId={comparableCurrent.content.id!}
+              old={old}
+              current={comparableCurrent}
+            />
+          )}
           <div className="planning-two">
             <section>
               <h4>Tidligere valgt revisjon</h4>
@@ -454,7 +548,15 @@ function HistoryContent({ ctx, plan }: { ctx: Context; plan: Plan }) {
               <button type="button" onClick={ctx.changed}>
                 Hent gjeldende plan og kildekontroll
               </button>
-              <PlanView ctx={ctx} plan={plan} />
+              {comparableCurrent ? (
+                <PlanView ctx={ctx} plan={comparableCurrent} />
+              ) : (
+                <p className="planning-warning">
+                  Gjeldende revisjon er ikke kontrollert mot dagens grunnlag.
+                  Tidligere kildetekst og modelltekst vises ikke. Den valgte
+                  historiske revisjonen vurderes separat.
+                </p>
+              )}
             </section>
           </div>
         </>

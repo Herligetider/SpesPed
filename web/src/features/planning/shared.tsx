@@ -119,9 +119,11 @@ export function localChoices(value: string): string[] {
     .sort((a, b) => a - b)
     .map((t) => new Date(t).toISOString());
 }
-export function localInstant(value: string): string {
-  const choices = localChoices(value),
-    selected = value.split("@")[1];
+function retainedLocalInstant(
+  value: string,
+  choices: string[],
+): string | undefined {
+  const selected = value.split("@")[1];
   if (
     selected &&
     /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?Z$/.test(selected) &&
@@ -130,7 +132,13 @@ export function localInstant(value: string): string {
     )
   )
     return selected;
-  if (choices.length === 1 && !selected) return choices[0];
+  return undefined;
+}
+export function localInstant(value: string): string {
+  const choices = localChoices(value),
+    selected = retainedLocalInstant(value, choices);
+  if (selected) return selected;
+  if (choices.length === 1 && !value.includes("@")) return choices[0];
   throw new ApiError(
     choices.length > 1
       ? "Klokkeslettet forekommer to ganger. Velg første eller andre forekomst ved tidsfeltet."
@@ -172,6 +180,15 @@ export function Field({
   required?: boolean;
 }) {
   const choices = type === "datetime-local" ? localChoices(value) : [];
+  const retained = retainedLocalInstant(value, choices);
+  // The native input represents milliseconds. An untouched imported instant may
+  // carry more precision; its required fold selector must represent that exact
+  // instant too, rather than leave the controlled selection without an option.
+  const fraction = retained?.match(/\.(\d+)Z$/)?.[1];
+  const foldChoices =
+    fraction && fraction.length > 3
+      ? choices.map((instant) => instant.replace(/\.\d{3}Z$/, `.${fraction}Z`))
+      : choices;
   return (
     <>
       <label className="planning-field">
@@ -204,7 +221,7 @@ export function Field({
           Gjentatt klokkeslett: {title}
           <select
             required
-            value={value.split("@")[1] || ""}
+            value={retained || ""}
             onChange={(e) =>
               onChange(
                 value.split("@")[0] +
@@ -213,7 +230,7 @@ export function Field({
             }
           >
             <option value="">Velg hvilken forekomst …</option>
-            {choices.map((instant, i) => {
+            {foldChoices.map((instant, i) => {
               const offset = -new Date(instant).getTimezoneOffset();
               const zone = `UTC${offset < 0 ? "-" : "+"}${String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0")}:${String(Math.abs(offset) % 60).padStart(2, "0")}`;
               return (

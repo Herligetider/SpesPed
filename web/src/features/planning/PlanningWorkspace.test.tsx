@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { ApiClient } from "../../api";
 import { SuggestionDiff } from "./PlanSuggestions";
 import { useState } from "react";
@@ -9,6 +9,8 @@ import PlanEditor, { blankPlan } from "./PlanEditor";
 import PlanWorkspace from "./PlanWorkspace";
 import type { Context, Diff, Plan, Props } from "./types";
 import { localChoices, localInstant, localValue } from "./shared";
+beforeAll(() => vi.stubEnv("TZ", "Europe/Oslo"));
+afterAll(() => vi.unstubAllEnvs());
 const response = (v: unknown, status = 200) =>
   new Response(JSON.stringify(v), {
     status,
@@ -249,6 +251,8 @@ describe("planning workspace invariants", () => {
     const client = new ApiClient(
       vi.fn(async (input) => {
         const url = String(input);
+        if (url.includes("/education-plans/plan-a/revisions"))
+          return response({ items: [p], total: 1 });
         if (url.endsWith("/education-plans/plan-a")) return response(p);
         if (url.includes("/education-plans?"))
           return response({ items: [p], total: 1 });
@@ -469,6 +473,8 @@ describe("proposal selection and editor refresh", () => {
     const client = new ApiClient(
       vi.fn(async (input) => {
         const url = String(input);
+        if (url.includes("/education-plans/plan-a/revisions"))
+          return response({ items: [p], total: 1 });
         if (url.endsWith("/education-plans/plan-a")) return response(p);
         if (url.includes("/education-plans?"))
           return response({ items: [p], total: 1 });
@@ -527,6 +533,8 @@ describe("optional model access", () => {
     const client = new ApiClient(
       vi.fn(async (input) => {
         const url = String(input);
+        if (url.includes("/education-plans/plan-a/revisions"))
+          return response({ items: [p], total: 1 });
         if (url.endsWith("/education-plans/plan-a")) return response(p);
         if (url.includes("/education-plans?"))
           return response({ items: [p], total: 1 });
@@ -587,5 +595,201 @@ it("preserves imported microseconds beyond browser input precision until the use
   expect(localInstant(localValue(source))).toBe(source);
   expect(localInstant(localValue(source).split("@")[0])).toBe(
     "2026-10-21T07:15:37.123Z",
+  );
+});
+
+it("submits an untouched imported late fold with microseconds through valid native form controls", async () => {
+  if (Intl.DateTimeFormat().resolvedOptions().timeZone !== "Europe/Oslo")
+    throw new Error("Run this regression with TZ=Europe/Oslo");
+  const user = userEvent.setup(),
+    writes: Record<string, unknown>[] = [];
+  const instant = "2026-10-25T01:30:00.123456Z",
+    p = fixture();
+  p.kind = "individual_education";
+  p.content.effective_from = instant;
+  p.content.goals[0].effective_from = instant;
+  p.content.decision_id = "decision-a";
+  p.content.decision_revision_id = "decision-revision-a";
+  p.content.allocations = [
+    {
+      provision_id: "provision-a",
+      decision_id: "decision-a",
+      decision_revision_id: "decision-revision-a",
+      amount: "100",
+      unit: "hours",
+      counting_basis: "learner_time",
+      effective_from: instant,
+      effective_until: p.content.effective_until,
+    },
+  ];
+  const client = new ApiClient(
+    vi.fn(async (_input, init) => {
+      if (init?.method === "POST") {
+        writes.push(JSON.parse(String(init.body)));
+        return response(p);
+      }
+      return response({ items: [], total: 0 });
+    }),
+  );
+  render(
+    <PlanEditor
+      ctx={context(client)}
+      initial={p}
+      onSaved={() => {}}
+      onClose={() => {}}
+    />,
+  );
+  const folds = screen.getAllByRole("combobox", {
+    name: /Gjentatt klokkeslett/,
+  }) as HTMLSelectElement[];
+  expect(folds).toHaveLength(3);
+  for (const fold of folds) {
+    expect(fold.value).toBe(instant);
+    expect(fold.selectedOptions[0].textContent).toContain("Andre forekomst");
+    expect(fold.checkValidity()).toBe(true);
+    expect([...fold.options].map((option) => option.value)).toEqual([
+      "",
+      "2026-10-25T00:30:00.123456Z",
+      instant,
+    ]);
+  }
+  const title = screen.getByRole("textbox", { name: "Tittel" });
+  await user.clear(title);
+  await user.type(title, "Bare tittel er endret");
+  const form = title.closest("form")!;
+  expect(form.checkValidity()).toBe(true);
+  await user.click(
+    screen.getByRole("button", { name: "Lagre ny planrevisjon" }),
+  );
+  await waitFor(() => expect(writes).toHaveLength(1));
+  expect(writes[0]).toMatchObject({
+    effective_from: instant,
+    goals: [{ effective_from: instant }],
+    allocations: [{ effective_from: instant }],
+    title: "Bare tittel er endret",
+  });
+});
+
+describe("independent history reauthorization", () => {
+  it.each(["failed current read", "stale successful current read"])(
+    "hides recalled current prose on %s while authorized manual history remains readable",
+    async (mode) => {
+      const user = userEvent.setup();
+      const p = fixture();
+      p.content.id = "generated-revision";
+      p.content.revision = 3;
+      p.current_revision = 3;
+      p.content.title = "Privat gammel modelltekst";
+      p.content.rationale = "Privat gammel modellbegrunnelse";
+      const manual = structuredClone(p);
+      manual.content = {
+        ...manual.content,
+        id: "manual-revision",
+        revision: 1,
+        title: "Uavhengig manuelt grunnlag",
+        rationale: "Bekreftet manuelt grunnlag",
+      };
+      let recalled = false;
+      const client = new ApiClient(
+        vi.fn(async (input) => {
+          const url = String(input);
+          if (url.includes("/education-plans/plan-a/revisions")) {
+            const redacted = {
+              ...p,
+              source_status: "review_required",
+              content: { id: p.content.id, revision: 3 },
+            };
+            if (new URL(url, "http://test").searchParams.get("limit") === "1")
+              return response({ items: [p], total: 3 });
+            return response({
+              items: [recalled ? redacted : p, manual],
+              total: 3,
+            });
+          }
+          if (url.endsWith("/education-plans/plan-a")) {
+            if (recalled && mode === "failed current read")
+              throw new TypeError("lost current response");
+            return response(p);
+          }
+          if (url.includes("/education-plans?"))
+            return response({
+              items: [
+                recalled
+                  ? {
+                      ...p,
+                      source_status: "review_required",
+                      content: { id: p.content.id, revision: 3 },
+                    }
+                  : p,
+              ],
+              total: 1,
+            });
+          return response({ items: [], total: 0 });
+        }),
+      );
+      function Harness() {
+        const [refresh, setRefresh] = useState(0);
+        return (
+          <PlanWorkspace
+            ctx={{
+              ...context(client),
+              refresh,
+              changed: () => setRefresh((n) => n + 1),
+            }}
+            decision={null}
+          />
+        );
+      }
+      render(<Harness />);
+      await user.click(
+        await screen.findByRole("button", { name: "Åpne plan og revisjoner" }),
+      );
+      await user.click(
+        await screen.findByText("Revisjonshistorikk og sammenligning"),
+      );
+      await user.selectOptions(
+        await screen.findByRole("combobox", {
+          name: "Velg revisjon som skal sammenlignes med gjeldende",
+        }),
+        "manual-revision",
+      );
+      expect(
+        await screen.findByRole("heading", {
+          name: "Uavhengig manuelt grunnlag · revisjon 1",
+        }),
+      ).toBeVisible();
+      expect(
+        screen.getAllByRole("heading", {
+          name: "Privat gammel modelltekst · revisjon 3",
+        }),
+      ).toHaveLength(2);
+      recalled = true;
+      await user.click(
+        screen.getAllByRole("button", {
+          name: "Hent gjeldende plan og kildekontroll",
+        })[0],
+      );
+      await waitFor(() =>
+        expect(
+          screen.queryAllByRole("heading", {
+            name: "Privat gammel modelltekst · revisjon 3",
+          }),
+        ).toHaveLength(0),
+      );
+      expect(
+        await screen.findByRole("heading", {
+          name: "Uavhengig manuelt grunnlag · revisjon 1",
+        }),
+      ).toBeVisible();
+      for (const node of screen.queryAllByText(
+        "Privat gammel modellbegrunnelse",
+      ))
+        expect(node).not.toBeVisible();
+      expect(
+        screen.getByText(
+          /Gjeldende revisjon er ikke kontrollert mot dagens grunnlag/,
+        ),
+      ).toBeVisible();
+    },
   );
 });
