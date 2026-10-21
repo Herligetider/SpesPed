@@ -25,14 +25,14 @@ from spesped.contexts.governance.ports import ValidatedEvidenceReference
 
 ORIGIN='http://testserver'
 PASSWORD='synthetic-governance-passphrase'
-POSTGRES='postgresql+psycopg://spesped_test:synthetic-development-only@127.0.0.1:55432/spesped_test'
 ACTIONS=('rules.manage','rules.approve','tasks.manage','tasks.review','overview','workload.manage')
 
 @pytest.fixture(params=['sqlite','postgres'])
 def env(request,tmp_path):
     admin=None; schema=None
     if request.param=='postgres':
-        url=os.getenv('SPESPED_TEST_POSTGRES_URL',POSTGRES)
+        url=os.getenv('SPESPED_TEST_POSTGRES_URL')
+        if not url: pytest.skip('Set SPESPED_TEST_POSTGRES_URL for PostgreSQL verification')
         admin=create_engine(url)
         schema='j13_'+uuid4().hex
         with admin.begin() as connection: connection.execute(text(f'CREATE SCHEMA "{schema}"'))
@@ -438,3 +438,145 @@ def test_idempotent_retry_in_reused_service_session_returns_current_owner(env):
             changed=svc.assign_task(second,actor,ids['school'],task['id'],s.Assignment(expected_version=original.version,owner_id=ids['teacher'],reason='Synthetic concurrent reassignment'))
         retried=svc.trigger_obligations(first,actor,ids['school'],s.Trigger.model_validate(body))[0]
         assert retried.id==original.id and retried.owner_id==ids['teacher'] and retried.version==changed.version
+
+
+def test_review_r1_impact_filters_identifiable_scope_and_binds_hidden_changes(env):
+    c,f,ids,_,_=env;b=base(ids)
+    _,version,h=rule_setup(env)
+    profile=profile_setup(env,version,h)
+    case=str(uuid4())
+    with f.begin() as db:
+        db.add(AuthorityGrant(school_id=ids['school'],user_id=ids['leader'],action='governance.case.read',learner_id=ids['learner'],case_id=case,valid_from=date(2020,1,1),granted_by=ids['leader']))
+        db.add(AuthorityGrant(school_id=ids['school'],user_id=ids['outsider'],action='governance.rules.approve',valid_from=date(2020,1,1),granted_by=ids['leader']))
+    c.app.state.governance_case_scope_resolver=lambda db,actor,school,case_id: ids['learner'] if case_id==case else None
+    task=post(c,b+'/triggers',trigger_body(profile,learner_id=ids['learner'],case_id=case),h,201)['items'][0]
+    _,replacement,h=rule_setup(env)
+    proposed=profile_setup(env,replacement,h,activate=False,valid_from=date.today().isoformat(),supersedes_profile_id=profile['id'])
+    leader_impact=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert leader_impact['items'][0]['obligation_id']==task['id']
+    h_outsider=login(c,'outsider')
+    assert c.get(b+f'/obligations/{task["id"]}').status_code==403
+    limited=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert limited['items']==[] and limited['total']==0
+    assert limited['total_scope']=='authorized_obligations_only'
+    assert limited['impact_digest']==leader_impact['impact_digest']
+    assert task['id'] not in str(limited) and case not in str(limited) and ids['learner'] not in str(limited)
+    assert version['id'] not in str(limited)
+    # A change to hidden work still invalidates the approval fingerprint, without
+    # disclosing the hidden task or its exact count to this rule approver.
+    h=login(c)
+    post(c,b+f'/obligations/{task["id"]}/assignment',{'expected_version':task['version'],'owner_id':ids['leader'],'reason':'Changed during review'},h)
+    h_outsider=login(c,'outsider')
+    post(c,b+f'/profiles/{proposed["id"]}/activate',{'expected_version':proposed['version'],'rationale':'Stale restricted preview','impact_digest':limited['impact_digest']},h_outsider,409)
+    updated=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert updated['items']==[] and updated['total']==0 and updated['impact_digest']!=limited['impact_digest']
+    post(c,b+f'/profiles/{proposed["id"]}/activate',{'expected_version':proposed['version'],'rationale':'Reviewed school rule change with subject details restricted','impact_digest':updated['impact_digest']},h_outsider)
+
+
+def test_review_r1_revoked_case_authority_removes_impact_details(env):
+    c,f,ids,_,_=env;b=base(ids)
+    _,version,h=rule_setup(env);profile=profile_setup(env,version,h);case=str(uuid4())
+    with f.begin() as db:
+        grant=AuthorityGrant(school_id=ids['school'],user_id=ids['leader'],action='governance.case.read',learner_id=ids['learner'],case_id=case,valid_from=date(2020,1,1),granted_by=ids['leader'])
+        db.add(grant);db.flush();grant_id=grant.id
+    c.app.state.governance_case_scope_resolver=lambda *args:ids['learner']
+    task=post(c,b+'/triggers',trigger_body(profile,learner_id=ids['learner'],case_id=case),h,201)['items'][0]
+    _,replacement,h=rule_setup(env)
+    proposed=profile_setup(env,replacement,h,activate=False,valid_from=date.today().isoformat(),supersedes_profile_id=profile['id'])
+    full=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert full['total']==1
+    with f.begin() as db:db.get(AuthorityGrant,grant_id).state='revoked'
+    limited=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert limited['items']==[] and limited['total']==0
+    assert limited['impact_digest']==full['impact_digest']
+    assert task['id'] not in str(limited)
+
+
+def test_review_r2_same_rule_school_facts_show_changed_and_unknown_applicability(env):
+    c,f,ids,_,_=env;b=base(ids)
+    _,version,h=rule_setup(env,conditions=[{'fact':'curriculum_scheme','equals':'A'}])
+    profile=profile_setup(env,version,h,school_inputs={'curriculum_scheme':'A'})
+    task=post(c,b+'/triggers',trigger_body(profile),h,201)['items'][0]
+    proposed=profile_setup(env,version,h,activate=False,valid_from=date.today().isoformat(),supersedes_profile_id=profile['id'],school_inputs={'curriculum_scheme':'B'})
+    impact=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert impact['total']==1
+    effect=impact['items'][0]
+    assert effect['previous_requirement_version_id']==effect['proposed_requirement_version_id']==version['id']
+    assert effect['before']['applicability']=='applicable' and effect['after']['applicability']=='not_applicable'
+    assert effect['before']['deadline_kind']==effect['after']['deadline_kind']=='without_undue_delay'
+    assert effect['changed_school_inputs']==[{'fact':'curriculum_scheme','before_known':True,'before':'A','after_known':True,'after':'B'}]
+    missing=profile_setup(env,version,h,activate=False,valid_from=date.today().isoformat(),supersedes_profile_id=profile['id'],school_inputs={})
+    missing_impact=c.get(b+f'/profiles/{missing["id"]}/impact').json()
+    assert missing_impact['items'][0]['after']['applicability']=='unresolved'
+    assert missing_impact['items'][0]['after']['unresolved_inputs']==['curriculum_scheme']
+    assert missing_impact['school_input_changes'][0]['after_known'] is False
+    post(c,b+f'/profiles/{proposed["id"]}/activate',{'expected_version':1,'rationale':'Reviewed applicability effect','impact_digest':impact['impact_digest']},h)
+    assert c.get(b+f'/obligations/{task["id"]}').json()['applicability']=='applicable'
+    assert post(c,b+'/triggers',trigger_body(proposed,occurred_at=utcnow().isoformat()),h,201)['items'][0]['applicability']=='not_applicable'
+
+
+def test_review_r2_previously_not_applicable_and_changed_deadline_inputs_are_visible(env):
+    c,f,ids,_,_=env;b=base(ids)
+    _,version,h=rule_setup(env,conditions=[{'fact':'curriculum_scheme','equals':'A'}])
+    profile=profile_setup(env,version,h,school_inputs={'curriculum_scheme':'B'})
+    task=post(c,b+'/triggers',trigger_body(profile),h,201)['items'][0]
+    assert task['applicability']=='not_applicable'
+    proposed=profile_setup(env,version,h,activate=False,valid_from=date.today().isoformat(),supersedes_profile_id=profile['id'],school_inputs={'curriculum_scheme':'A'})
+    impact=c.get(b+f'/profiles/{proposed["id"]}/impact').json()
+    assert impact['items'][0]['before']['applicability']=='not_applicable'
+    assert impact['items'][0]['after']['applicability']=='applicable'
+    with f() as db:
+        old=db.get(m.RequirementVersion,version['id']);definition=db.get(m.RequirementDefinition,old.requirement_id)
+        definition_id,expected=definition.id,definition.version
+    revision=post(c,b+f'/requirements/{definition_id}/versions',{'expected_version':expected,'valid_from':'2020-01-01','conditions':[{'fact':'curriculum_scheme','equals':'A'}],'trigger_type':'synthetic_event','deadline':{'kind':'calendar_period','count':3,'unit':'days','calendar':'school_days','start':'provided_start','legal_basis':'Synthetic changed legal timing'},'required_action':'Same synthetic action','accountable_role':'educator','interpretation_notes':'Reviewed timing change'},h,201)
+    revision=post(c,b+f'/requirement-versions/{revision["id"]}/review',{'expected_version':1,'rationale':'Reviewed timing'},h)
+    timed=profile_setup(env,revision,h,activate=False,valid_from=date.today().isoformat(),supersedes_profile_id=profile['id'],school_inputs={'curriculum_scheme':'A'})
+    timed_impact=c.get(b+f'/profiles/{timed["id"]}/impact').json()['items'][0]
+    assert timed_impact['after']['deadline_kind']=='calendar_period'
+    assert timed_impact['after']['deadline_at'] is None and timed_impact['after']['deadline_reasons']==['Missing start_date']
+    assert c.get(b+f'/obligations/{task["id"]}').json()['deadline_kind']=='without_undue_delay'
+
+
+def test_review_r3_closed_study_withdrawal_keeps_history_and_excludes_aggregate(env):
+    c,f,ids,_,_=env;b=base(ids);h=login(c)
+    study=post(c,b+'/workload-studies',{'title':'Synthetic consent study','task_type':'session_preparation','protocol':'Matched synthetic tasks','quality_rubric':'Synthetic quality scale','minimum_quality':3},h,201)
+    path=b+f'/workload-studies/{study["id"]}'
+    measurement={'match_key':'matched','mode':'manual','complexity':'low','scenario':'Synthetic','primary_minutes':10,'review_minutes':0,'correction_minutes':0,'duplicate_entry_minutes':0,'followup_minutes':0,'quality':4}
+    for who in ('leader','teacher','volunteer'):
+        h=login(c,who);post(c,path+'/participation',{'consent':True},h)
+        post(c,path+'/measurements',measurement,h,201)
+        post(c,path+'/measurements',{**measurement,'mode':'assisted','primary_minutes':5},h,201)
+    h=login(c);assert c.get(path+'/results').json()['manual_minutes']==30
+    post(c,path+'/close',{'expected_version':1,'rationale':'Collection complete'},h)
+    post(c,path+'/participation',{'consent':False,'expected_version':0},h,409)
+    assert post(c,path+'/participation',{'consent':False,'expected_version':1},h)=={'consent':False,'version':2}
+    result=c.get(path+'/results').json()
+    assert result['status']=='insufficient_comparable_sample' and result['manual_minutes'] is None
+    assert c.get(path+'/my-measurements').json()['total']==2
+    with f() as db:
+        participant=db.scalar(select(m.WorkloadParticipant).where(m.WorkloadParticipant.study_id==study['id'],m.WorkloadParticipant.user_id==ids['leader']))
+        withdrawal=participant.withdrawn_at
+        assert participant.consented_at < withdrawal
+        assert db.scalar(select(func.count()).select_from(m.WorkloadMeasurement).where(m.WorkloadMeasurement.participant_id==participant.id))==2
+    assert post(c,path+'/participation',{'consent':False,'expected_version':2},h)=={'consent':False,'version':2}
+    with f() as db:assert db.get(m.WorkloadParticipant,participant.id).withdrawn_at==withdrawal
+    post(c,path+'/participation',{'consent':True,'expected_version':2},h,400)
+    post(c,path+'/measurements',{**measurement,'match_key':'after-close'},h,400)
+    h=login(c,'outsider');post(c,path+'/participation',{'consent':True},h,400)
+
+
+def test_review_r4_action_occurrence_and_reopening_bound_remedial_period(env):
+    task,h,_,_=trigger_setup(env);c,f,ids,_,_=env;b=base(ids);path=b+f'/obligations/{task["id"]}'
+    deviation=post(c,b+'/deviations',{'obligation_id':task['id'],'issue_type':'missing_delivery','description':'Current synthetic missing delivery'},h,201)
+    old=post(c,path+'/actions',{'expected_version':task['version'],'kind':'performed_action','action_type':'old_delivery','description':'A month-old action entered after the current issue','occurred_at':(utcnow()-timedelta(days=30)).isoformat()},h,201)
+    resolution={'expected_version':deviation['version'],'action':'resolve','explanation':'Attempt to reuse earlier actual delivery','performed_action_id':old['action']['id']}
+    rejected=c.post(b+f'/deviations/{deviation["id"]}/followups',json=resolution,headers=h)
+    assert rejected.status_code==400 and rejected.json()['error']['code']=='remedial_action_predates_issue'
+    current=c.get(b+f'/deviations/{deviation["id"]}').json()
+    assert current['state']=='open' and current['version']==deviation['version'] and current['followups']==[]
+    actual=post(c,path+'/actions',{'expected_version':old['obligation']['version'],'kind':'performed_action','action_type':'remedial_delivery','description':'Performed after the current reported issue','occurred_at':utcnow().isoformat()},h,201)
+    resolved=post(c,b+f'/deviations/{deviation["id"]}/followups',{**resolution,'performed_action_id':actual['action']['id']},h)
+    reopened=post(c,b+f'/deviations/{deviation["id"]}/followups',{'expected_version':resolved['version'],'action':'reopen','explanation':'A renewed issue requires current remediation'},h)
+    post(c,b+f'/deviations/{deviation["id"]}/followups',{**resolution,'expected_version':reopened['version'],'performed_action_id':actual['action']['id']},h,400)
+    final_action=post(c,path+'/actions',{'expected_version':actual['obligation']['version'],'kind':'performed_action','action_type':'renewed_remediation','description':'Performed after reopening','occurred_at':utcnow().isoformat()},h,201)
+    assert post(c,b+f'/deviations/{deviation["id"]}/followups',{**resolution,'expected_version':reopened['version'],'performed_action_id':final_action['action']['id']},h)['state']=='resolved'

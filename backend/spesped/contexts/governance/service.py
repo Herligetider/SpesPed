@@ -178,20 +178,94 @@ def create_profile(db, actor, school_id, command):
     return row
 
 
+def _school_input_changes(before, after):
+    return [{'fact': key, 'before_known': key in before, 'before': before.get(key),
+             'after_known': key in after, 'after': after.get(key)}
+            for key in sorted(set(before) | set(after))
+            if key not in before or key not in after or digest(before[key]) != digest(after[key])]
+
+
+def _obligation_effect(task):
+    return {'applicability': task.applicability,
+        'applicability_reasons': task.applicability_reasons,
+        'unresolved_inputs': task.unresolved_inputs,
+        'deadline_kind': task.deadline_kind,
+        'deadline_date': task.deadline_date.isoformat() if task.deadline_date else None,
+        'deadline_at': task.deadline_at.isoformat() if task.deadline_at else None,
+        'deadline_reasons': task.deadline_reasons}
+
+
+def _proposed_effect(db, school, task, proposed_rule, profile):
+    receipt = db.get(TriggerReceipt, task.receipt_id)
+    if proposed_rule is None or proposed_rule.trigger_type != receipt.event_type:
+        return {'applicability': 'not_triggered',
+            'applicability_reasons': ['The proposed profile no longer triggers this requirement for the recorded event'],
+            'unresolved_inputs': [], 'deadline_kind': None, 'deadline_date': None,
+            'deadline_at': None, 'deadline_reasons': []}
+    original_profile = db.get(SchoolRuleProfile, receipt.profile_id)
+    # Replace the original reviewed school facts instead of retaining a removed
+    # fact from the obligation's old evaluation. Preserve recorded event inputs.
+    inputs = {key: value for key, value in task.evaluated_inputs.items()
+              if key not in original_profile.school_inputs}
+    inputs.update(profile.school_inputs)
+    inputs['school_kind'] = school.kind
+    hypothetical = ObligationInstance(timezone=task.timezone)
+    try:
+        calculate_task(db, hypothetical, proposed_rule, receipt.occurred_at, inputs,
+                       TimingInputs.model_validate(task.timing_inputs))
+    except DomainError as error:
+        if error.code != 'invalid_deadline_input': raise
+        # A change may make the old timing inputs insufficient or invalid. The
+        # preview must expose that uncertainty rather than treating it as no impact.
+        hypothetical.deadline_date = None
+        hypothetical.deadline_at = None
+        hypothetical.deadline_reasons = ['Proposed timing cannot resolve from the recorded inputs']
+    return _obligation_effect(hypothetical)
+
+
 def profile_impact(db, actor, school_id, identifier):
     authority(db, actor, school_id, 'rules.approve')
     profile = get_scoped(db, SchoolRuleProfile, school_id, identifier)
-    selected = {get_scoped(db, RequirementVersion, school_id, rid).requirement_id: str(rid) for rid in profile.requirement_version_ids}
-    items = []
+    school = db.get(School, school_id)
+    selected = {rule.requirement_id: rule for rule in
+        (get_scoped(db, RequirementVersion, school_id, rid) for rid in profile.requirement_version_ids)}
+    predecessor = db.get(SchoolRuleProfile, profile.supersedes_profile_id) if profile.supersedes_profile_id else None
+    school_changes = _school_input_changes(predecessor.school_inputs if predecessor else {}, profile.school_inputs)
+    full_items, visible_items = [], []
+    # Not-applicable duties can become applicable when school facts change and
+    # therefore belong in impact assessment too. Historical records stay frozen.
     for task in db.scalars(select(ObligationInstance).where(ObligationInstance.school_id == school_id,
-            ObligationInstance.state != 'reviewed_satisfied', ObligationInstance.applicability != 'not_applicable')):
+            ObligationInstance.state != 'reviewed_satisfied')):
         previous = db.get(RequirementVersion, task.requirement_version_id)
-        new_id = selected.get(previous.requirement_id)
-        if new_id != previous.id:
-            items.append({'obligation_id': task.id, 'version': task.version,
-                'previous_requirement_version_id': previous.id, 'proposed_requirement_version_id': new_id})
-    items.sort(key=lambda i: i['obligation_id'])
-    return {'items': items, 'total': len(items), 'impact_digest': digest({'profile':profile.content_digest,'items':items}),
+        proposed = selected.get(previous.requirement_id)
+        before = _obligation_effect(task)
+        after = _proposed_effect(db, school, task, proposed, profile)
+        if (proposed.id if proposed else None) == previous.id and before == after: continue
+        original = db.get(SchoolRuleProfile, db.get(TriggerReceipt, task.receipt_id).profile_id)
+        item = {'obligation_id': task.id, 'version': task.version,
+            'previous_requirement_version_id': previous.id,
+            'proposed_requirement_version_id': proposed.id if proposed else None,
+            'changed_school_inputs': _school_input_changes(original.school_inputs, profile.school_inputs),
+            'before': before, 'after': after}
+        full_items.append(item)
+        try:
+            # Match the identifiable detail endpoint, including task authority,
+            # learner assignment and exact current protected-case permission.
+            task_access(db, actor, task)
+        except DomainError:
+            continue
+        visible_items.append(item)
+    full_items.sort(key=lambda item: item['obligation_id'])
+    visible_items.sort(key=lambda item: item['obligation_id'])
+    return {'items': visible_items, 'total': len(visible_items),
+        'total_scope': 'authorized_obligations_only',
+        # This constant notice never reveals whether a hidden pupil/case cohort
+        # exists, nor its count or rule association. The digest still binds the
+        # complete internal impact for activation concurrency correctness.
+        'restricted_scope': 'Subject access is required for identifiable impact; restricted counts are not disclosed',
+        'school_input_changes': school_changes,
+        'simulation': 'Recorded occurrence and timing inputs evaluated with the proposed profile',
+        'impact_digest': digest({'profile': profile.content_digest, 'items': full_items}),
         'historical_tasks_change': False}
 
 
@@ -400,7 +474,12 @@ def follow_deviation(db, actor, school_id, identifier, command, evidence_validat
     if command.action == 'resolve':
         authority(db, actor, school_id, 'tasks.review')
         if command.performed_action_id is None: raise DomainError('performed_action_required', 'Resolution requires reviewed evidence of a performed remedial action.')
-        if action.recorded_at < row.created_at: raise DomainError('invalid_action_evidence', 'Select a performed action from this obligation.')
+        receipt = get_scoped(db, TriggerReceipt, school_id, task.receipt_id)
+        reopened_at = db.scalar(select(DeviationFollowup.recorded_at).where(DeviationFollowup.school_id == school_id,
+            DeviationFollowup.deviation_id == row.id, DeviationFollowup.action == 'reopen').order_by(DeviationFollowup.recorded_at.desc()).limit(1))
+        remediation_started_at = max(row.created_at, receipt.occurred_at, reopened_at or row.created_at)
+        if action.occurred_at < remediation_started_at:
+            raise DomainError('remedial_action_predates_issue', 'Select an action actually performed after this deviation was opened or reopened.')
         for reference in action.evidence_references:
             current = validate_reference(db, actor, task, reference['reference_id'], evidence_validator)
             if current != reference: raise DomainError('evidence_changed', 'The remedial evidence changed and requires renewed review.', 409)
@@ -469,14 +548,16 @@ def participate(db, actor, school_id, identifier, command):
     school_lock(db, actor, school_id)
     owner_valid(db, school_id, actor.user_id)
     study = get_scoped(db, WorkloadStudy, school_id, identifier)
-    if study.state != 'open': raise DomainError('closed_study', 'This workload study is closed.')
+    if command.consent and study.state != 'open': raise DomainError('closed_study', 'This workload study is closed.')
     row = db.scalar(select(WorkloadParticipant).where(WorkloadParticipant.school_id == school_id, WorkloadParticipant.study_id == study.id, WorkloadParticipant.user_id == actor.user_id))
     if row is None:
         if not command.consent: return {'consent':False}
         row = WorkloadParticipant(school_id=school_id, study_id=study.id, user_id=actor.user_id)
         db.add(row)
     elif row.version != command.expected_version: raise DomainError('version_conflict', 'Participation changed. Reload before retrying.', 409)
-    elif not command.consent: row.withdrawn_at = utcnow()
+    elif not command.consent:
+        if row.withdrawn_at is not None: return {'consent':False, 'version':row.version}
+        row.withdrawn_at = utcnow()
     elif row.withdrawn_at is not None: raise DomainError('withdrawn_participation', 'Withdrawn participation cannot be silently reactivated.')
     publish(db, actor, school_id, 'governance.workload.consent_changed', row)
     return {'consent':command.consent, 'version':row.version}
