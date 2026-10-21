@@ -330,13 +330,15 @@
         "J01",
         "J02"
       ],
-      "status": "implementing",
+      "status": "changes_requested",
       "requiredEvidence": "Multi-pupil source separation, file rejection, provenance, derivative correction",
       "implementationAgent": "/root/j04_evidence",
-      "reviewAgent": "/root/review_j04",
+      "reviewAgent": "/root/review_intake_structuring",
       "commits": [
         "2efa896941aa171d11d28ce7635b7342c64b28be",
-        "62446cee4520cb58920a45524c5f4de34fd49c63"
+        "62446cee4520cb58920a45524c5f4de34fd49c63",
+        "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
+        "4599b3411d474317dc6e5f05e96f2fa88c16efde"
       ],
       "evidence": [
         {
@@ -356,6 +358,17 @@
           "path": "docs/reviews/context-integration-review.md",
           "revision": "43180acb5b9e97d91b5cde05c1d7795dcbb4b109",
           "result": "Current evidence-to-AI and governance bindings accepted; pre-attribution structuring, clarification and remaining consumers explicitly not implemented by this composition."
+        },
+        {
+          "type": "implementer_report",
+          "revision": "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
+          "result": "Extended intake/evidence/gateway/integration suite183passed8skips with actual scanner/OCR; SQLite/PostgreSQL migration+metadata/checks passed.44newintakecases. Independent review assigned; no full feature completion."
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J04-structuring-review.md",
+          "revision": "4599b3411d474317dc6e5f05e96f2fa88c16efde",
+          "result": "183passed8skips; independent8passed2skips including positive reproduction of SR1. Single-head76-table metadata and PostgreSQL roundtrip passed. Original implementer repairing recall leak."
         }
       ],
       "findings": [
@@ -376,12 +389,18 @@
           "priority": "P2",
           "description": "Valid non-UTF-8 8bit MIME email rejected before extraction",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J04-SR1",
+          "priority": "P1",
+          "description": "Manual proposal existing-row return leaks recalled model proposal and review prose",
+          "status": "open"
         }
       ],
       "remainingWork": [
-        "Automatic structured document-field proposals with source span review, beyond literal paragraph proposals; assigned to /root/j04_structuring.",
-        "Owned clarification workflow for unresolved source attribution and fields; assigned to /root/j04_structuring.",
-        "Consumer integration with profiles/plans/teaching, and independent review of the extended intake flow."
+        "Independent review/recheck of pre-attribution structured AI proposals, owned clarification tasks and merged schema assembly.",
+        "J05/teaching/downstream consumer integration and J07 UI.",
+        "F05 owned follow-up for already shared derivative corrections remains required in disclosure/document consumer integration."
       ],
       "activeImplementationAgent": "/root/j04_structuring"
     },
@@ -398,13 +417,56 @@
         "J02",
         "J04"
       ],
-      "status": "implementing",
+      "status": "changes_requested",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
       "implementationAgent": "/root/j05_plans",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "reviewAgent": "/root/review_j05",
+      "commits": [
+        "ac4eea27bdbb38421fe48465269d950f4d37d634"
+      ],
+      "evidence": [
+        {
+          "type": "implementer_report",
+          "revision": "ac4eea27bdbb38421fe48465269d950f4d37d634",
+          "result": "Manual core shared-tree suite33passed/1SQLitecontention skip; PostgreSQL variant passed. Run included evolving J04 extension. Independent reviewer assigned exact pin with accepted old evidence core. AI IEP generation remains required and unimplemented."
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J05-review.md",
+          "revision": "ac4eea27bdbb38421fe48465269d950f4d37d634",
+          "result": "33passed1skip baseline; independent desired-behavior probes fail for three reproducible findings. Original implementer repairing. Manual core not accepted; full AI generation still required."
+        },
+        {
+          "type": "integration_candidate",
+          "revision": "b67bb741c0c8449bca93b3c434812e55415c605e",
+          "result": "Root metadata-only evidence binding port:6SQLite/PostgreSQL tests passed. Helper/use await independent review with J05 repairs; no source-prose permission granted."
+        }
+      ],
+      "findings": [
+        {
+          "id": "J05-R1",
+          "priority": "P1",
+          "description": "Source-bound auxiliary prose and replay responses bypass current-source filtering",
+          "status": "open"
+        },
+        {
+          "id": "J05-R2",
+          "priority": "P2",
+          "description": "Idempotent command replay bypasses revoked specialized signing authority",
+          "status": "open"
+        },
+        {
+          "id": "J05-R3",
+          "priority": "P2",
+          "description": "Opposing plan revision/lifecycle locks deadlock with undefined retry response",
+          "status": "open"
+        }
+      ],
+      "remainingWork": [
+        "Independent review and integration of the manual authored/imported IEP, support-profile and entitlement backend candidate.",
+        "F08 generated IEP/goal suggestions from confirmed assessment and decision basis, with source/revision checks and explicit professional selection/apply; implementer confirms this is not yet implemented.",
+        "Audit and complete remaining F07/F08 clarification and consumer-impact workflows; full UI acceptance belongs to J07 and later UI jobs."
+      ]
     },
     {
       "id": "J06",
@@ -470,13 +532,14 @@
         "J01",
         "J02"
       ],
-      "status": "verified",
+      "status": "awaiting_review",
       "requiredEvidence": "Real local protocol tests, no production remote fallback, injection/source limits",
       "implementationAgent": "/root/j08_ai_gateway",
-      "reviewAgent": "/root/review_j08",
+      "reviewAgent": "/root/review_intake_structuring",
       "commits": [
         "9f8ca976dbf03c261e3e33e2f0ebc04a7a762f2c",
-        "69c2572944ebb4a5f8ac2fc7d18cf5e0f24d253d"
+        "69c2572944ebb4a5f8ac2fc7d18cf5e0f24d253d",
+        "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a"
       ],
       "evidence": [
         {
@@ -501,6 +564,11 @@
           "path": "docs/reviews/context-integration-review.md",
           "revision": "c1720fc2a9b0a499517fd91b871a01bfeebd8e61",
           "result": "Assembly independently accepted with test extension 43180ac: 10 integration tests and 13 independent adverse checks passed. Shared PostgreSQL migration/metadata roundtrip clean."
+        },
+        {
+          "type": "scope_reopened",
+          "revision": "849dd6342dfd48bcc77e54ec4ee2f36a5a38c30a",
+          "result": "Intake subject/purpose and distinct evaluated output schema extend gateway contract; current changed scope independently reviewed with J04. Prior accepted gateway evidence retains its pinned scope only."
         }
       ],
       "findings": [
@@ -516,7 +584,8 @@
           "description": "Slow response headers bypass total HTTP wall deadline",
           "status": "verified_fixed"
         }
-      ]
+      ],
+      "activeImplementationAgent": "/root/j04_structuring"
     },
     {
       "id": "J09",
@@ -720,9 +789,9 @@
         "J02",
         "J13"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Case isolation, alternative routes, no headteacher gate on personal/urgent duty",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j16_safeguarding",
       "reviewAgent": null,
       "commits": [],
       "evidence": [],
@@ -1901,7 +1970,7 @@
       "id": "F24",
       "title": "Skolemiljø og aktivitetsplan",
       "context": "BC13",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J16",
@@ -1931,7 +2000,7 @@
       "id": "F25",
       "title": "Bekymring, barnevern og akutt oppfølging",
       "context": "BC13",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J16",
@@ -1961,7 +2030,7 @@
       "id": "F26",
       "title": "Fysiske inngrep og forebygging",
       "context": "BC13",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J16",
@@ -2508,6 +2577,11 @@
         "backend": "261 passed, 11 intentional SQLite concurrency skips, 90 subtests passed in 178.26s. Configured PostgreSQL variants and real scanner/OCR checks passed. Existing Starlette/httpx deprecation warning only.",
         "documentation": "Deterministic generation: 40 features, 90 requirements, 71 sources; 29 local Markdown targets valid; manifest retains all86criteria and no completed full features."
       }
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Pinned J05 manual core ac4eea2 and extended J04 structuring849dd63, merged schema4599b34. Distinct reviewers reproduced three J05 findings and one J04 recall leak; fixes assigned to original implementers. Root added tested metadata projection portb67bb74 for independently reviewed J05 adoption. J16 protected-case backend and tests in progress. Full feature and release gates remain incomplete."
     }
   ]
 }
