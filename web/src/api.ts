@@ -1,4 +1,4 @@
-import type { Learner, LearnerProfile, ListResponse, School, Session } from './types';
+import type { Clarification, ExtractionProposal, IntakeSource, Learner, LearnerProfile, ListResponse, School, Session } from './types';
 
 type ErrorPayload = { error?: { code?: string; message?: string; details?: unknown } };
 
@@ -72,10 +72,81 @@ export class ApiClient {
     );
   }
 
+  async intake(schoolId: string): Promise<ListResponse<IntakeSource>> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake?limit=100`);
+  }
+  async intakeSource(schoolId: string, sourceId: string): Promise<IntakeSource> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}`);
+  }
+  async intakePage(schoolId: string, sourceId: string, revision: number, page: number): Promise<{page:number;text:string;source_revision:number}> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/revisions/${revision}/pages/${page}`);
+  }
+  async intakeOriginal(schoolId: string, sourceId: string, revision: number): Promise<Blob> {
+    return this.requestBlob(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/revisions/${revision}/original`);
+  }
+  async intakeProposals(schoolId: string, sourceId: string, revision: number): Promise<ListResponse<ExtractionProposal>> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/proposals?revision=${revision}&limit=100`);
+  }
+  async recoveryCandidates(schoolId: string, sourceId: string): Promise<ListResponse<Pick<ExtractionProposal,'id'|'source_id'|'source_revision'|'page'|'span_start'|'span_end'|'field_name'>>> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/proposals/recovery-candidates?limit=100`);
+  }
+  async intakeClarifications(schoolId: string, sourceId: string): Promise<ListResponse<Clarification>> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/clarifications?limit=100`);
+  }
+  async createIntakeNote(schoolId: string, body: Record<string, unknown>): Promise<IntakeSource> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/notes`, {method:'POST', body:JSON.stringify(body)});
+  }
+  async uploadIntake(schoolId: string, file: File, metadata: Record<string, unknown>): Promise<IntakeSource> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/files`, {method:'POST', body:file, headers:{'X-Evidence-Filename':file.name, 'X-Evidence-Metadata':JSON.stringify(metadata)}});
+  }
+  async reviseIntake(schoolId:string,sourceId:string,version:number,file:File,metadata:Record<string,unknown>):Promise<IntakeSource>{
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/revisions`,{method:'POST',body:file,headers:{'X-Expected-Version':String(version),'X-Evidence-Filename':file.name,'X-Evidence-Metadata':JSON.stringify(metadata)}});
+  }
+  async reviewProposal(schoolId:string, proposalId:string, body:Record<string,unknown>):Promise<ExtractionProposal> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/extraction-proposals/${encodeURIComponent(proposalId)}/review`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async proposeField(schoolId:string, sourceId:string, body:Record<string,unknown>):Promise<ExtractionProposal> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/proposals`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async recoverManualField(schoolId:string, sourceId:string, body:Record<string,unknown>):Promise<ExtractionProposal> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/proposals/manual-recovery`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async createClarification(schoolId:string, sourceId:string, body:Record<string,unknown>):Promise<Clarification> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/clarifications`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async resolveClarification(schoolId:string, sourceId:string, taskId:string, body:Record<string,unknown>):Promise<Clarification> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/clarifications/${encodeURIComponent(taskId)}/resolve`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async reopenClarification(schoolId:string, sourceId:string, taskId:string, body:Record<string,unknown>):Promise<Clarification> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/intake/${encodeURIComponent(sourceId)}/clarifications/${encodeURIComponent(taskId)}/reopen`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async correctEvidence(schoolId:string,evidenceId:string,body:Record<string,unknown>):Promise<unknown> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/evidence/${encodeURIComponent(evidenceId)}/corrections`,{method:'POST',body:JSON.stringify(body)});
+  }
+  async reviewEvidence(schoolId:string, proposalId:string, body:Record<string,unknown>):Promise<unknown> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/extraction-proposals/${encodeURIComponent(proposalId)}/confirm`, {method:'POST',body:JSON.stringify(body)});
+  }
+  async timeline(schoolId:string, learnerId:string):Promise<ListResponse<Record<string,unknown>>> {
+    return this.request(`/schools/${encodeURIComponent(schoolId)}/learners/${encodeURIComponent(learnerId)}/timeline?limit=100`);
+  }
+
+  private async requestBlob(path:string):Promise<Blob> {
+    const generation = this.authGeneration;
+    const response = await this.fetcher(`${this.baseUrl}${path}`, {credentials:'include'});
+    if (response.status === 401 && generation === this.authGeneration) {
+      this.csrfToken = null; this.authGeneration += 1; this.onSessionExpired?.();
+    }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as ErrorPayload;
+      throw new ApiError(payload.error?.message || 'Originalen kunne ikke åpnes.', response.status, payload.error?.code || `HTTP_${response.status}`);
+    }
+    return response.blob();
+  }
+
   private async request<T>(path: string, init: RequestInit = {}, ignoreUnauthorized = false): Promise<T> {
     const requestGeneration = this.authGeneration;
     const headers = new Headers(init.headers);
-    if (init.body !== undefined) headers.set('Content-Type', 'application/json');
+    if (typeof init.body === 'string') headers.set('Content-Type', 'application/json');
     if (init.method && init.method.toUpperCase() !== 'GET') {
       if (this.csrfToken) headers.set('X-CSRF-Token', this.csrfToken);
     }

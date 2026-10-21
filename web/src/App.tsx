@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiClient, ApiError, api } from './api';
+import IntakeWorkspace from './IntakeWorkspace';
 import { localizeApiError, translate } from './i18n';
 import type { Language, MessageKey } from './i18n';
 import type { Learner, LearnerProfile, Session } from './types';
@@ -21,6 +22,7 @@ export default function App({ client = api }: { client?: ApiClient }) {
   const [profile, setProfile] = useState<LoadState<LearnerProfile> | null>(null);
   const [selectedLearner, setSelectedLearner] = useState<Learner | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [workspace, setWorkspace] = useState<'learners' | 'intake'>('learners');
   const authGeneration = useRef(0);
   const profileGeneration = useRef(0);
   const languageRef = useRef(language);
@@ -176,9 +178,12 @@ export default function App({ client = api }: { client?: ApiClient }) {
           {session.schools.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
         <nav aria-label={t('workspace')} className="main-nav">
-          <div className={`nav-item ${school ? 'active' : ''}`} aria-current={school ? 'page' : undefined}>
+          <button className={`nav-item ${school && workspace === 'learners' ? 'active' : ''}`} aria-current={workspace === 'learners' ? 'page' : undefined} type="button" onClick={() => {setWorkspace('learners');leaveProfile();}}>
             <span className="nav-icon" aria-hidden="true">▦</span>{t('learners')}
-          </div>
+          </button>
+          <button className={`nav-item ${school && workspace === 'intake' ? 'active' : ''}`} aria-current={workspace === 'intake' ? 'page' : undefined} type="button" onClick={() => {setWorkspace('intake');leaveProfile();}}>
+            <span className="nav-icon" aria-hidden="true">⇧</span>Dokumentinnboks
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <div className="signed-in"><span className="avatar" aria-hidden="true">{session.user.display_name.slice(0, 1).toLocaleUpperCase(language)}</span><span className="signed-in-copy"><strong>{session.user.display_name}</strong><span>{session.user.email}</span></span></div>
@@ -190,10 +195,12 @@ export default function App({ client = api }: { client?: ApiClient }) {
         </div>
       </aside>
       <main id="main-content" className="main-panel">
-        <header className="topbar"><div><div className="eyebrow">{school?.name ?? t('appName')}</div><h1>{selectedLearner ? t('profile') : t('learners')}</h1></div><div className="topbar-user" aria-label={session.user.display_name}>{session.user.display_name}</div></header>
+        <header className="topbar"><div><div className="eyebrow">{school?.name ?? t('appName')}</div><h1>{selectedLearner ? t('profile') : workspace === 'intake' ? 'Dokumentinnboks' : t('learners')}</h1></div><div className="topbar-user" aria-label={session.user.display_name}>{session.user.display_name}</div></header>
         <div className="content-wrap">
           {notice && <div className="notice" role="status">{notice}</div>}
-          {!session.schools.length ? <EmptyState title={t('schools')} message={t('noSchools')} /> : !school ? <EmptyState title={t('chooseSchool')} message={t('selectSchool')} /> : selectedLearner ? (
+          {!session.schools.length ? <EmptyState title={t('schools')} message={t('noSchools')} /> : !school ? <EmptyState title={t('chooseSchool')} message={t('selectSchool')} /> : workspace === 'intake' ? (
+            <IntakeWorkspace client={client} schoolId={school.id} formatError={displayError} />
+          ) : selectedLearner ? (
             <ProfilePanel learner={selectedLearner} profile={profile} t={t} formatError={displayError} onBack={leaveProfile} onRetry={() => openProfile(selectedLearner)} />
           ) : <LearnerList state={learners} t={t} language={language} formatError={displayError} onOpen={openProfile} onRetry={() => setListReload((value) => value + 1)} onPageChange={setLearnerOffset} />}
         </div>

@@ -65,6 +65,28 @@ describe('ApiClient', () => {
     expect(fetcher.mock.calls[0][0]).toBe('/api/v1/schools/school-1/learners?offset=100&limit=100');
   });
 
+  it('uploads binary source bytes with the backend metadata headers and no JSON content type', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response(201, { id: 'source-1' }));
+    const client = new ApiClient(fetcher);
+    const file = new File(['Synthetic source text'], 'synthetic.txt', { type: 'text/plain' });
+    const metadata = { request_key: 'request-1', external_scope: 'manual', external_id: 'source-1', sender: 'Synthetic sender', document_type: 'note', received_at: '2026-10-21T09:00:00Z', original_at: null };
+    await client.uploadIntake('school-1', file, metadata);
+    const headers = new Headers(fetcher.mock.calls[0][1]?.headers);
+    expect(fetcher.mock.calls[0][0]).toBe('/api/v1/schools/school-1/intake/files');
+    expect(fetcher.mock.calls[0][1]?.body).toBe(file);
+    expect(headers.get('X-Evidence-Filename')).toBe('synthetic.txt');
+    expect(headers.get('X-Evidence-Metadata')).toBe(JSON.stringify(metadata));
+    expect(headers.has('Content-Type')).toBe(false);
+  });
+
+  it('sends source and aggregate revisions for manual recovery and surfaces stale revision conflicts', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response(409, { error: { code: 'revision_conflict', message: 'The source changed. Select a current source field for manual review.' } }));
+    const client = new ApiClient(fetcher);
+    await expect(client.recoverManualField('school-1', 'source-1', { expected_version: 4, source_revision: 2, recovery_of_proposal_id: 'model-1', page: 1, span_start: 10, span_end: 20, field_name: 'content', proposed_value: 'Synthetic corrected value' })).rejects.toMatchObject({ status: 409, code: 'revision_conflict' });
+    expect(fetcher.mock.calls[0][0]).toBe('/api/v1/schools/school-1/intake/source-1/proposals/manual-recovery');
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({ expected_version: 4, source_revision: 2, recovery_of_proposal_id: 'model-1' });
+  });
+
   it('does not let an old request 401 expire a newer login or clear its CSRF token', async () => {
     let releaseOldResponse!: (value: Response) => void;
     const oldResponse = new Promise<Response>((resolve) => { releaseOldResponse = resolve; });
