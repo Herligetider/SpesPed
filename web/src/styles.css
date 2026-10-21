@@ -12,3 +12,4 @@
 .intake-workspace textarea.source-text { width: 100%; min-height: 12rem; max-height: 32rem; resize: vertical; line-height: 1.6; white-space: pre-wrap; }
 .intake-workspace blockquote { margin: .8rem 0; padding: .7rem 1rem; border-left: 3px solid var(--color-primary, #4e7365); background: #f1f5f2; white-space: pre-wrap; overflow-wrap: anywhere; }
 .intake-workspace .source-highlight { padding: .5rem; background: #fff8da; }
+.attribution-controls { border: 0; padding: 0; margin: 0; min-width: 0; }

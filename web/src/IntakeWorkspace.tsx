@@ -43,6 +43,29 @@ const label = (v: string) => stateLabels[v] ?? v;
 const makeKey = () => globalThis.crypto.randomUUID();
 const characters = (text: string) => Array.from(text);
 const excerpt = (text: string, span: Span) => characters(text).slice(span.start, span.end).join('');
+function noteValues(form: HTMLFormElement) {
+    const data = new FormData(form);
+    return { sender: String(data.get('sender') || 'Ansatt'), document_type: String(data.get('doctype') || 'notat'), original_at: String(data.get('original_at') || ''), text: String(data.get('note') || '') };
+}
+function fileValues(form: HTMLFormElement) {
+    const data = new FormData(form);
+    return { sender: String(data.get('sender') || 'Ukjent avsender'), document_type: String(data.get('doctype') || 'importert dokument'), original_at: String(data.get('original_at') || ''), external_id: String(data.get('external_id') || '').trim() };
+}
+function selectedFile(form: HTMLFormElement) {
+    const input = form.elements.namedItem('file');
+    return input instanceof HTMLInputElement ? input.files?.[0] ?? null : null;
+}
+function fileSignature(form: HTMLFormElement, file: File) {
+    return JSON.stringify({ ...fileValues(form), name: file.name, size: file.size, lastModified: file.lastModified });
+}
+function resetSavedFile(form: HTMLFormElement | null, attempt: { file: File; signature: string }) {
+    if (form && selectedFile(form) === attempt.file && fileSignature(form, attempt.file) === attempt.signature) {
+        form.reset();
+        const input = form.elements.namedItem('file');
+        if (input instanceof HTMLInputElement)
+            input.value = '';
+    }
+}
 export const selectionSpan = (text: string, start: number, end: number): Span => ({ start: characters(text.slice(0, start)).length, end: characters(text.slice(0, end)).length });
 export function localInstant(value: string): string {
     const date = new Date(value), parts = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
@@ -84,7 +107,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
         metadata: Record<string, unknown>;
     } | null>(null);
     const [attributions, setAttributions] = useState<Record<string, Attribution>>({}), [recoveryDraft, setRecoveryDraft] = useState({ candidate: '', value: '' });
-    const noteForm = useRef<HTMLFormElement>(null);
+    const noteForm = useRef<HTMLFormElement>(null), fileForm = useRef<HTMLFormElement>(null);
     const [uncertain, setUncertain] = useState<'note' | 'file' | null>(null);
     const active = (generation: number) => alive.current && navigation.current === generation;
     function revokeOriginal() { if (originalRef.current)
@@ -239,7 +262,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
     function metadata(sender: string, document_type: string, original_at: string) { return { request_key: makeKey(), external_scope: 'manual', external_id: makeKey(), sender, document_type, received_at: new Date().toISOString(), original_at: original_at ? localInstant(original_at) : null }; }
     async function submitNote(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        const form = event.currentTarget, data = new FormData(form), input = { sender: String(data.get('sender') || 'Ansatt'), document_type: String(data.get('doctype') || 'notat'), original_at: String(data.get('original_at') || ''), text: String(data.get('note') || '') };
+        const form = event.currentTarget, input = noteValues(form);
         if (!input.text.trim())
             return;
         const signature = JSON.stringify(input);
@@ -260,7 +283,8 @@ function Workspace({ client, schoolId, formatError }: Props) {
             noteAttempt.current = null; throw error; }), 'Notatet er lagret i innboksen.')) {
             noteAttempt.current = null;
             setUncertain(null);
-            form.reset();
+            if (JSON.stringify(noteValues(form)) === attempt.signature)
+                form.reset();
         }
         else if (active(generation))
             setUncertain(noteAttempt.current ? 'note' : null);
@@ -272,17 +296,16 @@ function Workspace({ client, schoolId, formatError }: Props) {
         setUncertain(null);
         const form = noteForm.current;
         if (form) {
-            const data = new FormData(form);
-            if (JSON.stringify({ sender: String(data.get('sender') || 'Ansatt'), document_type: String(data.get('doctype') || 'notat'), original_at: String(data.get('original_at') || ''), text: String(data.get('note') || '') }) === attempt.signature)
+            if (JSON.stringify(noteValues(form)) === attempt.signature)
                 form.reset();
         }
     } }
     async function submitFile(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        const form = event.currentTarget, data = new FormData(form), file = data.get('file');
+        const form = event.currentTarget, file = selectedFile(form);
         if (!(file instanceof File) || !file.size)
             return;
-        const input = { sender: String(data.get('sender') || 'Ukjent avsender'), document_type: String(data.get('doctype') || 'importert dokument'), original_at: String(data.get('original_at') || ''), external_id: String(data.get('external_id') || '').trim() }, signature = JSON.stringify({ ...input, name: file.name, size: file.size, lastModified: file.lastModified });
+        const input = fileValues(form), signature = fileSignature(form, file);
         if (fileAttempt.current && fileAttempt.current.signature !== signature) {
             setNotice('Prøv den opprinnelige filinnsendingen igjen før du oppretter en ny import.');
             setUncertain('file');
@@ -300,7 +323,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
             fileAttempt.current = null; throw error; }), 'Kilden er lagret. Filkontroll og uttrekk vises i statusen.')) {
             fileAttempt.current = null;
             setUncertain(null);
-            form.reset();
+            resetSavedFile(form, attempt);
         }
         else if (active(generation))
             setUncertain(fileAttempt.current ? 'file' : null);
@@ -310,12 +333,18 @@ function Workspace({ client, schoolId, formatError }: Props) {
         fileAttempt.current = null; throw error; }), 'Den opprinnelige filinnsendingen er bekreftet lagret.')) {
         fileAttempt.current = null;
         setUncertain(null);
+        resetSavedFile(fileForm.current, attempt);
     } }
     async function review(field: ExtractionProposal, outcome: 'accepted' | 'edited' | 'rejected') {
+        const submittedEditor = editor[field.id];
         const value = editor[field.id] ?? field.proposed_value;
         const success = await perform(() => client.reviewProposal(schoolId, field.id, { expected_version: field.version, outcome, ...(outcome === 'edited' ? { value } : {}), reason: outcome === 'accepted' ? 'Kontrollert mot vist kilde' : outcome === 'rejected' ? 'Ikke støttet av vist kilde' : 'Manuelt korrigert mot vist kilde' }), outcome === 'rejected' ? 'Feltet er forkastet.' : 'Feltet er lagret som gjennomgått.');
         if (success)
-            setEditor(values => { const next = { ...values }; delete next[field.id]; return next; });
+            setEditor(values => {
+                if (values[field.id] !== submittedEditor)
+                    return values;
+                const next = { ...values }; delete next[field.id]; return next;
+            });
     }
     async function manualProposal(event: FormEvent) { event.preventDefault(); if (!selected || !page || manual.page !== page.page)
         return; await perform(() => client.proposeField(schoolId, selected.id, { expected_version: selected.version, page: manual.page, span_start: manual.start, span_end: manual.end, field_name: manual.field_name, proposed_value: manual.value }), 'Manuelt kildefelt er lagret som forslag.'); }
@@ -486,7 +515,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
     </label>
     <button className="primary-button" disabled={busy}>Lagre notat</button>
     </form>
-    <form onSubmit={submitFile}>
+    <form ref={fileForm} onSubmit={submitFile}>
     <h3>Importer fil eller lagret e-post</h3>
     <p className="muted">Velg en lokal PDF, Word-fil, skann eller .eml.</p>
     <label>Avsender<input name="sender" defaultValue="Ukjent avsender" required maxLength={320}/>
@@ -615,7 +644,7 @@ function ProposalCard({ client, schoolId, field, selected, learners, busy, forma
         </p>
         <button className="secondary-button" onClick={() => onClarify(`Beholdt elevtilordning: ${a.occurred_at}, ${a.topic}, ${a.reporter}`)}>Bruk bekreftelsesutkastet i en avklaring</button>
         </div>}
-    {['accepted', 'edited'].includes(field.outcome) && field.state !== 'confirmed' && <form className="attribution-form" onSubmit={confirm}>
+    {['accepted', 'edited'].includes(field.outcome) && field.state !== 'confirmed' && <form className="attribution-form" onSubmit={confirm}><fieldset className="attribution-controls" disabled={busy}>
         <h4>Bekreft elevtilordning og utdrag</h4>
         <p>Kontrollert verdi: <strong>{value}
         </strong>
@@ -654,7 +683,7 @@ function ProposalCard({ client, schoolId, field, selected, learners, busy, forma
             </p>}{error && <p role="alert">{error}
             </p>}
         <button className="primary-button" disabled={busy || !validSpan || learners.state !== 'ready' || !learners.value.length}>Bekreft avgrenset elevopplysning</button>
-        </form>}
+    </fieldset></form>}
   </article>;
 }
 function ManualRecovery({ client, schoolId, source, formatError, perform, onShow, busy, draft, setDraft }: {

@@ -128,6 +128,71 @@ describe('document intake scope, exact review and recovery', () => {
         await waitFor(() => expect(create).toHaveBeenCalledTimes(2));
         expect(create.mock.calls[0][1].request_key).not.toBe(create.mock.calls[1][1].request_key);
     });
+    it('clears the unchanged file selection after an explicit successful retry', async () => {
+        const user = userEvent.setup(), upload = vi.fn().mockRejectedValueOnce(failure(0, 'NETWORK_ERROR')).mockResolvedValue(source);
+        const client = fixture({ uploadIntake: upload });
+        render(<IntakeWorkspace {...{ client, formatError }} schoolId="school-1"/>);
+        const input = await screen.findByLabelText('Fil') as HTMLInputElement;
+        await user.upload(input, new File(['Synthetic upload'], 'synthetic.txt', { type: 'text/plain' }));
+        expect(input.files).toHaveLength(1);
+        // jsdom's native file validity does not recognize user-event's FileList.
+        // Real Chromium covers native validation; this probe targets retry state.
+        fireEvent.submit(input.form!);
+        expect(upload).toHaveBeenCalledTimes(1);
+        await user.click(await screen.findByRole('button', { name: 'Prøv opprinnelig innsending igjen' }));
+        await waitFor(() => expect(input.files).toHaveLength(0));
+        expect(upload.mock.calls[0]).toEqual(upload.mock.calls[1]);
+        await user.click(screen.getByRole('button', { name: 'Importer til innboksen' }));
+        expect(upload).toHaveBeenCalledTimes(2);
+    });
+    it('preserves a new note draft typed during the original save', async () => {
+        const user = userEvent.setup(), pending = deferred<IntakeSource>(), client = fixture({ createIntakeNote: vi.fn().mockReturnValue(pending.promise) });
+        render(<IntakeWorkspace {...{ client, formatError }} schoolId="school-1"/>);
+        const input = await screen.findByLabelText('Notat');
+        await user.type(input, 'Submitted note');
+        await user.click(screen.getByRole('button', { name: 'Lagre notat' }));
+        await user.clear(input); await user.type(input, 'New unsaved note');
+        await act(async () => pending.resolve(source));
+        expect(input).toHaveValue('New unsaved note');
+    });
+    it.each([false, true])('preserves a replacement file during a pending save (retry=%s)', async retry => {
+        const user = userEvent.setup(), pending = deferred<IntakeSource>();
+        const upload = retry ? vi.fn().mockRejectedValueOnce(failure(0, 'NETWORK_ERROR')).mockReturnValue(pending.promise) : vi.fn().mockReturnValue(pending.promise);
+        const client = fixture({ uploadIntake: upload });
+        render(<IntakeWorkspace {...{ client, formatError }} schoolId="school-1"/>);
+        const input = await screen.findByLabelText('Fil') as HTMLInputElement;
+        const oldFile = new File(['old'], 'same.txt', { type: 'text/plain', lastModified: 1 });
+        const newFile = new File(['new'], 'same.txt', { type: 'text/plain', lastModified: 1 });
+        await user.upload(input, oldFile);
+        fireEvent.submit(input.form!);
+        expect(upload).toHaveBeenCalledTimes(1);
+        if (retry) await user.click(await screen.findByRole('button', { name: 'Prøv opprinnelig innsending igjen' }));
+        await user.upload(input, newFile);
+        await act(async () => pending.resolve(source));
+        expect(input.files?.[0]).toBe(newFile);
+    });
+    it('preserves a newer review edit after the submitted edit succeeds', async () => {
+        const user = userEvent.setup(), pending = deferred<unknown>(); let reviewed = false;
+        const client = fixture({ reviewProposal: vi.fn().mockImplementation(() => { reviewed = true; return pending.promise; }), intakeProposals: vi.fn().mockImplementation(async () => ok([{ ...field, ...(reviewed ? { outcome: 'edited', state: 'reviewed', reviewed_value: 'Submitted review', version: 2 } : {}) }])) });
+        render(<IntakeWorkspace {...{ client, formatError }} schoolId="school-1"/>); await open(user);
+        const input = screen.getByLabelText('Rett verdi');
+        await user.clear(input); await user.type(input, 'Submitted review');
+        await user.click(screen.getByRole('button', { name: 'Lagre retting' }));
+        await user.clear(input); await user.type(input, 'New unsaved review');
+        await act(async () => pending.resolve({}));
+        expect(await screen.findByLabelText('Din beholdte retting')).toHaveValue('New unsaved review');
+    });
+    it('keeps attribution controls fixed while their exact confirmation is pending', async () => {
+        const user = userEvent.setup(), pending = deferred<unknown>();
+        const client = fixture({ intakeProposals: vi.fn().mockResolvedValue(ok([{ ...field, outcome: 'accepted', state: 'reviewed' }])), reviewEvidence: vi.fn().mockReturnValue(pending.promise) });
+        render(<IntakeWorkspace {...{ client, formatError }} schoolId="school-1"/>); await open(user);
+        await user.selectOptions(screen.getByLabelText('Elev'), 'learner-1');
+        fireEvent.change(screen.getByLabelText('Hendelsestidspunkt'), { target: { value: '2026-09-15T10:00' } });
+        await user.click(screen.getByRole('button', { name: 'Bekreft avgrenset elevopplysning' }));
+        expect(screen.getByLabelText('Tema')).toBeDisabled();
+        expect(screen.getByLabelText('Elev')).toBeDisabled();
+        await act(async () => pending.resolve({}));
+    });
     it('uses Unicode code points for default and selected manual excerpts', async () => {
         const user = userEvent.setup(), client = fixture();
         render(<IntakeWorkspace {...{ client, formatError }} schoolId="school-1"/>);
