@@ -2,7 +2,7 @@
 from datetime import datetime,timedelta,time,timezone,date
 from decimal import Decimal,InvalidOperation
 from functools import wraps
-from uuid import UUID
+from uuid import UUID,uuid4
 import json
 from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError
@@ -35,9 +35,10 @@ def get(db,model,school_id,identifier,expected=None):
     if expected is not None and row.version!=expected:raise conflict()
     return row
 
-def event(db,actor,row,action,**payload):
+def event(db,actor,row,action,*,occurred_at=None,**payload):
+    recorded_at=utcnow()
     db.flush();record_audit(db,actor,row.school_id,action,row.__tablename__,row.id)
-    db.add(m.AssessmentEvent(school_id=row.school_id,aggregate_id=row.id,aggregate_version=getattr(row,'version',1),actor_id=actor.user_id,event_type=action,payload=encode(payload),causation_id=db.info['assessment_request_key']))
+    db.add(m.AssessmentEvent(school_id=row.school_id,aggregate_id=row.id,aggregate_version=getattr(row,'version',1),actor_id=actor.user_id,event_type=action,payload=encode(payload),causation_id=db.info['assessment_request_key'],occurred_at=occurred_at or recorded_at,recorded_at=recorded_at,created_at=recorded_at,correlation_id=db.info['assessment_correlation_id'],schema_version=1))
     db.flush()
 
 def mutation(action,kind):
@@ -45,12 +46,14 @@ def mutation(action,kind):
         @wraps(fn)
         def wrapped(db,actor,school_id,*args):
             previous=db.info.get('assessment_request_key')
+            previous_correlation=db.info.get('assessment_correlation_id')
             try:
                 # All BC09 writers lock the same tenant before reading revisions
                 # or request keys. PostgreSQL serializes competing commands.
                 require_school_access(db,actor,school_id)
                 db.scalar(select(School.id).where(School.id==school_id).with_for_update())
                 command=args[-1];db.info['assessment_request_key']=command.request_key
+                db.info['assessment_correlation_id']=previous_correlation or str(uuid4())
                 fingerprint=a.digest({'operation':fn.__name__,'target':[str(v) for v in args[:-1]],'command':command.model_dump(mode='json')})
                 receipt=db.scalar(select(m.AssessmentCommand).where(m.AssessmentCommand.school_id==school_id,m.AssessmentCommand.actor_id==actor.user_id,m.AssessmentCommand.request_key==command.request_key))
                 # Reauthorize the exact command scope even when replaying.
@@ -83,6 +86,8 @@ def mutation(action,kind):
             finally:
                 if previous is None:db.info.pop('assessment_request_key',None)
                 else:db.info['assessment_request_key']=previous
+                if previous_correlation is None:db.info.pop('assessment_correlation_id',None)
+                else:db.info['assessment_correlation_id']=previous_correlation
         return wrapped
     return decorate
 
@@ -179,7 +184,7 @@ def start_administration(db,actor,school_id,identifier,command):
     _,instrument,_=administration_sources(db,actor,row,use=True,on_date=local_day(db,school_id,command.occurred_at))
     if row.state!='planned' or command.occurred_at>utcnow():raise conflict('Only a planned administration can start at an actual recorded instant.')
     row.eligibility=authority_basis(db,actor,authority_request(actor,row,instrument,'instrument_administration',local_day(db,school_id,command.occurred_at),local_day(db,school_id,command.occurred_at)),required=True)
-    row.started_at=command.occurred_at;row.state='started';row.version+=1;event(db,actor,row,'assessment.administration.started');return row
+    row.started_at=command.occurred_at;row.state='started';row.version+=1;event(db,actor,row,'assessment.administration.started',occurred_at=command.occurred_at);return row
 
 @mutation('assessment.write','administration')
 def abort_administration(db,actor,school_id,identifier,command):
@@ -209,7 +214,7 @@ def record_result(db,actor,school_id,identifier,command):
     row.current_result+=1;row.state='recorded';row.version+=1
     content=command.model_dump(mode='json',exclude={'request_key','expected_version'})
     result=m.ResultRevision(school_id=school_id,administration_id=row.id,number=row.current_result,occurred_at=command.occurred_at,raw=command.raw,conditions=command.conditions.model_dump(mode='json'),recorded_by=actor.user_id,correction_reason=command.correction_reason,digest=a.digest(content));db.add(result)
-    db.flush();event(db,actor,row,'assessment.result.recorded',result_revision_id=result.id);return row
+    db.flush();event(db,actor,row,'assessment.result.recorded',occurred_at=command.occurred_at,result_revision_id=result.id);return row
 
 @mutation('assessment.review','administration')
 def review_result(db,actor,school_id,identifier,command):
@@ -262,11 +267,17 @@ def resolve_reference(db,actor,school_id,learner_id,ref,seen=None):
         seen=set() if seen is None else set(seen)
         if row.id in seen:raise conflict('Cyclic progress evidence is unavailable.')
         current=progress_view(db,actor,school_id,row.id,seen=seen|{row.id})
-        if current['source_status']!='current' or current['state']!='confirmed' or current['content']['number']!=ref.revision:raise conflict('The exact previous professional review is no longer a current source.')
+        if current['source_status'] not in {'current','review_required'} or current['state']!='confirmed' or not current['content'] or current['content']['number']!=ref.revision:raise conflict('The exact previous professional review is no longer an available source.')
         value={'review_id':row.id,'snapshot_digest':row.snapshot_digest,'content':current['content'],'occurred_at':current['content']['created_at'],'recorded_at':current['content']['created_at']}
+        if current['review_required']:
+            value['source_review']={'source_status':'review_required','review_required':True,'late_evidence_revision_ids':current.get('late_evidence_revision_ids',[]),'evidence_availability_changed':current.get('evidence_availability_changed',False),'dependent_review_ids':[v['reference']['id'] for v in current.get('review_dependencies',[])]}
     value=encode(value)
     if ref.digest and a.digest(value)!=ref.digest:raise conflict('The selected exact source digest changed.')
     return {'reference':ref.model_dump(mode='json'),'digest':a.digest(value),'value':value}
+
+def review_dependency(entry):
+    marker=entry['value'].get('source_review')
+    return {'reference':entry['reference'],**marker} if marker and marker.get('review_required') else None
 
 def validate_tasks(db,school_id,learner_id,finding):
     from spesped.auth import Actor
@@ -319,9 +330,12 @@ def progress_dependencies(db,actor,row,seen):
     if a.digest(original)!=row.snapshot_digest:raise conflict('The historical evidence snapshot no longer matches its digest.')
     current_goal=a.goal(db,actor,row.school_id,row.learner_id,row.goal_revision_id,row.starts_at)
     stale=a.digest(current_goal)!=a.digest(original['goal']) or not a.current_goal_binding(db,row.school_id,row.learner_id,original['goal'],row.starts_at)
+    dependencies=[]
     for entry in original['references']+original.get('goal_evidence',{}).get('items',[]):
         current=resolve_reference(db,actor,row.school_id,row.learner_id,entry['reference'],seen=seen)
-        if current['digest']!=entry['digest']:stale=True
+        dependency=review_dependency(current)
+        if dependency:dependencies.append(dependency)
+        if current['digest']!=entry['digest'] or dependency:stale=True
     for value in original['observations']:
         current=a.observation(db,actor,row.school_id,row.learner_id,value['revision_id'])
         if a.digest(current)!=a.digest(value):stale=True
@@ -333,15 +347,16 @@ def progress_dependencies(db,actor,row,seen):
     evidence=a.goal_evidence(db,actor,row.school_id,row.learner_id,row.goal_revision_id,row.starts_at,row.ends_at)
     prior={(r['reference']['id'],r['reference']['revision']) for r in original.get('goal_evidence',{}).get('items',[])}
     late.extend('evidence:'+r['reference']['id']+':'+str(r['reference']['revision']) for r in evidence['items'] if (r['reference']['id'],r['reference']['revision']) not in prior)
-    return stale,late
+    availability_changed=evidence['unavailable_count']!=original.get('goal_evidence',{}).get('unavailable_count',0)
+    return stale or availability_changed,late,dependencies,availability_changed
 
 def progress_view(db,actor,school_id,identifier,seen=None):
     row=get(db,m.ProgressReview,school_id,identifier);pupil_access(db,actor,school_id,row.learner_id)
-    try:stale,late=progress_dependencies(db,actor,row,set() if seen is None else seen)
+    try:stale,late,dependencies,availability_changed=progress_dependencies(db,actor,row,set() if seen is None else seen)
     except DomainError as exc:
         if exc.status_code not in {403,409}:raise
         return {'kind':'progress','id':row.id,'learner_id':row.learner_id,'version':row.version,'state':row.state,'source_status':'unavailable','review_required':True,'snapshot':None,'content':None,'reason':exc.code}
-    return {'kind':'progress',**row_json(row),'source_status':'review_required' if stale else 'current','review_required':stale or bool(late),'late_evidence_revision_ids':late,'content':row_json(progress_revision(db,row)),'historical_review_immutable':True}
+    return {'kind':'progress',**row_json(row),'source_status':'review_required' if stale or late else 'current','review_required':stale or bool(late),'late_evidence_revision_ids':late,'review_dependencies':dependencies,'evidence_availability_changed':availability_changed,'content':row_json(progress_revision(db,row)),'historical_review_immutable':True}
 
 @mutation('assessment.write','progress')
 def create_progress(db,actor,school_id,command):
@@ -398,6 +413,7 @@ def statement_basis(db,actor,row,content,seen=None):
             if not row.starts_on<=day<=row.ends_on:raise DomainError('assessment_source_period','Subject evidence must occur within the selected school-local assessment period.',409)
         sources.append({**entry,'resolved':value})
     unresolved=[]
+    if any(review_dependency(v['resolved']) for v in sources):unresolved.append('source_review_required')
     if content['completion']=='unresolved':unresolved.append('subject_completion_unresolved')
     if content['exemption']=='unresolved':unresolved.append('assessment_exemption_unresolved')
     if not any(v['role']=='subject_competence' for v in sources):unresolved.append('subject_competence_basis_missing')
@@ -414,10 +430,13 @@ def statement_view(db,actor,school_id,identifier):
     try:
         if a.digest(rev.content)!=rev.digest:raise conflict('The statement content differs from its immutable digest.')
         sc,sources,unresolved=statement_basis(db,actor,row,rev.content)
-        stale=a.digest(sc)!=a.digest(rev.content['scheme_binding']) or a.digest(sources)!=a.digest(rev.content['source_snapshot'])
+        dependencies=[v for entry in sources if (v:=review_dependency(entry['resolved']))]
+        stale=bool(dependencies) or a.digest(sc)!=a.digest(rev.content['scheme_binding']) or a.digest(sources)!=a.digest(rev.content['source_snapshot'])
         contributions=list(db.scalars(select(m.Contribution).where(m.Contribution.school_id==school_id,m.Contribution.statement_revision_id==rev.id).order_by(m.Contribution.created_at,m.Contribution.id)))
         for entry in contributions:
-            for ref in entry.sources:resolve_reference(db,actor,school_id,row.learner_id,ref)
+            for ref in entry.sources:
+                dependency=review_dependency(resolve_reference(db,actor,school_id,row.learner_id,ref))
+                if dependency:dependencies.append(dependency);stale=True
         final=db.scalar(select(m.StatementFinalization).where(m.StatementFinalization.school_id==school_id,m.StatementFinalization.statement_revision_id==rev.id))
     except DomainError as exc:
         if exc.status_code not in {403,409}:raise
@@ -427,7 +446,7 @@ def statement_view(db,actor,school_id,identifier):
     contributed={c.author_id for c in contributions if c.kind=='staff'}
     missing=sorted(set(rev.content['expected_contributors'])-contributed)
     communications=list(db.scalars(select(m.Communication).where(m.Communication.school_id==school_id,m.Communication.statement_revision_id==rev.id)))
-    return {'kind':'statement',**row_json(row),'source_status':'review_required' if stale else 'current','revision_id':rev.id,'content_digest':rev.digest,'content':rev.content,'scheme':sc,'unresolved':unresolved,'missing_contributor_ids':missing,'contributions':[row_json(c) for c in contributions],'finalization':row_json(final) if final else None,'communications':[row_json(c) for c in communications],'external_send_performed':False,'finalization_authority_status':'reviewed_current' if final_authority_current else 'unassessed'}
+    return {'kind':'statement',**row_json(row),'source_status':'review_required' if stale else 'current','revision_id':rev.id,'content_digest':rev.digest,'content':rev.content,'scheme':sc,'unresolved':unresolved,'review_dependencies':dependencies,'missing_contributor_ids':missing,'contributions':[row_json(c) for c in contributions],'finalization':row_json(final) if final else None,'communications':[row_json(c) for c in communications],'external_send_performed':False,'finalization_authority_status':'reviewed_current' if final_authority_current else 'unassessed'}
 
 @mutation('assessment.write','statement')
 def create_statement(db,actor,school_id,command):
@@ -485,7 +504,7 @@ def record_communication(db,actor,school_id,identifier,command):
     if row.state!='finalized' or rev.id!=str(command.revision_id) or command.occurred_at>utcnow():raise conflict('Record factual communication for an exact finalized statement after it happened.')
     current=statement_view(db,actor,school_id,row.id)
     if current['source_status']!='current':raise conflict('Recheck the statement sources before recording communication.')
-    db.add(m.Communication(school_id=school_id,statement_revision_id=rev.id,recorded_by=actor.user_id,occurred_at=command.occurred_at,destination=command.destination,method=command.method,factual_reference=command.factual_reference));row.version+=1;event(db,actor,row,'assessment.communication.recorded',destination=command.destination);return row
+    db.add(m.Communication(school_id=school_id,statement_revision_id=rev.id,recorded_by=actor.user_id,occurred_at=command.occurred_at,destination=command.destination,method=command.method,factual_reference=command.factual_reference));row.version+=1;event(db,actor,row,'assessment.communication.recorded',occurred_at=command.occurred_at,destination=command.destination);return row
 
 def view(db,actor,school_id,kind,identifier):
     return {'instrument':instrument_view,'administration':administration_view,'follow_up':follow_up_view,'progress':progress_view,'statement':statement_view}[kind](db,actor,school_id,identifier)
@@ -525,8 +544,9 @@ def revision_history(db,actor,school_id,kind,identifier,offset=0,limit=50):
         sc=revision.content.get('scheme_binding')
         historical=SimpleNamespace(**{**row_json(row),'scheme_revision_id':sc['scheme_revision_id'] if sc else None,'starts_on':row.starts_on,'ends_on':row.ends_on})
         try:
-            statement_basis(db,actor,historical,revision.content)
-            values.append({**row_json(revision),'source_status':'current'})
+            _,sources,_=statement_basis(db,actor,historical,revision.content)
+            dependencies=[v for entry in sources if (v:=review_dependency(entry['resolved']))]
+            values.append({**row_json(revision),'source_status':'review_required' if dependencies else 'current','review_dependencies':dependencies})
         except DomainError as exc:
             if exc.status_code not in {403,409}:raise
             values.append({'id':revision.id,'number':revision.number,'source_status':'unavailable','content':None})

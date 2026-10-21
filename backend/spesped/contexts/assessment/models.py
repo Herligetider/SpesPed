@@ -156,6 +156,11 @@ class AssessmentEvent(Row,Base):
     event_type:Mapped[str]=mapped_column(String(100))
     payload:Mapped[dict]=mapped_column(JSON,default=dict)
     causation_id:Mapped[str]=mapped_column(String(120))
+    occurred_at:Mapped[datetime]=mapped_column(UTCDateTime())
+    recorded_at:Mapped[datetime]=mapped_column(UTCDateTime())
+    correlation_id:Mapped[str]=mapped_column(String(36))
+    schema_version:Mapped[int]=mapped_column(Integer,default=1)
+    __table_args__=(CheckConstraint('schema_version >= 0',name='ck_assessment_event_schema_version'),)
     processed_at:Mapped[datetime|None]=mapped_column(UTCDateTime(),nullable=True)
 
 _IMMUTABLE=(InstrumentRevision,InstrumentReview,ResultRevision,ResultReview,ProgressRevision,StatementRevision,Contribution,StatementFinalization,Communication)
