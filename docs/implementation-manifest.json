@@ -2057,7 +2057,8 @@
       "reviewAgent": "/root/review_guardian_ui",
       "commits": [
         "83699e5b389d04157f177998d7ca26aa40f23286",
-        "c6e0ad87bc6c403e331a7e2408c51b8e4dd30ea6"
+        "c6e0ad87bc6c403e331a7e2408c51b8e4dd30ea6",
+        "f78ca34b40afb20c5d89809642980dcc38d6de54"
       ],
       "evidence": [
         {
@@ -2074,6 +2075,12 @@
           "type": "repair_candidate",
           "revision": "c6e0ad87bc6c403e331a7e2408c51b8e4dd30ea6",
           "result": "Originalauthor2file repair tracks pending grant through open; successful same-page refresh removal invalidates scope. Four owned file hashes verified;8focused tests and typecheck pass. Original independent reviewer reactivated with exact archive and original adverse probe; finding remains open until recheck."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "f78ca34b40afb20c5d89809642980dcc38d6de54",
+          "path": "docs/reviews/guardian-ui-review.md",
+          "result": "Bounded guardian portal accepted; R1withdrawalrace andR2locale closed. Exactarchive37focusedApp/API/guardian tests,6independent withdrawal/focus/pagination/attachmentprobes, fulltypecheck/build pass. FreshactualChromium extractedexactdateLabel usesNorwegianfallback whennnunsupported. Prior nativePGbrowser atd156 independently exercised keyboardopen/authenticateddownload/explicitreceipt/reload/nolearnerdossier and390pxlayout. Practitionerdisclosure UI, externalproviders/deployment andwholeF21 remain required."
         }
       ],
       "findings": [
@@ -2081,7 +2088,13 @@
           "id": "J21-GUI-R1",
           "priority": "P2",
           "description": "Late open payload redisplays content after refresh removes pending grant",
-          "status": "repair_in_progress"
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J21-GUI-R2",
+          "priority": "P3",
+          "description": "Unsupported Nynorsk browser locale falls back to English date formatting",
+          "status": "verified_fixed"
         }
       ]
     },
@@ -3893,7 +3906,7 @@
     {
       "date": "2026-10-21",
       "classification": "progress",
-      "result": "Previous goal turn made concrete progress: accepted BC03 coverage and all J11 repairs, pinned native BC11 and its original-author caller-state repair, and started actual document UI/choice work. Current turn accepted independent J12-R1 recheck, assigned guardian portal UI, added root authenticated attachment/guardian shell integration and started full backend integration at frozen91558b2 with actualPG and archive-native imports. Full product remains incomplete; no releasegate or wholefeature promoted. Pinned guardian, native document choices and document workspace candidates; distinct reviewers found1guardianrace,2choiceprojection/narrowing and7documentUI defects. Original authors repairing all findings. Root normal guardian native browser journey passes; document save422/blankeditor reproduced. No full feature promoted.",
+      "result": "Previous goal turn made concrete progress: accepted BC03 coverage and all J11 repairs, pinned native BC11 and its original-author caller-state repair, and started actual document UI/choice work. Current turn accepted independent J12-R1 recheck, assigned guardian portal UI, added root authenticated attachment/guardian shell integration and started full backend integration at frozen91558b2 with actualPG and archive-native imports. Full product remains incomplete; no releasegate or wholefeature promoted. Pinned guardian, native document choices and document workspace candidates; distinct reviewers found1guardianrace,2choiceprojection/narrowing and7documentUI defects. Original authors repairing all findings. Root normal guardian native browser journey passes; document save422/blankeditor reproduced. No full feature promoted. Guardianportal bounded review accepted atf78ca34 afterwithdrawalrace+Norwegiandatefallback repairs;37focused/6independentchecks andfrozenbuild pass.",
       "verification": {
         "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
