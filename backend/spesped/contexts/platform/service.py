@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from spesped.audit import record_audit
 from spesped.auth import Actor, active_at, require_authority, require_learner_access, school_today
-from spesped.contexts.identity.models import School, StaffAssignment
+from spesped.contexts.identity.models import School, StaffAssignment, UserAccount
 from spesped.db import utcnow
 from spesped.errors import DomainError, access_denied
 from .contracts import (GatewayRuntime, GenerationRequest, PolicyCommand, ReleaseCommand,
@@ -39,6 +39,12 @@ def _version(record, expected):
 
 def _authorize(db, actor, school_id, learner_id, purpose):
     if purpose not in PURPOSE_CAPABILITIES:
+        raise access_denied()
+    # Consumer transactions may already hold identity rows. Their old cached
+    # active state must not survive a separately committed deactivation.
+    user = db.get(UserAccount, actor.user_id, populate_existing=True)
+    school = db.get(School, school_id, populate_existing=True)
+    if user is None or user.state != 'active' or school is None or school.state != 'active':
         raise access_denied()
     if purpose == 'intake_structuring':
         if learner_id is not None:

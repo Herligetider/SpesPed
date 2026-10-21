@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from sqlalchemy import event, select
 
 from spesped.assembly import EvidenceSourceResolver, SyntheticAttestation, load_evaluation_suites
-from spesped.contexts.identity.models import AuthorityGrant
+from spesped.contexts.identity.models import AuthorityGrant, School, UserAccount
 from spesped.contexts.platform import service
 from spesped.contexts.platform.contracts import (
     EvaluationCase, GenerationRequest, ProviderSpec, ReleaseCommand, ReviewCommand,
@@ -257,6 +257,26 @@ def test_consumer_ports_preserve_transaction_and_metadata_does_not_select_job_ou
         assert not service.job_binding_is_current(db, typed.ids['school'], 'invalid', typed.runtime)
         assert not service.job_binding_is_current(db, typed.ids['school'], result.id, None)
         assert not service.job_binding_is_current(db, typed.ids['school'], result.id, replace(typed.runtime, providers={}))
+
+
+@pytest.mark.parametrize('kind', ['user', 'school'])
+def test_current_job_denies_cached_identity_after_deactivation(typed, kind):
+    result, command = finished(typed)
+    model, identity = (UserAccount, typed.actor.user_id) if kind == 'user' else (School, typed.ids['school'])
+    with typed.factory() as reader:
+        cached = reader.get(model, identity)
+        assert cached.state == 'active'
+        assert service.current_job(reader, typed.actor, typed.ids['school'], result.id, typed.runtime).id == result.id
+        with typed.factory.begin() as writer:
+            writer.get(model, identity).state = 'disabled'
+        for read in (
+            lambda: service.current_job(reader, typed.actor, typed.ids['school'], result.id, typed.runtime),
+            lambda: service.get_job(reader, typed.actor, typed.ids['school'], result.id, typed.runtime),
+            lambda: service.create_job(reader, typed.actor, typed.ids['school'], command, typed.runtime),
+        ):
+            with pytest.raises(DomainError) as exc:
+                read()
+            assert exc.value.status_code == 403
 
 
 def test_remote_metadata_requires_current_operator_attestation_and_boundary(typed):
