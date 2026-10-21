@@ -797,7 +797,9 @@
         "280bdcc43a04d3a65ffe88f9f2c60eea97016bd6",
         "004e19f935450f3260c4c1036530a4cfec8e6742",
         "79158a84a59fa047f10a58e6e55fd53088b18ea0",
-        "033fb8f91b333cc40183e2cae21dae6538e29584"
+        "033fb8f91b333cc40183e2cae21dae6538e29584",
+        "b6093a3cbbc9fbfc2ab4da928d9ef1517d8d56ed",
+        "0b726b8ebc4231d29118535b114bb0acd1023251"
       ],
       "evidence": [
         {
@@ -937,6 +939,17 @@
           "type": "implementation_assignment",
           "agent": "/root",
           "result": "Root is adding source replacement and reprocessing to the intake UI with stable source identity, preserved original versions, current revision checks and explicit uncertain-outcome reconciliation. Separate tests and actual browser verification will precede independent review; no feature acceptance."
+        },
+        {
+          "type": "independent_recheck",
+          "revision": "b6093a3cbbc9fbfc2ab4da928d9ef1517d8d56ed",
+          "path": "docs/reviews/suggestion-recovery-ui-review.md",
+          "result": "Both recovery UI findings independently closed; bounded acceptance with no new finding. Frozen125webtests,26independent branch cases,build/typecheck,ten normal actual-App PostgreSQL workflows,107-row real UI pagination and both original recall probes passed. Recalled prose/actions remain hidden against held replies; changed registered execution state reconciles with one run POST and zero recalled output reads. Unchanged/regressed versions retain uncertainty. Full J07 remains incomplete."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "0b726b8ebc4231d29118535b114bb0acd1023251",
+          "result": "Root source replacement/reprocessing UI pinned. Native authorized source metadata now includes stable import identity. Frozen134webtests/build,4SQLite/PostgreSQL API cases and6actual-App browser workflows passed, including Unicode replacement/old original preservation, exact lost-response retry, concurrent revision comparison, failed read retry, unknown inspection outcome and390px layout. Independent review assigned /root/review_composition; source maintenance acceptance pending."
         }
       ],
       "findings": [
@@ -1052,20 +1065,20 @@
           "id": "REC-UI-R1",
           "priority": "P1",
           "description": "Fresh exact owner metadata reports a recalled proposal, but a successful diff computed before recall and delivered later restores its prose and review controls.",
-          "status": "open"
+          "status": "verified_fixed"
         },
         {
           "id": "REC-UI-R2",
           "priority": "P2",
           "description": "A committed run with a lost response remains unknown after recall even though fresh exact owner metadata proves an advanced completed execution state; reconciliation only accepts metadata for expiry.",
-          "status": "open"
+          "status": "verified_fixed"
         }
       ],
       "remainingWork": [
         "Implement source replacement/reprocessing, intake AI job creation/application, learner evidence timeline/filtering, correction history/impact and clarification reassignment.",
         "Implement complete plan/profile/IOP, session/assistant/delivery/observation screens against persisted APIs, with independent normal and adverse browser acceptance.",
         "Complete document-type, mobile and accessibility acceptance; current synthetic browser fixtures do not establish deployed OCR quality or production readiness.",
-        "Close and independently recheck REC-UI-R1/R2, then complete source maintenance, intake generation, timeline/history and other full-workflow gaps."
+        "Independently review source maintenance, then complete intake AI creation/application, timeline/history, clarification reassignment and remaining full-workflow gaps."
       ]
     },
     {
@@ -1315,7 +1328,8 @@
       "reviewAgent": "/root/review_j09",
       "commits": [
         "a0bcab2ac738605fe754ae16d5d4337d810276f5",
-        "673a0ebe078a31191a529e0947560dd03f6f872e"
+        "673a0ebe078a31191a529e0947560dd03f6f872e",
+        "7443e4e1b4e0c3a9a6dfdd2b6cedd6bc53d3d09e"
       ],
       "evidence": [
         {
@@ -1343,6 +1357,11 @@
           "revision": "673a0ebe078a31191a529e0947560dd03f6f872e",
           "path": "docs/reviews/J10-review.md",
           "result": "Changes required: J10-R1 and J10-R2 reproduced on SQLite/PostgreSQL. Frozen candidate/composition43passed1SQLite-onlyskip,10independentchecks passed including defect reproductions. Original author assigned source-review propagation and additive event-envelope migration; bounded BC09 acceptance withheld. Native J19/AI/UI/dispatch remain required integrations."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "7443e4e1b4e0c3a9a6dfdd2b6cedd6bc53d3d09e",
+          "result": "R1 late/source-availability review markers now propagate through nested progress/statements/contributions while historic human judgements remain immutable. R2 additive j10_assessment_events migration supplies full event envelope: new v1 events and explicit legacy v0 backfill without rewriting original migration. Author57passed1SQLite-onlyskip plus6positive independent probes; exact recheck assigned original reviewer /root/review_j09. Findings remain open pending verification."
         }
       ],
       "findings": [
@@ -1660,12 +1679,17 @@
         "J17",
         "J18"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Account/enrollment lifecycle and revocation, school profile revisions, source reconciliation, type-specific authority/deadlines, working named administrative flows",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j19_professional_authority",
       "reviewAgent": null,
       "commits": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "type": "work_assignment",
+          "result": "Native professional qualification/responsibility and assessment-authority workflows assigned to /root/j19_professional_authority (gpt-6.1-sol high). Persist source-backed human-reviewed staff/teaching responsibilities and exact assessment eligibility/completion/exemption/grade authority with native BC07/BC09 read adapters. Root owns registration. No role-to-qualified shortcut or production synthetic port. Full school/account/enrollment administration, other administrative types/appeals and UI remain required J19/J24 work."
+        }
+      ],
       "findings": []
     },
     {
