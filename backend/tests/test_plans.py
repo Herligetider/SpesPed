@@ -634,3 +634,114 @@ def test_recommendation_clarification_resolution_also_tracks_its_decision_source
     issue=client.get(path+'/clarifications').json()['items'][0]
     assert issue['source_status'] == 'review_required'
     assert issue['description'] is None and issue['resolution'] is None and issue['source'] is None
+
+
+def split_assessment(client,ids,headers,case,*,extra_recommendation=False):
+    """Three independent documents must remain separate provenance bindings."""
+    parent,parent_item=evidence(client,ids,headers,text='Synthetic separate expert parent original')
+    recommendation,_=evidence(client,ids,headers,text='Synthetic separate recommendation original')
+    rec={'category':'individually_adapted_education','subject':'reading','content':'Synthetic expert recommendation','amount':'150','unit':'hours','counting_basis':'learner_time','source':recommendation,**period()}
+    records=[rec]
+    if extra_recommendation:records.append({**rec,'subject':'mathematics','content':'Synthetic separate mathematics recommendation'})
+    path=base(ids)+f'/support-cases/{case["id"]}/expert-assessments'
+    assessment=post(client,path,headers,retry(issuer='Synthetic expert service',assessment_at=(utcnow()-timedelta(days=70)).isoformat(),source=parent,recommendations=records))
+    assessment=post(client,path+f'/{assessment["id"]}/confirm',headers,expected(assessment,reason='Checked separate parent and recommendation originals'),200)
+    return assessment,parent,parent_item,recommendation
+
+
+@pytest.mark.parametrize('change',['reassigned','disputed','access_revoked'])
+def test_exact_expert_parent_lineage_protects_resolution_mutation_replay_without_hiding_other_comparisons(env,change):
+    from spesped.contexts.entitlements.models import CaseClarification
+    client,factory,app,ids=env;headers=login(client);case=support_case(client,factory,ids,headers)
+    first,parent,parent_item,rec=split_assessment(client,ids,headers,case,extra_recommendation=True)
+    other,other_parent,_,_=split_assessment(client,ids,headers,case)
+    decision_source,_=evidence(client,ids,headers,text='Synthetic independent decision source')
+    decision=confirmed_decision(client,ids,headers,case,decision_source)
+    path=base(ids)+f'/support-cases/{case["id"]}/clarifications'
+    values=client.get(path).json()['items']
+    selected=[v for v in values if v['comparison_basis']['assessment_id'] == first['id']]
+    known=selected[0];pending=selected[1]
+    for issue in selected:
+        basis=issue['comparison_basis']
+        assert basis['assessment_source'] == parent and basis['recommendation_source'] == rec
+        assert basis['decision_source'] == decision_source and basis['decision_revision_id'] == decision['content']['id']
+        assert other_parent not in [basis['assessment_source'],basis['recommendation_source'],basis['decision_source']]
+    resolve_cmd=expected(known,resolution='Synthetic private resolution based on the expert parent')
+    post(client,path+f'/{known["id"]}/resolve',headers,resolve_cmd,200)
+    manual=post(client,path,headers,retry(kind='other',description='Synthetic independently authored manual clarification'))
+    if change == 'access_revoked':
+        with factory.begin() as db:
+            for assignment in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id == ids['reviewer'],StaffAssignment.learner_id == ids['a'])):
+                assignment.actions=[a for a in assignment.actions if a not in {'evidence.read','evidence.write'}]
+    else:
+        correction={'expected_version':parent_item['version'],'learner_id':ids['b'] if change == 'reassigned' else ids['a'],'claim_type':'report','reporter':'Synthetic expert','source_type':'imported_document','certainty':'confirmed' if change == 'reassigned' else 'disputed','occurred_at':(utcnow()-timedelta(days=20)).isoformat(),'topic':'education','content':'Synthetic corrected expert parent','reason':'Review parent attribution'}
+        if change == 'reassigned':
+            source=parent_item['source'];correction.update(excerpt_page=source['page'],excerpt_start=source['span_start'],excerpt_end=source['span_end'])
+        post(client,base(ids)+f'/evidence/{parent_item["id"]}/corrections',headers,correction,200)
+    values={v['id']:v for v in client.get(path).json()['items']}
+    assert values[manual['id']]['description'] == 'Synthetic independently authored manual clarification'
+    for issue in selected:
+        value=values[issue['id']]
+        assert value['source_status'] == 'review_required'
+        assert all(value[field] is None for field in ('description','source','resolution','comparison_basis'))
+    # A different originally compared parent remains independently readable.
+    if change != 'access_revoked':
+        independent=next(v for v in values.values() if v.get('comparison_basis') and v['comparison_basis']['assessment_id'] == other['id'])
+        assert independent['source_status'] == 'current' and independent['description']
+    retry_response=post(client,path+f'/{known["id"]}/resolve',headers,resolve_cmd,200)
+    assert retry_response['resolution'] is None and retry_response['comparison_basis'] is None
+    fresh=expected(pending,resolution='Synthetic newly recorded explanation remains protected')
+    for response in [post(client,path+f'/{pending["id"]}/resolve',headers,fresh,200),post(client,path+f'/{pending["id"]}/resolve',headers,fresh,200)]:
+        assert response['source_status'] == 'review_required' and response['resolution'] is None
+    with factory() as db:
+        stored=db.get(CaseClarification,known['id'])
+        assert stored.resolution == resolve_cmd['resolution']
+        assert stored.comparison_basis['assessment_source'] == parent
+
+
+def test_comparison_lineage_migration_backfills_exact_retained_event_and_fails_closed_unknown_or_ambiguous(env):
+    from copy import deepcopy
+    from spesped.contexts.entitlements.models import CaseClarification
+    client,factory,app,ids=env;headers=login(client);case=support_case(client,factory,ids,headers)
+    assessment,parent,parent_item,rec=split_assessment(client,ids,headers,case)
+    decision_source,_=evidence(client,ids,headers,text='Synthetic migration decision source')
+    decision=confirmed_decision(client,ids,headers,case,decision_source)
+    path=base(ids)+f'/support-cases/{case["id"]}/clarifications'
+    original=client.get(path).json()['items'][0]
+    original_basis=deepcopy(original['comparison_basis'])
+    resolve_cmd=expected(original,resolution='Synthetic retained historical resolution')
+    post(client,path+f'/{original["id"]}/resolve',headers,resolve_cmd,200)
+    manual=post(client,path,headers,retry(kind='source_review',description='Synthetic current manual note',source=rec))
+    with factory.begin() as db:
+        base_values={'school_id':ids['school'],'learner_id':ids['a'],'case_id':case['id'],'kind':'recommendation_difference','description':'Synthetic retained legacy detail','owner_id':ids['reviewer'],'source':rec,'reference_id':decision['content']['id'],'comparison_basis':deepcopy(original_basis)}
+        unknown=CaseClarification(**base_values,state='open');ambiguous=CaseClarification(**base_values,state='resolved',resolution='Synthetic ambiguous historical detail',resolved_by=ids['reviewer'],resolved_at=utcnow())
+        unlinked=CaseClarification(**{**base_values,'reference_id':None,'comparison_basis':None},state='resolved',resolution='Synthetic unlinked historical comparison detail',resolved_by=ids['reviewer'],resolved_at=utcnow())
+        db.add_all([unknown,ambiguous,unlinked]);db.flush();unknown_id,ambiguous_id,unlinked_id=unknown.id,ambiguous.id,unlinked.id
+        # Duplicate retained events make lineage ambiguous, even if their payloads
+        # happen to agree. An unrecorded task cannot inherit another task's event.
+        for _ in range(2):db.add(EntitlementEvent(school_id=ids['school'],aggregate_id=ambiguous_id,aggregate_version=1,event_type='support_case.recommendation_difference',payload={'recommendation_id':original_basis['recommendation_id'],'decision_revision_id':decision['content']['id']}))
+    config=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));config.attributes['database_url']=app.state.settings.database_url
+    command.downgrade(config,'j05_comparison_basis-1')
+    assert 'comparison_basis' not in {c['name'] for c in inspect(factory.kw['bind']).get_columns('entitlements_case_clarifications')}
+    command.upgrade(config,'j05_comparison_basis')
+    values={v['id']:v for v in client.get(path).json()['items']}
+    assert values[original['id']]['comparison_basis'] == original_basis
+    assert values[original['id']]['resolution'] == resolve_cmd['resolution']
+    assert values[manual['id']]['description'] == 'Synthetic current manual note'
+    for legacy_id in (unknown_id,ambiguous_id,unlinked_id):
+        row=values[legacy_id]
+        assert row['comparison_basis_status'] == 'unknown' and row['source_status'] == 'review_required'
+        assert all(row[field] is None for field in ('description','source','resolution','comparison_basis'))
+    fresh=expected(values[unknown_id],resolution='Synthetic protected new resolution for unknown legacy lineage')
+    for response in [post(client,path+f'/{unknown_id}/resolve',headers,fresh,200),post(client,path+f'/{unknown_id}/resolve',headers,fresh,200)]:
+        assert response['resolution'] is None and response['source_status'] == 'review_required'
+    with factory() as db:
+        assert db.get(CaseClarification,ambiguous_id).resolution == 'Synthetic ambiguous historical detail'
+        assert db.get(CaseClarification,unknown_id).resolution == fresh['resolution']
+        assert db.get(CaseClarification,unknown_id).comparison_basis is None
+    # Backfill supplies provenance only. Current actor/source authorization still
+    # rejects a subsequently corrected parent, even for an A+B reviewer.
+    source=parent_item['source']
+    post(client,base(ids)+f'/evidence/{parent_item["id"]}/corrections',headers,{'expected_version':parent_item['version'],'learner_id':ids['b'],'claim_type':'report','reporter':'Synthetic expert','source_type':'imported_document','certainty':'confirmed','occurred_at':(utcnow()-timedelta(days=20)).isoformat(),'topic':'education','content':'Synthetic parent belongs to B','reason':'Correct parent scope after migration','excerpt_page':source['page'],'excerpt_start':source['span_start'],'excerpt_end':source['span_end']},200)
+    values={v['id']:v for v in client.get(path).json()['items']}
+    assert values[original['id']]['resolution'] is None and values[original['id']]['comparison_basis'] is None

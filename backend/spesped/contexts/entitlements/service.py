@@ -352,6 +352,7 @@ def resolve_clarification(db,actor,school_id,case_id,clarification_id,command):
 def record_recommendation_differences(db,actor,case,decision,revision,provisions):
     """Separate expert recommendations from rights; create an owned human task."""
     from .models import CaseClarification
+    from .provenance import comparison_basis
     assessments=db.scalars(select(ExpertAssessment).where(ExpertAssessment.school_id == case.school_id,ExpertAssessment.case_id == case.id,ExpertAssessment.state == 'confirmed')).all()
     for assessment in assessments:
         for rec in db.scalars(select(Recommendation).where(Recommendation.school_id == case.school_id,Recommendation.assessment_id == assessment.id)):
@@ -364,7 +365,7 @@ def record_recommendation_differences(db,actor,case,decision,revision,provisions
                 else:
                     differs |= rec.amount != provision.amount
             if differs:
-                row=CaseClarification(school_id=case.school_id,learner_id=case.learner_id,case_id=case.id,kind='recommendation_difference',description='The confirmed expert recommendation and decision provision differ or have different quantity bases. Review each source; the decision remains separately authoritative.',owner_id=case.owner_id,source=rec.source,reference_id=revision.id,state='open')
+                row=CaseClarification(school_id=case.school_id,learner_id=case.learner_id,case_id=case.id,kind='recommendation_difference',description='The confirmed expert recommendation and decision provision differ or have different quantity bases. Review each source; the decision remains separately authoritative.',owner_id=case.owner_id,source=rec.source,reference_id=revision.id,comparison_basis=comparison_basis(assessment,rec,decision,revision,candidates),state='open')
                 db.add(row);db.flush();audit(db,actor,row,'support_case.recommendation_difference',recommendation_id=rec.id,decision_revision_id=revision.id)
 
 

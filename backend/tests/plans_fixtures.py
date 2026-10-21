@@ -37,7 +37,7 @@ def env(request,tmp_path):
         url=make_url(url).update_query_dict({'options':f'-csearch_path={schema}'}).render_as_string(hide_password=False)
     else: url=f'sqlite:///{tmp_path}/plans.db'
     config=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));config.attributes['database_url']=url
-    command.upgrade(config,'j05_plans')
+    command.upgrade(config,'j05_comparison_basis')
     # Shared checkout can contain the parallel evidence branch before the root
     # merge migration lands; exercise both explicit compatible heads.
     migration_versions=Path(__file__).resolve().parents[1]/'migrations/versions'

@@ -64,17 +64,15 @@ def assessment_view(db,actor,row):
 
 def clarification_view(db,actor,row):
     bindings=[row.source] if row.source else []
-    if row.reference_id:
-        # Automatic recommendation-difference tasks also discuss the decision;
-        # their resolution cannot outlive access to that second source basis.
-        revision=db.scalar(select(DecisionRevision).join(EducationDecision,EducationDecision.id == DecisionRevision.decision_id).where(DecisionRevision.school_id == row.school_id,DecisionRevision.id == row.reference_id,EducationDecision.learner_id == row.learner_id,EducationDecision.case_id == row.case_id))
-        if revision is None:
+    if row.kind == 'recommendation_difference':
+        from .provenance import comparison_bindings
+        bindings=comparison_bindings(db,row)
+        if bindings is None:
             value=row_view(row)
-            value.update(description=None,source=None,resolution=None,source_status='review_required')
+            value.update(description=None,source=None,resolution=None,comparison_basis=None,
+                         source_status='review_required',comparison_basis_status='unknown')
             return value
-        provisions=db.scalars(select(DecisionProvision).where(DecisionProvision.school_id == row.school_id,DecisionProvision.decision_revision_id == revision.id)).all()
-        bindings.extend([revision.source,*[p.source for p in provisions]])
-    return authorized_projection(db,actor,row.school_id,row.learner_id,row_view(row),bindings,('description','source','resolution'))
+    return authorized_projection(db,actor,row.school_id,row.learner_id,row_view(row),bindings,('description','source','resolution','comparison_basis'))
 
 
 def decision_view(db,actor,row,revision=None):

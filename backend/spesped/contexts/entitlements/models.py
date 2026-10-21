@@ -215,7 +215,26 @@ class CaseClarification(Aggregate, CaseRow, Base):
     due_at: Mapped[datetime | None]=mapped_column(UTCDateTime(),nullable=True)
     source: Mapped[dict | None]=mapped_column(JSON,nullable=True)
     reference_id: Mapped[str | None]=mapped_column(String(36),nullable=True)
+    comparison_basis: Mapped[dict | None]=mapped_column(JSON,nullable=True)
     resolution: Mapped[str | None]=mapped_column(Text,nullable=True)
     resolved_by: Mapped[str | None]=mapped_column(ForeignKey('identity_users.id'),nullable=True)
     resolved_at: Mapped[datetime | None]=mapped_column(UTCDateTime(),nullable=True)
     __table_args__=(*case_constraints(),CheckConstraint("kind IN ('missing_decision','unclear_unit','contradictory_period','recommendation_difference','source_review','other')"),CheckConstraint("state IN ('open','resolved')"))
+
+
+def _immutable_clarification_basis(mapper,connection,target):
+    fields=('school_id','learner_id','case_id','kind','source','reference_id','comparison_basis')
+    if any(_inspect(target).attrs[name].history.has_changes() for name in fields):
+        _immutable_record(mapper,connection,target)
+
+
+_event.listen(CaseClarification,'before_update',_immutable_clarification_basis)
+
+
+def _immutable_assessment_content(mapper,connection,target):
+    fields=('school_id','learner_id','case_id','issuer','assessment_at','valid_until','source')
+    if any(_inspect(target).attrs[name].history.has_changes() for name in fields):
+        _immutable_record(mapper,connection,target)
+
+
+_event.listen(ExpertAssessment,'before_update',_immutable_assessment_content)
