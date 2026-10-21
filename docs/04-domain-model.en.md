@@ -1,6 +1,6 @@
 # Domain model – Spesped
 
-Version 0.2 · 8 September 2026. Derived from [event storming](03-event-storming.en.md), with unresolved hotspots retained. This is a proposed model, not a database schema or validated implementation.
+Version 0.3 · 21 October 2026. Implementation ownership and contracts are specified in [Domain implementation contracts](09-domain-implementation.en.md); all original bounded contexts and capabilities are retained. Derived from [event storming](03-event-storming.en.md), with unresolved hotspots retained. This is a proposed model, not a database schema or validated implementation.
 
 Use a shared vocabulary inside each bounded context, keep transaction boundaries small, and reference other aggregates by identity. These principles follow [Eric Evans' DDD reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf); the contexts, classes and invariants below are specific design proposals for this product.
 

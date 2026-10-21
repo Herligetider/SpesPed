@@ -4,7 +4,7 @@ Prosjektgrunnlag for et program som skal redusere arbeidstrykket for lærere, sp
 
 Omfanget dekker offentlige grunnskoler og private montessoriskoler med statstilskudd, 1.–10. trinn. E-postutkast til foresatte kan lages for valgte tidsintervaller; eventuell gjentakelse er valgfri og sender ikke automatisk. Første komplette arbeidsflyt prioriterer undervisningsforberedelse og kort øktlogg. Alle 40 foreslåtte funksjonsområder er beholdt.
 
-Arbeidsversjon 0.2, oppdatert 8. september 2026. Lovkildene ble kontrollert 7. september; denne revisjonen utdyper produktet og leveranserekkefølgen. Dette er planleggingsdokumenter; programmet er ikke implementert.
+Arbeidsversjon 0.2, oppdatert 8. september 2026. Lovkildene ble kontrollert 7. september; denne revisjonen utdyper produktet og leveranserekkefølgen. Implementasjon er startet 21. oktober 2026. Ingen funksjon regnes som ferdig før kode, tester og uavhengig gjennomgang er verifisert i implementasjonsregisteret.
 
 ## Leserekkefølge
 
@@ -19,6 +19,12 @@ Arbeidsversjon 0.2, oppdatert 8. september 2026. Lovkildene ble kontrollert 7. s
 | [Implementation plan](docs/05-implementation-plan.en.md) | Arkitektur, P0–P8, leveranser, avhengigheter og akseptansekriterier | English |
 | [Traceability](docs/06-traceability.md) | Lovkrav → funksjon → kontekst → fase | English |
 | [Kilder / Sources](docs/07-sources.md) | 71 kilder, merket med kildetype og kontrolldato | Norsk/English |
+
+## Implementasjon
+
+- [Domain implementation contracts](docs/09-domain-implementation.en.md): modulansvar, datatyper, tilgang og API-kontrakter.
+- [Master implementation plan](docs/10-master-plan.en.md): 28 jobber som dekker alle funksjoner, med uavhengig gjennomgang.
+- [Implementasjonsregister](docs/implementation-manifest.json): status og faktisk verifikasjonsgrunnlag per funksjon og akseptansekriterium.
 
 ## Status og videre validering
 

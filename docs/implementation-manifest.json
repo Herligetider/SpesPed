@@ -1,0 +1,2082 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-10-21",
+  "goal": "Implement all current F01–F40 capabilities with independent review of every implementation job.",
+  "specification": {
+    "path": "docs/features.json",
+    "sha256": "2c904a3bf737b6100971348c282c2be05409cd1506f75171d4bb7c1a0e2a8dde",
+    "legalSourceCheckDate": "2026-09-07"
+  },
+  "completionPolicy": "Specification workflows, rules, extensions and acceptance criteria all require inspected implementation and runtime evidence. A manifest state is not proof.",
+  "jobs": [
+    {
+      "id": "J01",
+      "scope": "Backend foundation, durable identity, school/learner scope, sessions and CSRF",
+      "featureIds": [
+        "F01",
+        "F02",
+        "F27",
+        "F34"
+      ],
+      "dependsOn": [],
+      "status": "implementing",
+      "requiredEvidence": "Login/logout, expiry, cross-school/learner denial, authority and persistence tests",
+      "implementationAgent": "/root/j01_foundation",
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J02",
+      "scope": "Framework-independent domain primitives, period/quantity/provenance/approval policies",
+      "featureIds": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
+        "F27",
+        "F28",
+        "F29",
+        "F30",
+        "F31",
+        "F32",
+        "F33",
+        "F34",
+        "F35",
+        "F36",
+        "F37",
+        "F38",
+        "F39",
+        "F40"
+      ],
+      "dependsOn": [],
+      "status": "implementing",
+      "requiredEvidence": "Boundary and adverse domain examples, especially DST, revision and unsupported evidence",
+      "implementationAgent": "/root/j02_domain_core",
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J03",
+      "scope": "Accessible Norwegian web shell, real login, school/learner selection and API client",
+      "featureIds": [
+        "F01",
+        "F02",
+        "F31"
+      ],
+      "dependsOn": [],
+      "status": "implementing",
+      "requiredEvidence": "Production build, typed client, keyboard flow, real API integration after J01",
+      "implementationAgent": "/root/j03_web_shell",
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J04",
+      "scope": "Intake, file/OCR parsing, source confirmation, timeline and correction impact",
+      "featureIds": [
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Multi-pupil source separation, file rejection, provenance, derivative correction",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J05",
+      "scope": "Referrals, decisions, imported/created IEPs, goal versions and contributions",
+      "featureIds": [
+        "F07",
+        "F08"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J04"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Scope validation, dated authority, original approval, historical goals preserved",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J06",
+      "scope": "Session planning, exact approval, assistant briefs, actual delivery and notes",
+      "featureIds": [
+        "F12",
+        "F13",
+        "F15",
+        "F16",
+        "F39"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J04",
+        "J05"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Complete teaching cycle; no scheduled-as-delivered; assistant scope; stale brief",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J07",
+      "scope": "Teaching-cycle UI from intake to next observation",
+      "featureIds": [
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F07",
+        "F08",
+        "F12",
+        "F13",
+        "F15",
+        "F16",
+        "F39"
+      ],
+      "dependsOn": [
+        "J03",
+        "J04",
+        "J05",
+        "J06"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Browser journey against persistent API with negative paths and usable review",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J08",
+      "scope": "AI capability gateway, local/remote development adapters, OCR/speech ports, model evaluation",
+      "featureIds": [
+        "F33"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Real local protocol tests, no production remote fallback, injection/source limits",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J09",
+      "scope": "Curriculum/class plans, reusable resources, licenses and material inventory",
+      "featureIds": [
+        "F09",
+        "F10"
+      ],
+      "dependsOn": [
+        "J01",
+        "J04",
+        "J05"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Published revisions, authorized reuse, license restrictions, change impact",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J10",
+      "scope": "Instruments/results, progress reviews and ordinary/Montessori assessment",
+      "featureIds": [
+        "F11",
+        "F17",
+        "F19"
+      ],
+      "dependsOn": [
+        "J05",
+        "J06",
+        "J09"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Scale/condition validity, evidence gaps, human-only grades, scheme differences",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J11",
+      "scope": "Evidence snapshots, statutory templates, parent emails and opt-in draft schedules",
+      "featureIds": [
+        "F18",
+        "F20"
+      ],
+      "dependsOn": [
+        "J04",
+        "J05",
+        "J06",
+        "J10",
+        "J08"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Correct periods/goals, late evidence, cadence deduplication, no auto-send",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J12",
+      "scope": "Exact-package disclosure, secure dispatch, receipts and recipient access",
+      "featureIds": [
+        "F21"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J11"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Rights recheck, invalidation, unknown outcome reconciliation, secure recipient view",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J13",
+      "scope": "Reviewed rule profiles, obligations, deadlines, leadership deviations and workload studies",
+      "featureIds": [
+        "F06",
+        "F29",
+        "F40"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Unresolved applicability, correct triggers, actual action separate from document",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J14",
+      "scope": "Meetings, coordinated plans, tasks, attendance and follow-up",
+      "featureIds": [
+        "F22",
+        "F23"
+      ],
+      "dependsOn": [
+        "J01",
+        "J04",
+        "J06",
+        "J13"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Participant scope, typed IP versus IOP, duplicate imports, absence versus cancellation",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J15",
+      "scope": "Capacity, accepted groups, deterministic scheduling and atomic reservations",
+      "featureIds": [
+        "F14",
+        "F36"
+      ],
+      "dependsOn": [
+        "J05",
+        "J06",
+        "J09"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Feasible plan and explained infeasibility, concurrency, group/staff time separation",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J16",
+      "scope": "Protected school environment, intervention and concern workflows",
+      "featureIds": [
+        "F24",
+        "F25",
+        "F26"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J13"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Case isolation, alternative routes, no headteacher gate on personal/urgent duty",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J17",
+      "scope": "Rights requests, retention/holds, disposal, archive and school transfer",
+      "featureIds": [
+        "F27",
+        "F28",
+        "F35"
+      ],
+      "dependsOn": [
+        "J04",
+        "J11",
+        "J12",
+        "J13"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Third-party masking, held records, derivative disposal, selective transfer receipts",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J18",
+      "scope": "Versioned scoped identity/mail/calendar/school/archive integration adapters",
+      "featureIds": [
+        "F32"
+      ],
+      "dependsOn": [
+        "J01",
+        "J04",
+        "J12",
+        "J17"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Actual adapter contracts with local servers, revoked scope, retries and reconciliation",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J19",
+      "scope": "Public extracts, conditional administrative case types, exemptions and appeals",
+      "featureIds": [
+        "F30",
+        "F37",
+        "F38"
+      ],
+      "dependsOn": [
+        "J05",
+        "J10",
+        "J13",
+        "J17",
+        "J18"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Source reconciliation, type-specific authority/deadlines, working named administrative flows",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J20",
+      "scope": "Curriculum/resource/assessment/reporting UI",
+      "featureIds": [
+        "F09",
+        "F10",
+        "F11",
+        "F17",
+        "F18",
+        "F19"
+      ],
+      "dependsOn": [
+        "J03",
+        "J09",
+        "J10",
+        "J11"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Browser journeys, revisions and source review; public/Montessori fixtures",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J21",
+      "scope": "Period-email, recipient portal and collaboration UI",
+      "featureIds": [
+        "F20",
+        "F21",
+        "F22"
+      ],
+      "dependsOn": [
+        "J03",
+        "J11",
+        "J12",
+        "J14"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Chosen dates, paused draft plan, explicit send, recipient-specific view",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J22",
+      "scope": "Scheduling/capacity/attendance UI",
+      "featureIds": [
+        "F14",
+        "F23",
+        "F36"
+      ],
+      "dependsOn": [
+        "J03",
+        "J14",
+        "J15"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Interactive conflict explanation, locks, publication and real attendance follow-up",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J23",
+      "scope": "Protected cases, rights, archive and transfer UI",
+      "featureIds": [
+        "F24",
+        "F25",
+        "F26",
+        "F27",
+        "F28",
+        "F35"
+      ],
+      "dependsOn": [
+        "J03",
+        "J16",
+        "J17"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Role-separated browser journeys, urgent routing and disposition preview",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J24",
+      "scope": "School administration, governance, exports, integrations and workload UI",
+      "featureIds": [
+        "F01",
+        "F06",
+        "F29",
+        "F30",
+        "F32",
+        "F37",
+        "F38",
+        "F40"
+      ],
+      "dependsOn": [
+        "J03",
+        "J13",
+        "J18",
+        "J19"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Actual editable workflows for every enabled administrative type",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J25",
+      "scope": "Complete language/accessibility coverage, reviewed translation and opt-in local dictation",
+      "featureIds": [
+        "F16",
+        "F31"
+      ],
+      "dependsOn": [
+        "J07",
+        "J08",
+        "J20",
+        "J21",
+        "J22",
+        "J23",
+        "J24"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Bokmål/Nynorsk, keyboard/screen-reader checks, transcript confirmation and audio disposition",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J26",
+      "scope": "Production packaging, PostgreSQL isolation, encrypted storage, queue worker, backup/restore and local AI gate",
+      "featureIds": [
+        "F33",
+        "F34"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J04",
+        "J05",
+        "J06",
+        "J08",
+        "J09",
+        "J10",
+        "J11",
+        "J12",
+        "J13",
+        "J14",
+        "J15",
+        "J16",
+        "J17",
+        "J18",
+        "J19"
+      ],
+      "status": "queued",
+      "requiredEvidence": "PostgreSQL migrations/concurrency, restore drill, egress failure tests, operational runbooks",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J27",
+      "scope": "Full browser/API/adversarial/operational verification and repairs",
+      "featureIds": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
+        "F27",
+        "F28",
+        "F29",
+        "F30",
+        "F31",
+        "F32",
+        "F33",
+        "F34",
+        "F35",
+        "F36",
+        "F37",
+        "F38",
+        "F39",
+        "F40"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J03",
+        "J04",
+        "J05",
+        "J06",
+        "J07",
+        "J08",
+        "J09",
+        "J10",
+        "J11",
+        "J12",
+        "J13",
+        "J14",
+        "J15",
+        "J16",
+        "J17",
+        "J18",
+        "J19",
+        "J20",
+        "J21",
+        "J22",
+        "J23",
+        "J24",
+        "J25",
+        "J26"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Each specification workflow and exception exercised; no mock-only completion",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    },
+    {
+      "id": "J28",
+      "scope": "Independent whole-product completion audit and release decision",
+      "featureIds": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
+        "F27",
+        "F28",
+        "F29",
+        "F30",
+        "F31",
+        "F32",
+        "F33",
+        "F34",
+        "F35",
+        "F36",
+        "F37",
+        "F38",
+        "F39",
+        "F40"
+      ],
+      "dependsOn": [
+        "J01",
+        "J02",
+        "J03",
+        "J04",
+        "J05",
+        "J06",
+        "J07",
+        "J08",
+        "J09",
+        "J10",
+        "J11",
+        "J12",
+        "J13",
+        "J14",
+        "J15",
+        "J16",
+        "J17",
+        "J18",
+        "J19",
+        "J20",
+        "J21",
+        "J22",
+        "J23",
+        "J24",
+        "J25",
+        "J26",
+        "J27"
+      ],
+      "status": "queued",
+      "requiredEvidence": "Inspect every feature, criterion, extension and gate; reopen missing evidence",
+      "implementationAgent": null,
+      "reviewAgent": null,
+      "commits": [],
+      "evidence": [],
+      "findings": []
+    }
+  ],
+  "features": [
+    {
+      "id": "F01",
+      "title": "Skole, brukere og fullmakter",
+      "context": "BC01",
+      "status": "not_started",
+      "jobs": [
+        "J01",
+        "J02",
+        "J03",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F01.AC01",
+          "statement": "Et utløpt vikariat gir avslag ved åpning av både elevside, direkte dokumentlenke og bakgrunnsjobb.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F01.AC02",
+          "statement": "En lærer uten fullmakt kan bidra til et dokument, men kan ikke utføre den reserverte godkjenningshandlingen.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "title": "Elevprofil og foresattrelasjoner",
+      "context": "BC01",
+      "status": "not_started",
+      "jobs": [
+        "J01",
+        "J02",
+        "J03",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F02.AC01",
+          "statement": "En assistent ser nødvendig støtteinformasjon for sitt oppdrag, uten automatisk tilgang til sakkyndig vurdering eller familiesak.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F02.AC02",
+          "statement": "Endret foresattrelasjon blir tilgjengelig for ny mottakerkontroll før neste utsending.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "title": "Felles innboks for elevinformasjon",
+      "context": "BC02",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J04",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F03.AC01",
+          "statement": "Samme importerte e-post med samme kildeidentitet oppretter ikke to identiske oppfølgingspunkter.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F03.AC02",
+          "statement": "En e-post som omtaler søsken kan deles i kontrollerte utdrag uten å eksponere hele originalen for begge elevenes team.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "title": "Uttrekk med kildekontroll",
+      "context": "BC02",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J04",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F04.AC01",
+          "statement": "Feillesing av et timeantall kan rettes før det inngår i planlegging eller rapport.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F04.AC02",
+          "statement": "En bekreftet påstand kan åpnes med riktig kildeversjon og sidereferanse; manglende lesetilgang gir ikke innsyn via forhåndsvisning.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F05",
+      "title": "Elevtidslinje og retting",
+      "context": "BC02",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J04",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F05.AC01",
+          "statement": "Et notat skrevet i oktober om en hendelse i september kan finnes på begge relevante datoer med tydelig merking.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F05.AC02",
+          "statement": "En feil elevkobling gjør berørte utkast utdaterte og gir ingen fortsatt kildetilgang gjennom gamle lenker.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F06",
+      "title": "Kravregister og årshjul",
+      "context": "BC03",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J13",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F06.AC01",
+          "statement": "En lokal rapportfrist kan endres uten å omskrive lovens tidsregel eller historiske oppgaver.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F06.AC02",
+          "statement": "En regelendring viser hvilke åpne oppgaver som berøres før en autorisert person aktiverer endringen.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F07",
+      "title": "Henvisning, sakkyndighet og vedtak",
+      "context": "BC04",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J05",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F07.AC01",
+          "statement": "Et avvik mellom PPTs anbefalte omfang og vedtaket vises tydelig og blandes ikke til ett tall.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F07.AC02",
+          "statement": "Planlegging kan spore hvert registrert omfang til riktig bestemmelse, enhet og periode.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F08",
+      "title": "IOP med mål og versjoner",
+      "context": "BC05",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J05",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F08.AC01",
+          "statement": "En ny målrevisjon endrer ikke teksten i tidligere års dokumentasjon.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F08.AC02",
+          "statement": "Et forslag utenfor bekreftet vedtaksramme kan ikke aktiveres som om det allerede var godkjent.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F09",
+      "title": "Læreplan og klassens planer",
+      "context": "BC06",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J09",
+        "J20",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F09.AC01",
+          "statement": "Flytting av et tema oppdaterer forslag til fremtidige økter uten å endre gjennomførte økter.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F09.AC02",
+          "statement": "En elev kan arbeide med samme tema som klassen og ha egne konkrete mål og materiell.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F10",
+      "title": "Bibliotek for egne opplegg og materiell",
+      "context": "BC06",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J09",
+        "J20",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F10.AC01",
+          "statement": "En privat ressurs blir ikke søkbar for hele skolen før eieren har valgt en tillatt deling.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F10.AC02",
+          "statement": "En tilpasset Montessori-presentasjon beholder spor til original og synlige endringer.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F11",
+      "title": "Kartlegging og målinger",
+      "context": "BC09",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J10",
+        "J20",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F11.AC01",
+          "statement": "En verdi utenfor instrumentets skala blir avvist eller må avklares før bekreftelse.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F11.AC02",
+          "statement": "Et forslag til ny prøve uten godkjent intervallgrunnlag merkes som et åpent faglig spørsmål.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F12",
+      "title": "Planlegg neste undervisningsøkt",
+      "context": "BC07",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J06",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F12.AC01",
+          "statement": "Ved regenerering beholdes pedagogens tidligere versjon og redigeringer til brukeren velger å erstatte dem.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F12.AC02",
+          "statement": "En økt kan planlegges manuelt når AI er utilgjengelig, med samme mål- og godkjenningskontroll.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F13",
+      "title": "Assistentkort og veiledning",
+      "context": "BC07",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J06",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F13.AC01",
+          "statement": "Assistenten får bare innhold som trengs for det tildelte oppdraget, uten lenker som åpner hele elevmappen.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F13.AC02",
+          "statement": "En relevant endring i økten merker kortet som utdatert og krever ny pedagogisk kontroll.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F14",
+      "title": "Automatisk timeplan og gruppeforslag",
+      "context": "BC08",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J15",
+        "J22",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F14.AC01",
+          "statement": "Et uløselig forslag oppgir hvilke konkrete begrensninger som kolliderer i stedet for å publisere en ugyldig plan.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F14.AC02",
+          "statement": "Samme ansatt eller samme eksemplar av materiell kan ikke dobbeltreserveres ved samtidig publisering.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F15",
+      "title": "Gjennomførte timer og avvik",
+      "context": "BC07",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J06",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F15.AC01",
+          "statement": "En publisert timeplan oppretter ingen gjennomførte minutter før noen har registrert faktisk gjennomføring.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F15.AC02",
+          "statement": "En gruppeøkt på 30 minutter med to deltakende elever kan vise 30 minutter per elev og 30 minutter ansattressurs uten dobbel ressursbelastning.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F16",
+      "title": "Rask øktlogg og diktering",
+      "context": "BC07",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J06",
+        "J07",
+        "J25",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F16.AC01",
+          "statement": "En vanlig logg kan gjennomføres i brukertest med median tidsbruk høyst ett minutt uten tap av nødvendig informasjon.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F16.AC02",
+          "statement": "En ikke godkjent transkripsjon brukes ikke som bekreftet elevopplysning i genererte dokumenter.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F17",
+      "title": "Fremgang og neste steg",
+      "context": "BC09",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J10",
+        "J20",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F17.AC01",
+          "statement": "Når det mangler observasjoner, vises utilstrekkelig grunnlag fremfor en påstand om stagnasjon eller mestring.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F17.AC02",
+          "statement": "Endring i testmetode gjør sammenligningsbegrensningen synlig i graf og tekst.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F18",
+      "title": "Lovpålagte elevdokumenter og rapporter",
+      "context": "BC10",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J11",
+        "J20",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F18.AC01",
+          "statement": "En rapport over en periode med to IOP-revisjoner viser hvilket målgrunnlag som gjaldt når.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F18.AC02",
+          "statement": "Manglende obligatoriske opplysninger blir avklart eller håndtert av ansvarlig før dokumentet kan ferdigstilles etter den aktuelle malen.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F19",
+      "title": "Underveis-, halvårs- og sluttvurdering",
+      "context": "BC09",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J10",
+        "J20",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F19.AC01",
+          "statement": "Samme trinn ved offentlig skole og godkjent Montessori-ordning kan få forskjellige relevante vurderingsfelt.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F19.AC02",
+          "statement": "AI foreslår ingen karakter og ferdigstiller ikke en vurdering på vegne av faglærer.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F20",
+      "title": "E-postutkast til foresatte for valgt tidsintervall",
+      "context": "BC10",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J11",
+        "J21",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F20.AC01",
+          "statement": "Datoene 1.–15. oktober gir et utkast med relevant kjent grunnlag fra hele begge grensedagene, og datoene vises i gjennomgangen.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F20.AC02",
+          "statement": "En valgfri plan hver 14. dag oppretter høyst ett utkast per planversjon, elev og periode ved gjentatt jobbkjøring; den sender ingen e-post.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F20.AC03",
+          "statement": "Et utkast uten observasjoner påstår ikke at eleven har hatt fremgang. Brukeren kan avbryte eller skrive et manuelt brev med annet bekreftet formål.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F20.AC04",
+          "statement": "Et relevant sent registrert notat som tas inn i teksten, en endret periode eller en redigert oversettelse krever en ny dokumentrevisjon og ny relevant godkjenning.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F20.AC05",
+          "statement": "En ugyldig eller uavklart foresattrelasjon blokkerer utlevering også når mottakeren stod i en tidligere e-post.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F20.AC06",
+          "statement": "Fra-dato etter til-dato avvises. «Siden sist» uten et bekreftet tidligere sendingsgrunnlag ber brukeren velge datoer og antar ikke en periode.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F21",
+      "title": "Gjennomgang, godkjenning og sikker utsending",
+      "context": "BC11",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J12",
+        "J21",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F21.AC01",
+          "statement": "En foresatt som mister relevant tilgang mens en melding står i kø, kan ikke motta pakken uten ny avklaring.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F21.AC02",
+          "statement": "Ved ukjent leveringsutfall avstemmes leverandørreferansen før eventuell ny innsending, slik at timeout ikke gir blind dobbeltutsending.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F21.AC03",
+          "statement": "Kopiering til ekstern e-postklient registreres som klargjort/eksportert, og vises ikke som bekreftet sendt uten eget grunnlag.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F22",
+      "title": "Møter, samarbeid og individuell plan",
+      "context": "BC12",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J14",
+        "J21",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F22.AC01",
+          "statement": "Et gjennomført møte kan registreres uten at systemet krever et unødvendig omfattende referat.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F22.AC02",
+          "statement": "En oppgave forsvinner ikke ved neste møte; den viser utført handling eller fortsatt åpent ansvar.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F23",
+      "title": "Fravær og oppfølging",
+      "context": "BC12",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J14",
+        "J22",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F23.AC01",
+          "statement": "Samme fraværsregistrering importert flere ganger gir én gjeldende oppføring med kildeversjoner.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F23.AC02",
+          "statement": "En avlyst spesialpedagogisk økt registreres ikke som elevfravær når eleven var på skolen.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F24",
+      "title": "Skolemiljø og aktivitetsplan",
+      "context": "BC13",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J16",
+        "J23",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F24.AC01",
+          "statement": "Opprettelse av en plan setter ikke tiltakene til gjennomført.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F24.AC02",
+          "statement": "En sak om nærmeste leder følger konfigurert alternativ mottakervei og stopper ikke i vedkommendes godkjenningskø.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F25",
+      "title": "Bekymring, barnevern og akutt oppfølging",
+      "context": "BC13",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J16",
+        "J23",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F25.AC01",
+          "statement": "Brukeren kan registrere en allerede utført akutt handling etterpå uten at systemet krever et forhåndsgodkjent utkast.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F25.AC02",
+          "statement": "En vanlig e-postoppsummering i F20 henter ikke automatisk inn bekymringssakens innhold.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F26",
+      "title": "Fysiske inngrep og forebygging",
+      "context": "BC13",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J16",
+        "J23",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F26.AC01",
+          "statement": "Manglende elevperspektiv vises som et punkt for ansvarlig oppfølging, med mulighet til å beskrive hvorfor det ikke foreligger ennå.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F26.AC02",
+          "statement": "Gjentatte hendelser kan vises for rett ansvarlig uten å eksponere sakstekst i ordinære elevoppsummeringer.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F27",
+      "title": "Personvern, tilgang og innsyn",
+      "context": "BC14",
+      "status": "not_started",
+      "jobs": [
+        "J01",
+        "J02",
+        "J17",
+        "J23",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F27.AC01",
+          "statement": "Bytte av elev-ID i en lenke, eksport eller AI-forespørsel gir ikke tilgang til en annen elev.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F27.AC02",
+          "statement": "En innsynspakke inneholder ikke skjermede opplysninger om andre personer bare fordi de finnes i samme e-posttråd.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F28",
+      "title": "Dokumentforvaltning og arkiv",
+      "context": "BC14",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J17",
+        "J23",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F28.AC01",
+          "statement": "Et arkivkall uten bekreftet mottak merkes ikke som vellykket arkivert.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F28.AC02",
+          "statement": "En aktiv rettslig sperre stanser berørt sletting og oppgir ansvarlig avklaringsvei.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F29",
+      "title": "Ledelsesoversikt og internkontroll",
+      "context": "BC03",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J13",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F29.AC01",
+          "statement": "En ferdig rapport lukker ikke automatisk et registrert avvik om manglende undervisning.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F29.AC02",
+          "statement": "En visning for styret røper ikke identifiserbar sakstekst gjennom små grupper eller filtrering uten særskilt vurdering.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F30",
+      "title": "Offentlig rapportering og administrasjon",
+      "context": "BC03",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J19",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F30.AC01",
+          "statement": "Tall kan spores til kildene og beregningsdefinisjonen som ble brukt i akkurat denne rapportversjonen.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F30.AC02",
+          "statement": "Uenighet med skoleadministrativt system vises før attestasjon og overskrives ikke i det stille.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F31",
+      "title": "Tilgjengelighet og språk",
+      "context": "BC01",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J03",
+        "J25",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F31.AC01",
+          "statement": "En bruker kan registrere notat, gjennomgå kilde og godkjenne en økt med bare tastatur.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F31.AC02",
+          "statement": "Mottakerens dokument har logisk leserekkefølge og tydelig struktur ved skjermleserprøving.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F32",
+      "title": "Integrasjoner og datautveksling",
+      "context": "BC16",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J18",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F32.AC01",
+          "statement": "Gjennomkjøring av samme import oppretter ikke nye kopier av samme elev, melding eller vedtak.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F32.AC02",
+          "statement": "Frakobling stanser nye overføringer og viser hvem som håndterer gjenværende data og ventende jobber.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F33",
+      "title": "AI med utskiftbar modell og kvalitetskontroll",
+      "context": "BC15",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J08",
+        "J26",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F33.AC01",
+          "statement": "Samme brukerflyt kan bruke en utviklingsadapter og en lokal adapter uten at elev-/planbegrepene endres.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F33.AC02",
+          "statement": "Ved lokal modellfeil forblir produksjonsdata lokale, og brukeren kan fortsette med manuell redigering.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F33.AC03",
+          "statement": "Forslag uten støtte for faktapåstander viser manglende grunnlag og blir ikke presentert som bekreftet informasjon.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F34",
+      "title": "Drift, sikkerhet og beredskap",
+      "context": "BC15",
+      "status": "not_started",
+      "jobs": [
+        "J01",
+        "J02",
+        "J26",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F34.AC01",
+          "statement": "En prøvd gjenoppretting kan vise at dokumenter, nøkler, rettigheter og nødvendige disposisjonsoppgaver henger sammen.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F34.AC02",
+          "statement": "Meldingskøens status viser ukjent leveringsutfall fremfor å sende alt på nytt etter omstart.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F35",
+      "title": "Skoleår, overganger og skolebytte",
+      "context": "BC14",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J17",
+        "J23",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F35.AC01",
+          "statement": "Gammel lærertilknytning utløper som planlagt uten å endre tidligere forfatter- og godkjenningsspor.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F35.AC02",
+          "statement": "Overføringspakken viser hvilke opplysninger som deles på hvilket grunnlag, og kan ikke regnes som mottatt uten relevant bekreftelse.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F36",
+      "title": "Ressurser og arbeidsbelastning",
+      "context": "BC08",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J15",
+        "J22",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F36.AC01",
+          "statement": "Et oppdrag med 30 minutters økt og avtalt forberedelse belaster begge delene av kapasiteten.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F36.AC02",
+          "statement": "Manglende kvalifisert bemanning vises som et udekket behov, ikke som en automatisk tildeling til en ukvalifisert erstatter.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F37",
+      "title": "Betingede leder- og driftsplikter",
+      "context": "BC03",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J19",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F37.AC01",
+          "statement": "Et område uten avklart regel eller eier vises som uavklart og kan ikke erklæres oppfylt automatisk.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F37.AC02",
+          "statement": "Et kontrollpunkt kan referere til et autoritativt eksternt system uten å kopiere hele saksmappen.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F38",
+      "title": "Varsler, fritak, klager og partsrettigheter",
+      "context": "BC04",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J19",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F38.AC01",
+          "statement": "Endret underretningsdato viser behov for ny fristvurdering og omskriver ikke tidligere dokumentasjon i det stille.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F38.AC02",
+          "statement": "En bruker uten vedtaksmyndighet kan klargjøre saken, men kan ikke registrere et eget vedtak som gyldig myndighetsavgjørelse.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F39",
+      "title": "Tilbakemelding og kontroll av forslag",
+      "context": "BC07",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J06",
+        "J07",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F39.AC01",
+          "statement": "Pedagogens manuelt endrede støtteinstruksjon beholdes til vedkommende uttrykkelig velger en annen versjon.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F39.AC02",
+          "statement": "Retting av feil elevkobling gjør berørte operative forslag utilgjengelige eller utdaterte og viser nødvendig videre oppfølging.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "F40",
+      "title": "Målbar avlastning",
+      "context": "BC03",
+      "status": "not_started",
+      "jobs": [
+        "J02",
+        "J13",
+        "J24",
+        "J27",
+        "J28"
+      ],
+      "sourcePaths": [],
+      "runtimeEvidence": [],
+      "independentReviews": [],
+      "acceptanceCriteria": [
+        {
+          "id": "F40.AC01",
+          "statement": "En funksjon som sparer fem minutter skriving, men krever ti minutter ekstra kontroll, vises som økt samlet tidsbruk.",
+          "status": "not_started",
+          "evidence": []
+        },
+        {
+          "id": "F40.AC02",
+          "statement": "P2 kan evalueres på øktforberedelse, assistentforståelse og notatføring uten at foreldre-e-post er implementert.",
+          "status": "not_started",
+          "evidence": []
+        }
+      ]
+    }
+  ],
+  "releaseGates": [
+    {
+      "id": "G01",
+      "description": "All feature workflows, extensions, adverse cases and criteria implemented and independently reviewed.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G02",
+      "description": "PostgreSQL persistence, migrations, tenancy and concurrency verified against real PostgreSQL.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G03",
+      "description": "Complete role-separated browser journeys, accessibility and Bokmål/Nynorsk verified.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G04",
+      "description": "Production local AI chain, no remote fallback, model quality and configured server capacity verified.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G05",
+      "description": "Authorized integration configurations, receipts and operational reconciliation verified.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G06",
+      "description": "School-specific legal, privacy, recipient and records configurations approved by responsible owners.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G07",
+      "description": "Backup/restore, security, failure recovery and deployment runbooks exercised.",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "G08",
+      "description": "Measured workload benefit and independent whole-product completion audit passed.",
+      "status": "unverified",
+      "evidence": []
+    }
+  ],
+  "turnLog": [
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Verified documentation-only repository; established full-domain implementation contracts and 28-job plan; implementation not yet claimed."
+    }
+  ]
+}
