@@ -209,6 +209,7 @@ function PlanDetail({
           <PlanSuggestions
             ctx={ctx}
             plan={plan}
+            hasUnsaved={Boolean(editing)}
             onSaved={() => setEditing(null)}
           />
         )}

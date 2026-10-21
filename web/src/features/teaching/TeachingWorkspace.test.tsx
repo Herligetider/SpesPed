@@ -436,6 +436,7 @@ describe("persisted teaching workflow", () => {
   });
   it("shows a model diff and sends only explicitly selected replacement fields", async () => {
     const job = { id: "job", version: 1, state: "succeeded", error_code: null };
+    let requested = false;
     const { props, calls } = setup((call) => {
       if (call.path.endsWith("/ai/choices"))
         return response(
@@ -448,8 +449,32 @@ describe("persisted teaching workflow", () => {
             },
           ]),
         );
-      if (call.path.endsWith("/suggestions") && call.method === "POST")
+      if (call.path.endsWith("/suggestions") && call.method === "POST") {
+        requested = true;
         return response(job);
+      }
+      if (call.path.endsWith("/suggestions") && call.method === "GET")
+        return response({
+          items: requested
+            ? [
+                {
+                  id: "job",
+                  version: 1,
+                  state: "succeeded",
+                  attempts: 1,
+                  created_at: "2026-10-21T08:00:00Z",
+                  updated_at: "2026-10-21T08:01:00Z",
+                  basis_id: "basis",
+                  availability: "current",
+                  review_outcome: null,
+                },
+              ]
+            : [],
+          total: requested ? 1 : 0,
+          scope: "current_basis",
+          session_revision_id: "rev1",
+          manual_fallback_available: true,
+        });
       if (call.path.endsWith("/ai/jobs/job")) return response(job);
       if (call.path.endsWith("/diff"))
         return response({
@@ -489,6 +514,9 @@ describe("persisted teaching workflow", () => {
         onConflict={() => {}}
       />,
     );
+    await screen.findByRole("option", {
+      name: "Gjennomgått lokal modell · Syntetisk v1",
+    });
     await userEvent.selectOptions(
       await screen.findByLabelText(
         "Gjennomgått lokal modell og behandlingsoppsett",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type {
   Assessment,
   Context,
@@ -25,16 +25,61 @@ import {
   useRead,
   when,
 } from "./shared";
+import {
+  SavedProposals,
+  SelectedProposal,
+  RecoveryStatus,
+} from "../suggestions/SavedProposals";
+import {
+  proposalScopeKey,
+  useProposalRecovery,
+} from "../suggestions/useProposalRecovery";
+import type { ProposalRecovery } from "../suggestions/useProposalRecovery";
 import { GoalSelect } from "./PlanEditor";
-export default function PlanSuggestions({
-  ctx,
-  plan,
-  onSaved,
-}: {
+type PlanSuggestionsProps = {
   ctx: Context;
   plan: Plan;
   onSaved: (p: Plan) => void;
-}) {
+  hasUnsaved?: boolean;
+};
+export default function PlanSuggestions(props: PlanSuggestionsProps) {
+  const { ctx, plan } = props;
+  return (
+    <ScopedPlanSuggestions
+      key={proposalScopeKey({
+        client: ctx.client,
+        schoolId: ctx.schoolId,
+        learnerId: ctx.learnerId,
+        userId: ctx.currentUser.id,
+        kind: "plan",
+        ownerId: plan.id,
+        revisionId: plan.content.id || "",
+      })}
+      {...props}
+    />
+  );
+}
+function ScopedPlanSuggestions({
+  ctx,
+  plan,
+  onSaved,
+  hasUnsaved = false,
+}: PlanSuggestionsProps) {
+  const latest = useRef({ hasUnsaved, onSaved });
+  latest.current = { hasUnsaved, onSaved };
+  const recovery = useProposalRecovery<Diff>({
+    client: ctx.client,
+    schoolId: ctx.schoolId,
+    learnerId: ctx.learnerId,
+    userId: ctx.currentUser.id,
+    kind: "plan",
+    ownerId: plan.id,
+    revisionId: plan.content.id || "",
+    refresh: ctx.refresh,
+    formatError: ctx.formatError,
+    onConflict: ctx.changed,
+    onReconciled: () => ctx.changed(),
+  });
   const [offset, setOffset] = useState(0),
     [choice, setChoice] = useState<Option | null>(null),
     [caseId, setCaseId] = useState(""),
@@ -43,11 +88,8 @@ export default function PlanSuggestions({
     [basis, setBasis] = useState<{
       id: string;
       plan_revision_id: string;
-    } | null>(null),
-    [job, setJob] = useState<Job | null>(null);
-  const basisCmd = useCommand(ctx),
-    requestCmd = useCommand(ctx),
-    runCmd = useCommand(ctx);
+    } | null>(null);
+  const basisCmd = useCommand(ctx);
   const options = useRead<List<Option>>(
     ctx,
     ["ai", "choices"],
@@ -58,15 +100,6 @@ export default function PlanSuggestions({
       limit: "50",
     }),
   );
-  const jobStatus = useRead<Job>(
-    ctx,
-    job
-      ? ["ai", "jobs", job.id]
-      : ["learners", ctx.learnerId, "education-plans"],
-    undefined,
-    Boolean(job),
-  );
-  const currentJob = jobStatus.value || job;
   const usable =
     choice &&
     options.value?.items.find(
@@ -231,7 +264,6 @@ export default function PlanSuggestions({
                   },
                   (v) => {
                     setBasis(v as { id: string; plan_revision_id: string });
-                    setJob(null);
                   },
                 )
               }
@@ -252,73 +284,57 @@ export default function PlanSuggestions({
                 disabled={
                   basis.plan_revision_id !== plan.content.id ||
                   !usable ||
-                  requestCmd.busy ||
-                  requestCmd.pending
+                  recovery.busy ||
+                  Boolean(recovery.uncertain) ||
+                  hasUnsaved
                 }
                 onClick={() =>
-                  requestCmd.submit(
-                    ["education-plans", plan.id, "suggestions"],
-                    {
+                  recovery.command({
+                    kind: "create",
+                    path: ["education-plans", plan.id, "suggestions"],
+                    body: {
                       request_key: key(),
                       basis_id: basis.id,
                       policy_id: usable!.policy_id,
                       release_id: usable!.release_id,
                     },
-                    (v) => setJob(v as Job),
-                  )
+                    onSuccess: (value) => recovery.select((value as Job).id),
+                  })
                 }
               >
                 Bestill forslag fra valgt grunnlag
               </button>
-              {requestCmd.status}
             </div>
           )}
-          {currentJob && (
-            <div>
-              <button type="button" onClick={ctx.changed}>
-                Hent status for forslaget
-              </button>
-              {jobStatus.error !== undefined && (
-                <p role="alert">
-                  Forslagets status må avklares. Fortsett manuelt.{" "}
-                  {ctx.formatError(jobStatus.error)}
-                </p>
-              )}
-              <State value={currentJob.state} />
-              {currentJob.error_code && (
-                <p>
-                  Forslaget er utilgjengelig eller trenger ny vurdering.
-                  Fortsett manuelt.
-                </p>
-              )}
-              {currentJob.state === "queued" && (
-                <button
-                  type="button"
-                  disabled={runCmd.busy || runCmd.pending}
-                  onClick={() =>
-                    runCmd.submit(
-                      ["ai", "jobs", currentJob.id, "run"],
-                      { expected_version: currentJob.version },
-                      (v) => setJob(v as Job),
-                    )
-                  }
-                >
-                  Lag forslaget lokalt
-                </button>
-              )}
-              {runCmd.status}
-              {currentJob.state === "succeeded" && basis && (
-                <SuggestionDiff
-                  key={currentJob.id}
-                  ctx={ctx}
-                  plan={plan}
-                  basisId={basis.id}
-                  job={currentJob}
-                  onSaved={onSaved}
-                />
-              )}
-            </div>
+          <SavedProposals recovery={recovery} />
+          {hasUnsaved && (
+            <p>
+              En manuell planredigering er åpen. Lagre eller lukk den før du
+              vurderer modellforslaget. Utkastet ditt beholdes når du åpner
+              lagrede forslag.
+            </p>
           )}
+          <SelectedProposal recovery={recovery} />
+          {recovery.selectedId && (
+            <SuggestionDiff
+              key={recovery.selectedId}
+              ctx={ctx}
+              plan={plan}
+              basisId={recovery.verified.value?.summary.basis_id || ""}
+              job={{
+                id: recovery.selectedId,
+                version: recovery.verified.value?.summary.version || 0,
+                state: recovery.verified.value?.summary.state || "",
+              }}
+              recovery={recovery}
+              hasUnsaved={hasUnsaved}
+              onSaved={(row) => {
+                if (latest.current.hasUnsaved) ctx.changed();
+                else latest.current.onSaved(row);
+              }}
+            />
+          )}
+          <RecoveryStatus recovery={recovery} />
         </>
       )}
       <details>
@@ -354,17 +370,22 @@ export function SuggestionDiff({
   basisId,
   job,
   onSaved,
+  recovery,
+  hasUnsaved = false,
 }: {
   ctx: Context;
   plan: Plan;
   basisId: string;
   job: Job;
   onSaved: (p: Plan) => void;
+  recovery?: ProposalRecovery<Diff>;
+  hasUnsaved?: boolean;
 }) {
   const load = useRead<Diff>(
     ctx,
     ["education-plans", plan.id, "suggestions", job.id],
     new URLSearchParams({ basis_id: basisId }),
+    !recovery,
   );
   const [fields, setFields] = useState<string[]>([]),
     [goals, setGoals] = useState<string[]>([]),
@@ -378,24 +399,28 @@ export function SuggestionDiff({
     [outcome, setOutcome] = useState("applied"),
     [error, setError] = useState("");
   const cmd = useCommand(ctx);
-  if (load.error)
-    return (
+  const fresh = recovery ? recovery.verified.value?.diff : load.value;
+  const retained = useRef<Diff | null>(null);
+  if (fresh) retained.current = fresh;
+  const d = retained.current;
+  if (!d)
+    return recovery ? null : load.error ? (
       <p role="alert">
         Forslaget kan ikke brukes. Fortsett manuelt.{" "}
         {ctx.formatError(load.error)}
       </p>
+    ) : (
+      <p>Kontrollerer forslagets grunnlag …</p>
     );
-  if (!load.value) return <p>Kontrollerer forslagets grunnlag …</p>;
-  const d = load.value;
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        setError("");
-        try {
-          cmd.submit(
-            ["education-plans", plan.id, "suggestion-reviews"],
-            {
+    <div hidden={!fresh}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError("");
+          if (!fresh || hasUnsaved) return;
+          try {
+            const body = {
               request_key: key(),
               expected_version: d.expected_version,
               plan_revision_id: d.plan_revision_id,
@@ -420,69 +445,109 @@ export function SuggestionDiff({
                         ...period(newGoals[k]),
                       }))
                   : [],
-            },
-            (v) => onSaved(v as Plan),
-          );
-        } catch (e) {
-          setError(ctx.formatError(e));
-        }
-      }}
-    >
-      <fieldset disabled={cmd.busy || cmd.pending}>
-        <legend>Gjennomgå forskjellene før du velger</legend>
-        <p className="planning-warning">
-          Ubekreftet forslag. Bare uttrykkelig valgte felt og mål blir et nytt
-          utkast.
-        </p>
-        {d.missing_evidence.length > 0 && (
-          <div className="planning-warning">
-            <h5>Manglende grunnlag</h5>
-            <ul>
-              {d.missing_evidence.map((m, i) => (
-                <li key={i}>{m}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {d.fields.map((f) => (
-          <div className="planning-card" key={f.field}>
-            <h5>{label(f.field)}</h5>
-            <div className="planning-two">
-              <div>
-                <strong>Lagret</strong>
-                <p>{f.before}</p>
-              </div>
-              <div>
-                <strong>Foreslått</strong>
-                <p>{f.proposed}</p>
-              </div>
+            };
+            if (recovery)
+              recovery.command({
+                kind: "review",
+                jobId: job.id,
+                outcome,
+                path: ["education-plans", plan.id, "suggestion-reviews"],
+                body,
+                diff: d,
+                onSuccess: (value) => onSaved(value as Plan),
+              });
+            else
+              cmd.submit(
+                ["education-plans", plan.id, "suggestion-reviews"],
+                body,
+                (value) => onSaved(value as Plan),
+              );
+          } catch (e) {
+            setError(ctx.formatError(e));
+          }
+        }}
+      >
+        <fieldset
+          disabled={
+            hasUnsaved ||
+            cmd.busy ||
+            cmd.pending ||
+            Boolean(recovery?.busy) ||
+            Boolean(recovery?.uncertain)
+          }
+        >
+          <legend>Gjennomgå forskjellene før du velger</legend>
+          <p className="planning-warning">
+            Ubekreftet forslag. Bare uttrykkelig valgte felt og mål blir et nytt
+            utkast.
+          </p>
+          {d.missing_evidence.length > 0 && (
+            <div className="planning-warning">
+              <h5>Manglende grunnlag</h5>
+              <ul>
+                {d.missing_evidence.map((m, i) => (
+                  <li key={i}>{m}</li>
+                ))}
+              </ul>
             </div>
-            <label>
-              <input
-                type="checkbox"
-                disabled={outcome !== "applied"}
-                checked={fields.includes(f.field)}
-                onChange={(e) =>
-                  setFields(
-                    e.target.checked
-                      ? [...fields, f.field]
-                      : fields.filter((v) => v !== f.field),
-                  )
-                }
-              />{" "}
-              Ta inn foreslått {label(f.field).toLowerCase()}
-            </label>
-          </div>
-        ))}
-        {d.goals.map(({ proposal: g, before }) => (
-          <div className="planning-card" key={g.proposal_key}>
-            <h5>
-              {before ? `Endring av ${before.title}` : "Foreslått nytt mål"}
-            </h5>
-            <div className="planning-two">
-              {before && (
+          )}
+          {d.fields.map((f) => (
+            <div className="planning-card" key={f.field}>
+              <h5>{label(f.field)}</h5>
+              <div className="planning-two">
                 <div>
-                  <strong>Lagret mål</strong>
+                  <strong>Lagret</strong>
+                  <p>{f.before}</p>
+                </div>
+                <div>
+                  <strong>Foreslått</strong>
+                  <p>{f.proposed}</p>
+                </div>
+              </div>
+              <label>
+                <input
+                  type="checkbox"
+                  disabled={outcome !== "applied"}
+                  checked={fields.includes(f.field)}
+                  onChange={(e) =>
+                    setFields(
+                      e.target.checked
+                        ? [...fields, f.field]
+                        : fields.filter((v) => v !== f.field),
+                    )
+                  }
+                />{" "}
+                Ta inn foreslått {label(f.field).toLowerCase()}
+              </label>
+            </div>
+          ))}
+          {d.goals.map(({ proposal: g, before }) => (
+            <div className="planning-card" key={g.proposal_key}>
+              <h5>
+                {before ? `Endring av ${before.title}` : "Foreslått nytt mål"}
+              </h5>
+              <div className="planning-two">
+                {before && (
+                  <div>
+                    <strong>Lagret mål</strong>
+                    {(
+                      [
+                        "title",
+                        "expected_action",
+                        "arena",
+                        "support",
+                        "responsibility",
+                        "evaluation_method",
+                      ] as const
+                    ).map((f) => (
+                      <p key={f}>
+                        {label(f)}: {before[f]}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <div>
+                  <strong>Foreslått mål</strong>
                   {(
                     [
                       "title",
@@ -494,128 +559,118 @@ export function SuggestionDiff({
                     ] as const
                   ).map((f) => (
                     <p key={f}>
-                      {label(f)}: {before[f]}
+                      {label(f)}: {g[f]}
                     </p>
                   ))}
                 </div>
-              )}
-              <div>
-                <strong>Foreslått mål</strong>
-                {(
-                  [
-                    "title",
-                    "expected_action",
-                    "arena",
-                    "support",
-                    "responsibility",
-                    "evaluation_method",
-                  ] as const
-                ).map((f) => (
-                  <p key={f}>
-                    {label(f)}: {g[f]}
-                  </p>
-                ))}
               </div>
+              <label>
+                <input
+                  type="checkbox"
+                  disabled={outcome !== "applied"}
+                  checked={goals.includes(g.proposal_key)}
+                  onChange={(e) => {
+                    setGoals(
+                      e.target.checked
+                        ? [...goals, g.proposal_key]
+                        : goals.filter((v) => v !== g.proposal_key),
+                    );
+                    if (
+                      e.target.checked &&
+                      !before &&
+                      !newGoals[g.proposal_key]
+                    )
+                      setNewGoals({
+                        ...newGoals,
+                        [g.proposal_key]: {
+                          ...emptyPeriod(),
+                          parent_goal_id: null,
+                          curriculum_reference: "",
+                        },
+                      });
+                  }}
+                />{" "}
+                Ta inn dette målforslaget
+              </label>
+              {!before &&
+                goals.includes(g.proposal_key) &&
+                newGoals[g.proposal_key] && (
+                  <>
+                    <Field
+                      title="Fagpersonens læreplanreferanse for nytt mål"
+                      value={newGoals[g.proposal_key].curriculum_reference}
+                      onChange={(v) =>
+                        setNewGoals({
+                          ...newGoals,
+                          [g.proposal_key]: {
+                            ...newGoals[g.proposal_key],
+                            curriculum_reference: v,
+                          },
+                        })
+                      }
+                    />
+                    <GoalSelect
+                      goals={plan.content.goals}
+                      value={newGoals[g.proposal_key].parent_goal_id}
+                      onChange={(v) =>
+                        setNewGoals({
+                          ...newGoals,
+                          [g.proposal_key]: {
+                            ...newGoals[g.proposal_key],
+                            parent_goal_id: v,
+                          },
+                        })
+                      }
+                    />
+                    <Dates
+                      value={newGoals[g.proposal_key]}
+                      onChange={(p) =>
+                        setNewGoals({
+                          ...newGoals,
+                          [g.proposal_key]: {
+                            ...newGoals[g.proposal_key],
+                            ...p,
+                          },
+                        })
+                      }
+                    />
+                  </>
+                )}
             </div>
-            <label>
-              <input
-                type="checkbox"
-                disabled={outcome !== "applied"}
-                checked={goals.includes(g.proposal_key)}
-                onChange={(e) => {
-                  setGoals(
-                    e.target.checked
-                      ? [...goals, g.proposal_key]
-                      : goals.filter((v) => v !== g.proposal_key),
-                  );
-                  if (e.target.checked && !before && !newGoals[g.proposal_key])
-                    setNewGoals({
-                      ...newGoals,
-                      [g.proposal_key]: {
-                        ...emptyPeriod(),
-                        parent_goal_id: null,
-                        curriculum_reference: "",
-                      },
-                    });
-                }}
-              />{" "}
-              Ta inn dette målforslaget
-            </label>
-            {!before &&
-              goals.includes(g.proposal_key) &&
-              newGoals[g.proposal_key] && (
-                <>
-                  <Field
-                    title="Fagpersonens læreplanreferanse for nytt mål"
-                    value={newGoals[g.proposal_key].curriculum_reference}
-                    onChange={(v) =>
-                      setNewGoals({
-                        ...newGoals,
-                        [g.proposal_key]: {
-                          ...newGoals[g.proposal_key],
-                          curriculum_reference: v,
-                        },
-                      })
-                    }
-                  />
-                  <GoalSelect
-                    goals={plan.content.goals}
-                    value={newGoals[g.proposal_key].parent_goal_id}
-                    onChange={(v) =>
-                      setNewGoals({
-                        ...newGoals,
-                        [g.proposal_key]: {
-                          ...newGoals[g.proposal_key],
-                          parent_goal_id: v,
-                        },
-                      })
-                    }
-                  />
-                  <Dates
-                    value={newGoals[g.proposal_key]}
-                    onChange={(p) =>
-                      setNewGoals({
-                        ...newGoals,
-                        [g.proposal_key]: { ...newGoals[g.proposal_key], ...p },
-                      })
-                    }
-                  />
-                </>
-              )}
-          </div>
-        ))}
-        <label>
-          Hva vil du gjøre med forslaget
-          <select
-            value={outcome}
-            onChange={(e) => {
-              setOutcome(e.target.value);
-              if (e.target.value !== "applied") {
-                setFields([]);
-                setGoals([]);
-              }
-            }}
+          ))}
+          <label>
+            Hva vil du gjøre med forslaget
+            <select
+              value={outcome}
+              onChange={(e) => {
+                setOutcome(e.target.value);
+                if (e.target.value !== "applied") {
+                  setFields([]);
+                  setGoals([]);
+                }
+              }}
+            >
+              <option value="applied">Ta bare inn valgte deler</option>
+              <option value="rejected">Avvis med faglig begrunnelse</option>
+              <option value="discarded">Forkast uten å ta i bruk tekst</option>
+            </select>
+          </label>
+          <Field
+            title="Begrunnelse for vurdering av forslaget"
+            type="textarea"
+            value={reason}
+            onChange={setReason}
+          />
+          <button
+            type="submit"
+            disabled={outcome === "applied" && !fields.length && !goals.length}
           >
-            <option value="applied">Ta bare inn valgte deler</option>
-            <option value="rejected">Avvis med faglig begrunnelse</option>
-            <option value="discarded">Forkast uten å ta i bruk tekst</option>
-          </select>
-        </label>
-        <Field
-          title="Begrunnelse for vurdering av forslaget"
-          type="textarea"
-          value={reason}
-          onChange={setReason}
-        />
-        <button
-          type="submit"
-          disabled={outcome === "applied" && !fields.length && !goals.length}
-        >
-          Lagre vurdering av forslaget
-        </button>
-      </fieldset>
-      {error && <p role="alert">{error}</p>}
-      {cmd.status}
-    </form>
+            Lagre vurdering av forslaget
+          </button>
+        </fieldset>
+        {error && <p role="alert">{error}</p>}
+        {!recovery && cmd.status}
+      </form>
+    </div>
   );
 }
