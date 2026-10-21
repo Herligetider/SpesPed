@@ -26,9 +26,12 @@ def resolve(db,actor,request,kind):
     # convenient latest-row or positive-review-wins choice may mask conflict.
     if len(exact)!=1:return None,'unresolved'
     row,rev,content,review=exact[0]
-    if review and review.outcome=='ineligible':return None,'ineligible'
     try:
-        svc.current(db,row);svc.validate(db,actor,school_id,content,reviewing=True)
+        # Historical negative checks need the same current reviewer, exact source
+        # and person binding as positive checks before asserting eligibility.
+        _,_,review=svc.current(db,row,eligible=False)
+        svc.validate(db,actor,school_id,content,reviewing=review.outcome=='eligible')
+        if review.outcome!='eligible':return None,'ineligible' if review.outcome=='ineligible' else 'unresolved'
         refs=[content.qualification,content.responsibility]
         if kind=='assessment_review' and content.policy:refs.append(content.policy)
         sources=[{'record_id':row.id,'revision':rev.number,'digest':rev.digest}]

@@ -50,8 +50,8 @@ def current(db,row,*,eligible=True):
     if review.created_at>utcnow() or review.source_checked_on>school_today(db.get(School,row.school_id)):raise n.conflict()
     return rev,content,review
 
-def referenced(db,school_id,ref,kind):
-    row=get(db,school_id,ref.record_id);rev,content,review=current(db,row)
+def referenced(db,school_id,ref,kind,*,eligible=True):
+    row=get(db,school_id,ref.record_id);rev,content,review=current(db,row,eligible=eligible)
     if row.kind!=kind or rev.number!=ref.revision or rev.digest!=ref.digest:raise n.conflict()
     if kind in {'responsibility','assessment_policy'}:
         alternatives=db.scalars(select(m.ProfessionalRecord).where(m.ProfessionalRecord.school_id==school_id,m.ProfessionalRecord.kind==kind,m.ProfessionalRecord.learner_id==row.learner_id,m.ProfessionalRecord.person_id==row.person_id,m.ProfessionalRecord.state=='reviewed',m.ProfessionalRecord.id!=row.id)).all()
@@ -99,11 +99,12 @@ def view(db,actor,school_id,identifier,*,private=False):
     value={'id':row.id,'kind':row.kind,'learner_id':row.learner_id,'person_id':row.person_id,'version':row.version,'state':row.state,'revision_id':rev.id,'revision':rev.number,'content_digest':rev.digest,'review':None,'source_verification':'human_reference_only'}
     if review:value['review']={'id':review.id,'reviewed_by':review.reviewer_id,'reviewed_at':review.created_at,'outcome':review.outcome,'source_checked_on':review.source_checked_on}
     try:
-        current(db,row);validate(db,actor,school_id,content)
-        if row.kind in {'responsibility','assessment_policy'}:referenced(db,school_id,s.Reference(record_id=row.id,revision=rev.number,digest=rev.digest),row.kind)
-        value['eligibility']='reviewed_current'
+        _,_,current_review=current(db,row,eligible=False)
+        validate(db,actor,school_id,content,reviewing=current_review.outcome=='eligible')
+        if row.kind in {'responsibility','assessment_policy'}:referenced(db,school_id,s.Reference(record_id=row.id,revision=rev.number,digest=rev.digest),row.kind,eligible=False)
+        value['eligibility']={'eligible':'reviewed_current','ineligible':'ineligible','unresolved':'unresolved'}[current_review.outcome]
     except DomainError as exc:
-        value['eligibility']='ineligible' if review and review.outcome=='ineligible' else 'unresolved'
+        value['eligibility']='unresolved'
         value['eligibility_reason']=exc.code
     value['effective_from']=content.effective_from;value['effective_until']=content.effective_until
     now=utcnow()
@@ -127,8 +128,16 @@ def write(db,actor,school_id,operation,command,identifier=None):
         row=get(db,school_id,identifier) if identifier else None
         old=content_of(revision(db,row)) if row else None
         content=command.content if hasattr(command,'content') else old
-        authorize(db,actor,school_id,content,'review' if operation=='review' else 'manage')
-        if old:authorize(db,actor,school_id,old,'review' if operation=='review' else 'manage')
+        if operation=='review':
+            # A receipt authorizes no signing operation. Resolve its original
+            # immutable revision even after the current record changes purpose.
+            reviewed_revision=db.scalar(select(m.ProfessionalRevision).where(m.ProfessionalRevision.school_id==school_id,m.ProfessionalRevision.record_id==row.id,m.ProfessionalRevision.id==str(command.revision_id)))
+            if reviewed_revision is None:raise access_denied()
+            content=content_of(reviewed_revision)
+            authorize(db,actor,school_id,content,'review')
+        else:
+            authorize(db,actor,school_id,content,'manage')
+            if old:authorize(db,actor,school_id,old,'manage')
         fingerprint=n.digest({'operation':operation,'target':identifier,'command':command.model_dump(mode='json')})
         receipt=db.scalar(select(m.ProfessionalCommand).where(m.ProfessionalCommand.school_id==school_id,m.ProfessionalCommand.actor_id==actor.user_id,m.ProfessionalCommand.request_key==command.request_key))
         if receipt:
