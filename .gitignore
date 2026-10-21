@@ -7,6 +7,7 @@ __pycache__/
 htmlcov/
 .ruff_cache/
 node_modules/
+.vite/
 dist/
 playwright-report/
 test-results/
