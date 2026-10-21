@@ -26,6 +26,7 @@ class ModelRelease(Aggregate, Base):
     reviewed_by: Mapped[str | None] = mapped_column(ForeignKey('identity_users.id'), nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     evaluation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    reviewed_evaluation_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
     review_rationale: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     __table_args__ = (UniqueConstraint('school_id', 'id'),)
 
@@ -41,6 +42,8 @@ class ModelEvaluation(Base):
     suite_digest: Mapped[str] = mapped_column(String(64))
     state: Mapped[str] = mapped_column(String(30))
     metrics: Mapped[dict] = mapped_column(JSON)
+    evidence: Mapped[list] = mapped_column(JSON)
+    artifact_digest: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     __table_args__ = (ForeignKeyConstraint(['school_id', 'release_id'], ['platform_model_releases.school_id', 'platform_model_releases.id']),)
 

@@ -1,6 +1,7 @@
 """Durable generation workflow. No model operation mutates professional records."""
 from datetime import timedelta
 import hashlib
+import base64
 import json
 import time
 from uuid import uuid4
@@ -90,8 +91,8 @@ def _load(db, actor, school_id, job_id, *, lock=False):
 
 
 def _configuration(db, runtime, job):
-    policy = db.scalar(select(ProcessingPolicy).where(ProcessingPolicy.school_id == job.school_id, ProcessingPolicy.id == job.policy_id))
-    release = db.scalar(select(ModelRelease).where(ModelRelease.school_id == job.school_id, ModelRelease.id == job.release_id))
+    policy = db.scalar(select(ProcessingPolicy).where(ProcessingPolicy.school_id == job.school_id, ProcessingPolicy.id == job.policy_id).execution_options(populate_existing=True))
+    release = db.scalar(select(ModelRelease).where(ModelRelease.school_id == job.school_id, ModelRelease.id == job.release_id).execution_options(populate_existing=True))
     if policy is None or policy.state != 'active' or policy.version != job.policy_version:
         raise ProviderFailure('processing_policy_unavailable')
     if (release is None or release.state != 'reviewed' or release.configuration_digest != job.release_digest
@@ -100,7 +101,9 @@ def _configuration(db, runtime, job):
     evaluation = db.get(ModelEvaluation, release.evaluation_id)
     if (evaluation is None or evaluation.school_id != job.school_id or evaluation.release_id != release.id
             or evaluation.state != 'passed' or evaluation.release_digest != release.configuration_digest
-            or not release.reviewed_by or not release.reviewed_at):
+            or not release.reviewed_by or not release.reviewed_at
+            or release.reviewed_evaluation_digest != evaluation.artifact_digest
+            or digest(evaluation.evidence) != evaluation.artifact_digest):
         raise ProviderFailure('reviewed_release_required')
     if job.purpose not in policy.configuration['purposes'] or PURPOSE_CAPABILITIES[job.purpose] != release.capability or policy.provider_key != release.provider_key:
         raise ProviderFailure('purpose_not_supported')
@@ -113,6 +116,23 @@ def _configuration(db, runtime, job):
     if release_configuration_digest(current_command, provider) != release.configuration_digest:
         raise ProviderFailure('reviewed_template_required')
     return policy, release, provider
+
+
+def _require_visible(db, actor, job, runtime):
+    """Every return of an existing result uses the same current visibility gate.
+
+    Idempotent creation and an obsolete worker can return completed output just
+    like GET. They must also honor recalls and changed processing boundaries.
+    """
+    _authorize(db, actor, job.school_id, job.learner_id, job.purpose)
+    try:
+        sources = _current_sources(db, runtime, actor, job)
+        if job.output is not None:
+            _, _, provider = _configuration(db, runtime, job)
+            validate_provider(runtime, provider, sources)
+    except ProviderFailure as exc:
+        raise DomainError(exc.code, 'The reviewed result or its source authorization is currently unavailable.', 503) from None
+    return job
 
 
 def create_policy(db: Session, actor: Actor, school_id: str, command: PolicyCommand, runtime: GatewayRuntime):
@@ -184,30 +204,51 @@ def evaluate_release(db, actor, school_id, release_id, expected_version, policy_
         raise DomainError('evaluation_configuration_invalid', 'Evaluate a candidate with a matching active policy.', 409)
     suite = runtime.evaluation_suites.get(suite_name)
     provider = runtime.providers.get(release.provider_key)
-    if not suite or provider is None or provider_digest(provider) != release.provider_digest:
+    if not suite or len(suite) > 20 or provider is None or provider_digest(provider) != release.provider_digest:
         raise DomainError('evaluation_unavailable', 'Configure fixed synthetic evaluation fixtures and a provider first.', 503)
     if any(not case.sources or any(s.provenance != 'synthetic_fixture' or not s.provenance_reference for s in case.sources) for case in suite):
         raise DomainError('synthetic_evaluation_required', 'Evaluations require trusted synthetic fixtures.', 422)
     suite_manifest = [{'name': c.name, 'purpose': c.purpose, 'sources': _manifest(c.sources), 'required': c.required_substrings, 'forbidden': c.forbidden_substrings} for c in suite]
-    passed, failures, unsupported, latency = 0, [], 0, []
+    # Evaluation artifacts are operator-reviewable synthetic examples, not logs.
+    # Inputs and output evidence each have a 2 MB aggregate budget (20 cases max).
+    evidence = []
     for case in suite:
+        inputs = []
+        for source, manifest in zip(case.sources, _manifest(case.sources)):
+            inputs.append(manifest | {'content_encoding': 'utf8' if isinstance(source.content, str) else 'base64',
+                                      'content': source.content if isinstance(source.content, str) else base64.b64encode(source.content).decode('ascii')})
+        evidence.append({'case': case.name, 'purpose': case.purpose, 'inputs': inputs,
+                         'required_substrings': list(case.required_substrings), 'forbidden_substrings': list(case.forbidden_substrings),
+                         'output': None, 'failure': None})
+    if len(json.dumps(evidence, ensure_ascii=False).encode()) > 2_000_000:
+        raise DomainError('evaluation_artifact_limit', 'The fixed synthetic evaluation inputs exceed the review artifact budget.', 422)
+    output_bytes = 0
+    passed, failures, unsupported, latency = 0, [], 0, []
+    for case, case_evidence in zip(suite, evidence):
         started = time.monotonic()
         try:
             if PURPOSE_CAPABILITIES.get(case.purpose) != release.capability:
                 raise ProviderFailure('purpose_not_supported')
             output = invoke(runtime, provider, release, policy.configuration, list(case.sources))
-            rendered = json.dumps(output, ensure_ascii=False).casefold()
+            serialized = json.dumps(output, ensure_ascii=False)
+            output_bytes += len(serialized.encode())
+            if output_bytes > 2_000_000:
+                raise ProviderFailure('evaluation_artifact_limit', 'failed')
+            case_evidence['output'] = output
+            rendered = serialized.casefold()
             if any(s.casefold() not in rendered for s in case.required_substrings) or any(s.casefold() in rendered for s in case.forbidden_substrings):
                 raise ProviderFailure('evaluation_expectation_failed', 'failed')
             passed += 1
         except ProviderFailure as exc:
             failures.append({'case': case.name, 'error_code': exc.code})
+            case_evidence['failure'] = {'error_code': exc.code, 'state': exc.state}
             unsupported += exc.unsupported_sources
         latency.append(round((time.monotonic() - started) * 1000))
+        case_evidence['latency_ms'] = latency[-1]
     # No model prose or source content is duplicated in operational metrics.
     evaluation = ModelEvaluation(school_id=school_id, release_id=release.id, actor_id=actor.user_id,
         release_digest=release.configuration_digest, suite_name=suite_name, suite_digest=digest(suite_manifest),
-        state='passed' if passed == len(suite) else 'failed', metrics={'cases': len(suite), 'passed': passed, 'failure_rate': (len(suite)-passed)/len(suite), 'latency_ms': latency, 'unsupported_source_count': unsupported, 'failures': failures})
+        state='passed' if passed == len(suite) else 'failed', evidence=evidence, artifact_digest=digest(evidence), metrics={'cases': len(suite), 'passed': passed, 'failure_rate': (len(suite)-passed)/len(suite), 'latency_ms': latency, 'unsupported_source_count': unsupported, 'failures': failures})
     db.add(evaluation)
     _event(db, actor, evaluation, 'ai.evaluated')
     db.commit()
@@ -223,11 +264,13 @@ def review_release(db, actor, school_id, release_id, command: ReviewCommand):
     evaluation = db.get(ModelEvaluation, str(command.evaluation_id))
     if (release.state != 'candidate' or evaluation is None or evaluation.school_id != school_id
             or evaluation.release_id != release.id or evaluation.release_digest != release.configuration_digest
-            or evaluation.state != 'passed' or not command.professional_quality_confirmed):
+            or evaluation.state != 'passed' or not command.professional_quality_confirmed
+            or not evaluation.evidence or digest(evaluation.evidence) != evaluation.artifact_digest):
         raise DomainError('passing_review_required', 'A passing evaluation and explicit professional quality review are required.', 409)
     release.state = 'reviewed'
     release.reviewed_by, release.reviewed_at = actor.user_id, utcnow()
     release.evaluation_id, release.review_rationale = evaluation.id, command.rationale
+    release.reviewed_evaluation_digest = evaluation.artifact_digest
     _event(db, actor, release, 'ai.release_reviewed')
     db.commit()
     return release
@@ -241,11 +284,7 @@ def create_job(db, actor, school_id, command: GenerationRequest, runtime: Gatewa
     if existing:
         if existing.request_digest != fingerprint:
             raise DomainError('idempotency_conflict', 'This request key already identifies a different operation.', 409)
-        try:
-            _current_sources(db, runtime, actor, existing)
-        except ProviderFailure as exc:
-            raise DomainError(exc.code, 'The source context is currently unavailable.', 503) from None
-        return existing
+        return _require_visible(db, actor, existing, runtime)
     policy = db.scalar(select(ProcessingPolicy).where(ProcessingPolicy.id == str(command.policy_id), ProcessingPolicy.school_id == school_id).with_for_update())
     release = db.scalar(select(ModelRelease).where(ModelRelease.id == str(command.release_id), ModelRelease.school_id == school_id))
     if policy is None or release is None:
@@ -256,8 +295,7 @@ def create_job(db, actor, school_id, command: GenerationRequest, runtime: Gatewa
     if existing:
         if existing.request_digest != fingerprint:
             raise DomainError('idempotency_conflict', 'This request key already identifies a different operation.', 409)
-        _current_sources(db, runtime, actor, existing)
-        return existing
+        return _require_visible(db, actor, existing, runtime)
     # Policy locking serializes daily budget checks across concurrent requests.
     if policy.state != 'active' or command.purpose not in policy.configuration['purposes']:
         raise DomainError('processing_policy_unavailable', 'An active processing policy for this purpose is required.', 409)
@@ -289,19 +327,13 @@ def create_job(db, actor, school_id, command: GenerationRequest, runtime: Gatewa
         if existing.request_digest != fingerprint:
             raise DomainError('idempotency_conflict', 'This request key already identifies a different operation.', 409) from None
         _authorize(db, actor, school_id, existing.learner_id, existing.purpose)
-        _current_sources(db, runtime, actor, existing)
-        return existing
+        return _require_visible(db, actor, existing, runtime)
     return job
 
 
 def get_job(db, actor, school_id, job_id, runtime):
     job = _load(db, actor, school_id, job_id)
-    try:
-        _current_sources(db, runtime, actor, job)
-        if job.output is not None:
-            _configuration(db, runtime, job)
-    except ProviderFailure as exc:
-        raise DomainError(exc.code, 'The reviewed result or its source authorization is currently unavailable.', 503) from None
+    _require_visible(db, actor, job, runtime)
     record_audit(db, actor, school_id, 'ai.result_read', 'GenerationJob', job.id)
     db.commit()
     return job
@@ -392,9 +424,7 @@ def run_job(factory, actor: Actor | None, school_id: str, job_id: str, expected_
             # Cancellation or expired lease/new retry wins; discard old result.
             # Even this branch must not return another attempt's content after
             # the requester loses access during the original network call.
-            _authorize(db, actor, school_id, job.learner_id, job.purpose)
-            _current_sources(db, runtime, actor, job)
-            return job
+            return _require_visible(db, actor, job, runtime)
         try:
             _authorize(db, actor, school_id, job.learner_id, job.purpose)
             _authorize(db, Actor(job.actor_id), school_id, job.learner_id, job.purpose)

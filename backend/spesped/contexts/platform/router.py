@@ -31,11 +31,14 @@ def policy_view(policy):
 
 
 def release_view(release):
-    return {k: getattr(release, k) for k in ('id', 'version', 'state', 'provider_key', 'model_version', 'capability', 'template_version', 'output_schema_version', 'configuration_digest', 'reviewed_by', 'reviewed_at', 'evaluation_id', 'review_rationale')}
+    return {k: getattr(release, k) for k in ('id', 'version', 'state', 'provider_key', 'model_version', 'capability', 'template_version', 'output_schema_version', 'configuration_digest', 'reviewed_by', 'reviewed_at', 'evaluation_id', 'reviewed_evaluation_digest', 'review_rationale')}
 
 
-def evaluation_view(evaluation):
-    return {k: getattr(evaluation, k) for k in ('id', 'release_id', 'state', 'suite_name', 'suite_digest', 'release_digest', 'metrics', 'created_at')}
+def evaluation_view(evaluation, *, include_evidence=False):
+    result = {k: getattr(evaluation, k) for k in ('id', 'release_id', 'state', 'suite_name', 'suite_digest', 'release_digest', 'artifact_digest', 'metrics', 'created_at')}
+    if include_evidence:
+        result['evidence'] = evaluation.evidence
+    return result
 
 
 @router.post('/policies', status_code=201)
@@ -66,7 +69,7 @@ class EvaluationCommand(VersionCommand):
 
 @router.post('/releases/{release_id}/evaluations', status_code=201)
 def post_evaluation(school_id: UUID, release_id: UUID, command: EvaluationCommand, request: Request, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
-    return evaluation_view(service.evaluate_release(db, actor, str(school_id), str(release_id), command.expected_version, str(command.policy_id), command.suite_name, runtime(request)))
+    return evaluation_view(service.evaluate_release(db, actor, str(school_id), str(release_id), command.expected_version, str(command.policy_id), command.suite_name, runtime(request)), include_evidence=True)
 
 
 @router.get('/evaluations')
@@ -74,6 +77,17 @@ def get_evaluations(school_id: UUID, actor: Actor = Depends(get_actor), db: Sess
     sid = str(school_id)
     require_authority(db, actor, sid, 'platform.manage')
     return {'items': [evaluation_view(e) for e in db.scalars(select(ModelEvaluation).where(ModelEvaluation.school_id == sid).order_by(ModelEvaluation.created_at.desc(), ModelEvaluation.id).limit(limit).offset(offset))], 'total': db.scalar(select(func.count()).select_from(ModelEvaluation).where(ModelEvaluation.school_id == sid))}
+
+
+@router.get('/evaluations/{evaluation_id}')
+def read_evaluation(school_id: UUID, evaluation_id: UUID, actor: Actor = Depends(get_actor), db: Session = Depends(get_db)):
+    sid = str(school_id)
+    require_authority(db, actor, sid, 'platform.manage')
+    evaluation = db.scalar(select(ModelEvaluation).where(ModelEvaluation.school_id == sid, ModelEvaluation.id == str(evaluation_id)))
+    if evaluation is None:
+        from spesped.errors import access_denied
+        raise access_denied()
+    return evaluation_view(evaluation, include_evidence=True)
 
 
 @router.post('/releases/{release_id}/review')

@@ -10,9 +10,13 @@ import ipaddress
 import json
 import math
 import time
+import subprocess
+import signal
+import os
+import sys
+from pathlib import Path
 from urllib.parse import urlsplit
 
-import httpx
 from pydantic import ValidationError
 from .contracts import GatewayRuntime, ProviderSpec, SourceInput, Suggestion, SYSTEM_PROMPT, PURPOSE_INSTRUCTIONS
 
@@ -57,40 +61,69 @@ def validate_provider(runtime: GatewayRuntime, provider: ProviderSpec, sources: 
 
 
 def _post(provider: ProviderSpec, path: str, *, timeout: int, response_limit: int, **kwargs) -> dict:
-    started = time.monotonic()
-    headers = {'Accept': 'application/json'}
-    if provider.api_key:
-        headers['Authorization'] = 'Bearer ' + provider.api_key
-    # Short I/O waits plus elapsed-time checks also bound a server that drips bytes.
-    limits = httpx.Timeout(float(timeout), connect=min(timeout, 5), read=min(timeout, 1), write=min(timeout, 1), pool=1)
+    """Overall wall deadline, including headers, with no abandoned network work.
+
+    The isolated child uses the existing httpx protocol adapter. A timeout kills
+    and reaps it, closing its socket before this method returns. This also bounds
+    synchronous DNS/TLS work that cannot safely be cancelled in a Python thread.
+    Credentials and source data never appear in process arguments or logs.
+    """
+    deadline = time.monotonic() + timeout
+    if 'files' in kwargs:
+        kwargs['files'] = {name: [entry[0], base64.b64encode(entry[1]).decode('ascii'), entry[2]] for name, entry in kwargs['files'].items()}
+    payload = json.dumps({'url': provider.endpoint.rstrip('/') + path, 'api_key': provider.api_key,
+                          'timeout': timeout, 'deadline': deadline, 'response_limit': response_limit, 'kwargs': kwargs},
+                         ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()
+    if len(payload) > 4_000_000:
+        raise ProviderFailure('input_limit_exceeded', 'failed')
+    if time.monotonic() >= deadline:
+        raise ProviderFailure('provider_timeout')
+    child = None
     try:
-        with httpx.Client(trust_env=False, follow_redirects=False, timeout=limits) as client:
-            with client.stream('POST', provider.endpoint.rstrip('/') + path, headers=headers, **kwargs) as response:
-                if 300 <= response.status_code < 400:
-                    raise ProviderFailure('provider_redirect_rejected')
-                if response.status_code != 200:
-                    raise ProviderFailure('provider_http_error')
-                if 'application/json' not in response.headers.get('content-type', ''):
-                    raise ProviderFailure('invalid_output', 'failed')
-                data = bytearray()
-                for chunk in response.iter_bytes():
-                    if time.monotonic() - started > timeout:
-                        raise ProviderFailure('provider_timeout')
-                    data.extend(chunk)
-                    if len(data) > response_limit:
-                        raise ProviderFailure('output_limit_exceeded', 'failed')
-        if time.monotonic() - started > timeout:
+        child = subprocess.Popen([sys.executable, str(Path(__file__).with_name('http_worker.py'))],
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, close_fds=True,
+                                 env={'PATH': os.defpath, 'LANG': 'C.UTF-8', 'PYTHONNOUSERSITE': '1',
+                                      **{key: os.environ[key] for key in ('SYSTEMROOT', 'WINDIR') if key in os.environ}})
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(child.args, timeout)
+        output, _ = child.communicate(payload, timeout=remaining)
+        if time.monotonic() > deadline:
+            raise subprocess.TimeoutExpired(child.args, timeout)
+        if child.returncode == -getattr(signal, 'SIGALRM', 14):
             raise ProviderFailure('provider_timeout')
-        value = json.loads(data)
-        if not isinstance(value, dict):
-            raise ValueError()
-        return value
-    except httpx.TimeoutException:
+        if child.returncode != 0:
+            raise ProviderFailure('provider_worker_failed')
+        if len(output) > response_limit + 128:
+            raise ProviderFailure('output_limit_exceeded', 'failed')
+        value = json.loads(output)
+        if set(value) == {'response'} and isinstance(value['response'], dict):
+            return value['response']
+        allowed_errors = {'provider_redirect_rejected', 'provider_http_error', 'invalid_output',
+                          'output_limit_exceeded', 'input_limit_exceeded', 'provider_timeout',
+                          'provider_connection_failed', 'provider_worker_failed', 'invalid_provider_request'}
+        if (set(value) == {'error', 'state'} and value['error'] in allowed_errors
+                and value['state'] in {'failed', 'unavailable'}):
+            raise ProviderFailure(value['error'], value['state'])
+        raise ProviderFailure('provider_worker_failed')
+    except subprocess.TimeoutExpired:
         raise ProviderFailure('provider_timeout') from None
-    except httpx.HTTPError:
-        raise ProviderFailure('provider_connection_failed') from None
-    except (ValueError, UnicodeError):
+    except OSError:
+        raise ProviderFailure('provider_worker_failed') from None
+    except (ValueError, UnicodeError, TypeError):
         raise ProviderFailure('invalid_output', 'failed') from None
+    finally:
+        if child is not None:
+            # Also runs on caller interruption and malformed/error responses.
+            # kill + wait reaps the child; no HTTP thread or socket survives it.
+            if child.poll() is None:
+                child.kill()
+            child.wait()
+            if child.stdin is not None:
+                child.stdin.close()
+            if child.stdout is not None:
+                child.stdout.close()
 
 
 def validate_suggestion(value: dict, sources: list[SourceInput]) -> dict:

@@ -225,6 +225,7 @@ def test_actual_passing_evaluation_and_professional_review_required(env):
             service.create_job(db,env.actor,env.ids['school'],request.model_copy(update={'release_id':UUID(candidate.id),'logical_request_key':str(uuid4())}),env.runtime)
         env.server.mode='malformed'; bad=service.evaluate_release(db,env.actor,env.ids['school'],candidate.id,1,env.ids['policy'],'fixed-v1',env.runtime)
         assert bad.state=='failed' and bad.metrics['failure_rate']==1
+        assert bad.evidence[0]['output'] is None and bad.evidence[0]['failure']['error_code']=='invalid_output'
         with pytest.raises(DomainError): service.review_release(db,env.actor,env.ids['school'],candidate.id,ReviewCommand(expected_version=1,evaluation_id=bad.id,professional_quality_confirmed=True,rationale='Must never pass failed evaluation.'))
         env.server.mode='ok'; good=service.evaluate_release(db,env.actor,env.ids['school'],candidate.id,1,env.ids['policy'],'fixed-v1',env.runtime)
         assert good.state=='passed'
@@ -373,3 +374,172 @@ def test_run_checks_requesting_actors_source_rights_beyond_learner_permission(en
     assert result.state=='failed' and result.output is None and len(env.server.requests)==before
     with env.factory() as db:
         with pytest.raises(DomainError): service.get_job(db,Actor(user_id),env.ids['school'],job.id,env.runtime)
+
+
+@pytest.mark.parametrize('withdrawal',['release','policy','missing-provider','changed-provider','changed-template','boundary'])
+def test_idempotent_completed_output_requires_current_reviewed_configuration(env,withdrawal,monkeypatch):
+    job,request=new_job(env); completed=run(env,job); runtime=env.runtime
+    assert completed.output is not None
+    if withdrawal in {'release','policy'}:
+        with env.factory() as db:
+            record=db.get(service.ModelRelease if withdrawal=='release' else service.ProcessingPolicy,env.ids[withdrawal])
+            service.revoke_configuration(db,env.actor,env.ids['school'],withdrawal,record.id,record.version)
+    elif withdrawal=='missing-provider': runtime=replace(runtime,providers={})
+    elif withdrawal=='changed-provider':
+        runtime=replace(runtime,providers={'local':replace(runtime.providers['local'],endpoint='http://127.0.0.1:1/v1')})
+    elif withdrawal=='changed-template':
+        import spesped.contexts.platform.contracts as contracts
+        monkeypatch.setattr(contracts,'SYSTEM_PROMPT',contracts.SYSTEM_PROMPT+' A changed template needs review.')
+    else: runtime=replace(runtime,private_networks=())
+    with env.factory() as db:
+        with pytest.raises(DomainError): service.get_job(db,env.actor,env.ids['school'],job.id,runtime)
+        with pytest.raises(DomainError): service.create_job(db,env.actor,env.ids['school'],request,runtime)
+    with env.factory() as db:
+        stored=db.get(GenerationJob,job.id)
+        assert stored.version==completed.version and stored.output==completed.output
+
+
+@pytest.mark.parametrize('withdrawal',['release','policy','missing-provider','changed-template'])
+def test_obsolete_worker_cannot_return_newer_recalled_result(env,withdrawal,monkeypatch):
+    if env.factory.kw['bind'].dialect.name!='postgresql': pytest.skip('Concurrent worker sessions require PostgreSQL')
+    job,_=new_job(env); env.server.entered.clear(); env.server.mode='delay'
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        old=executor.submit(run,env,job)
+        assert env.server.entered.wait(5)
+        with env.factory.begin() as db:
+            row=db.get(GenerationJob,job.id); row.lease_expires_at=utcnow()-timedelta(seconds=1)
+        with env.factory() as db:
+            row=db.get(GenerationJob,job.id); expired=service.expire_job(db,env.actor,env.ids['school'],job.id,row.version)
+        env.server.mode='ok'; completed=run(env,expired)
+        assert completed.state=='succeeded'
+        if withdrawal in {'release','policy'}:
+            with env.factory() as db:
+                record=db.get(service.ModelRelease if withdrawal=='release' else service.ProcessingPolicy,env.ids[withdrawal])
+                service.revoke_configuration(db,env.actor,env.ids['school'],withdrawal,record.id,record.version)
+        elif withdrawal=='missing-provider': env.runtime.providers.clear()
+        else:
+            import spesped.contexts.platform.contracts as contracts
+            monkeypatch.setattr(contracts,'SYSTEM_PROMPT',contracts.SYSTEM_PROMPT+' Revised template pending review.')
+        env.server.resume.set()
+        with pytest.raises(DomainError): old.result(5)
+
+
+@pytest.mark.parametrize('phase',['headers','body','silent','cancelled'])
+def test_overall_http_deadline_kills_reaps_worker_and_closes_socket(phase,monkeypatch):
+    import socket
+    import spesped.contexts.platform.providers as providers
+    listener=socket.socket(); listener.bind(('127.0.0.1',0)); listener.listen(1); listener.settimeout(3)
+    connected=threading.Event(); closed=threading.Event(); failures=[]; processes=[]
+    real_popen=providers.subprocess.Popen
+    def observed_popen(*args,**kwargs):
+        assert 'synthetic-private-token' not in str(args)
+        process=real_popen(*args,**kwargs); processes.append(process)
+        if phase=='cancelled':
+            real_communicate=process.communicate
+            def interrupted_communicate(payload,timeout):
+                try: return real_communicate(payload,timeout=.65)
+                except providers.subprocess.TimeoutExpired: raise KeyboardInterrupt()
+            process.communicate=interrupted_communicate
+        return process
+    monkeypatch.setattr(providers.subprocess,'Popen',observed_popen)
+    def serve():
+        try:
+            conn,_=listener.accept()
+            with conn:
+                conn.settimeout(.05); request=bytearray()
+                while b'\r\n\r\n' not in request: request.extend(conn.recv(65536))
+                head,body=request.split(b'\r\n\r\n',1)
+                length=int(next(line.split(b':',1)[1] for line in head.split(b'\r\n') if line.lower().startswith(b'content-length:')))
+                while len(body)<length: body+=conn.recv(65536)
+                connected.set()
+                if phase=='headers': conn.sendall(b'HTTP/1.1 200 OK\r\n')
+                elif phase=='body': conn.sendall(b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 100000\r\n\r\n{')
+                end=time.monotonic()+3
+                while time.monotonic()<end:
+                    try:
+                        if phase=='headers': conn.sendall(b'X-Drip: still-active\r\n')
+                        elif phase=='body': conn.sendall(b' ')
+                        if conn.recv(1,socket.MSG_PEEK)==b'': closed.set(); return
+                    except socket.timeout: pass
+                    except (BrokenPipeError,ConnectionResetError): closed.set(); return
+                    time.sleep(.05)
+                failures.append('HTTP socket survived its configured deadline')
+        except Exception as exc: failures.append(type(exc).__name__)
+        finally: listener.close()
+    thread=threading.Thread(target=serve,daemon=True); thread.start()
+    started=time.monotonic()
+    try:
+        expected = KeyboardInterrupt if phase=='cancelled' else ProviderFailure
+        with pytest.raises(expected):
+            providers._post(ProviderSpec('local',f'http://127.0.0.1:{listener.getsockname()[1]}/v1',frozenset({'generation'}),api_key='synthetic-private-token'),'/chat/completions',timeout=1,response_limit=1000,json={})
+        assert time.monotonic()-started<1.4
+        assert connected.is_set() and closed.wait(.5)
+        assert len(processes)==1 and processes[0].poll() is not None
+        assert processes[0].stdin.closed and processes[0].stdout.closed
+    finally: thread.join(3)
+    assert not thread.is_alive() and not failures
+
+
+def test_concurrent_http_workers_finish_and_are_reaped(env,monkeypatch):
+    import spesped.contexts.platform.providers as providers
+    processes=[]; lock=threading.Lock(); real_popen=providers.subprocess.Popen
+    def observed_popen(*args,**kwargs):
+        process=real_popen(*args,**kwargs)
+        with lock: processes.append(process)
+        return process
+    monkeypatch.setattr(providers.subprocess,'Popen',observed_popen)
+    first,_=new_job(env); second,_=new_job(env)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results=list(executor.map(lambda job:run(env,job),[first,second]))
+    assert all(result.state=='succeeded' for result in results)
+    assert len(processes)==2 and len({p.pid for p in processes})==2
+    assert all(p.poll()==0 and p.stdin.closed and p.stdout.closed for p in processes)
+
+
+def test_evaluation_artifact_contains_exact_reviewed_synthetic_outputs_and_is_operator_only(env):
+    from spesped.contexts.identity.models import UserAccount,SchoolMembership
+    with env.factory() as db:
+        release=db.get(service.ModelRelease,env.ids['release']); evaluation=db.get(service.ModelEvaluation,release.evaluation_id)
+        assert release.reviewed_evaluation_digest==evaluation.artifact_digest==service.digest(evaluation.evidence)
+        evidence=evaluation.evidence; evaluation_id=evaluation.id
+        assert evidence[0]['inputs'][0]['content']==env.resolver.source.content
+        assert evidence[0]['inputs'][0]['content_digest']==service._manifest([env.resolver.source])[0]['content_digest']
+        assert evidence[0]['output']['statements'][0]['text']=='Syntetisk øktforslag'
+        assert evidence[0]['failure'] is None
+    app=create_app(Settings(environment='test',database_url=env.url,allowed_origins=['http://testserver']),env.factory)
+    if not any(getattr(route,'path','').endswith('/ai/jobs') for route in app.routes): app.include_router(router)
+    app.state.ai_gateway=env.runtime
+    with TestClient(app) as client:
+        path=f'/api/v1/schools/{env.ids["school"]}/ai/evaluations/{evaluation_id}'
+        assert client.get(path).status_code==401
+        client.post('/api/v1/auth/login',json={'email':'gateway@example.invalid','password':'synthetic-gateway-password'},headers={'Origin':'http://testserver'})
+        output=client.get(path); assert output.status_code==200 and output.json()['evidence']==evidence
+        assert output.json()['artifact_digest']==service.digest(evidence)
+        assert 'evidence' not in client.get(f'/api/v1/schools/{env.ids["school"]}/ai/evaluations').json()['items'][0]
+        with env.factory.begin() as db:
+            original=db.get(UserAccount,env.actor.user_id)
+            user=UserAccount(email='nonoperator@example.invalid',display_name='Synthetic staff',password_hash=original.password_hash)
+            db.add(user);db.flush();db.add(SchoolMembership(school_id=env.ids['school'],user_id=user.id,role='technical_administrator',valid_from=date.today()))
+        client.cookies.clear()
+        client.post('/api/v1/auth/login',json={'email':'nonoperator@example.invalid','password':'synthetic-gateway-password'},headers={'Origin':'http://testserver'})
+        assert client.get(path).status_code==403
+    # Immutable artifact identity is rechecked before completed output is visible.
+    job,_=new_job(env); completed=run(env,job)
+    with env.factory.begin() as db:
+        evaluation=db.get(service.ModelEvaluation,evaluation_id)
+        evaluation.evidence=[{'tampered':'synthetic replacement'}]
+    with env.factory() as db:
+        with pytest.raises(DomainError): service.get_job(db,env.actor,env.ids['school'],completed.id,env.runtime)
+
+
+@pytest.mark.parametrize('invalid',['oversized-artifact','non-synthetic'])
+def test_evaluation_artifact_budget_and_synthetic_provenance_checked_before_http(env,invalid):
+    with env.factory() as db:
+        candidate=service.create_release(db,env.actor,env.ids['school'],ReleaseCommand(provider_key='local',model_version='review-artifact-v2',capability='generation'),env.runtime)
+        source=replace(env.resolver.source,content='x'*2_000_000) if invalid=='oversized-artifact' else replace(env.resolver.source,provenance='school_data')
+        runtime=replace(env.runtime,evaluation_suites={'invalid':(EvaluationCase('invalid',source.purpose,(source,)),)})
+        before=len(env.server.requests)
+        with pytest.raises(DomainError) as error:
+            service.evaluate_release(db,env.actor,env.ids['school'],candidate.id,1,env.ids['policy'],'invalid',runtime)
+        assert error.value.code==('evaluation_artifact_limit' if invalid=='oversized-artifact' else 'synthetic_evaluation_required')
+        assert len(env.server.requests)==before
