@@ -7,7 +7,13 @@
     "sha256": "32dd639fa8cf53b5a9d69b9826808ae3c0fe209f7f56e2d19dab468ce6c5d191",
     "legalSourceCheckDate": "2026-09-07",
     "productRevision": "0.3",
-    "changeReview": "2026-10-21: all 40 features expanded with workspace, stateBehavior, automationBoundary and recovery. IDs, phases, workflows, rules and all 86 acceptance examples retained. Added details remain required in existing feature jobs. J01–J03 evidence applies only to their pinned foundation scopes; no feature or criterion promoted. See docs/10-master-plan.en.md."
+    "changeReview": "2026-10-21: all 40 features expanded with workspace, stateBehavior, automationBoundary and recovery. IDs, phases, workflows, rules and all 86 acceptance examples retained. Added details remain required in existing feature jobs. J01–J03 evidence applies only to their pinned foundation scopes; no feature or criterion promoted. See docs/10-master-plan.en.md.",
+    "independentReview": {
+      "revision": "5c1206d71e480d2800b87265f32b83d3cd7a0c93",
+      "reviewer": "/root/review_catalog_update",
+      "path": "docs/reviews/catalog-0.3-review.md",
+      "result": "No actionable finding: 40 features and 86 prior acceptance examples preserved; detailed behavior and period-based parent email consistent; deterministic regeneration passed."
+    }
   },
   "completionPolicy": "Specification workflows, rules, extensions and acceptance criteria all require inspected implementation and runtime evidence. A manifest state is not proof.",
   "jobs": [
@@ -327,10 +333,57 @@
       "status": "implementing",
       "requiredEvidence": "Multi-pupil source separation, file rejection, provenance, derivative correction",
       "implementationAgent": "/root/j04_evidence",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "reviewAgent": "/root/review_j04",
+      "commits": [
+        "2efa896941aa171d11d28ce7635b7342c64b28be",
+        "62446cee4520cb58920a45524c5f4de34fd49c63"
+      ],
+      "evidence": [
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J04-review.md",
+          "revision": "2efa896941aa171d11d28ce7635b7342c64b28be",
+          "result": "Changes required; concrete independently reproduced findings sent to original implementer."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J04-review.md",
+          "revision": "62446cee4520cb58920a45524c5f4de34fd49c63",
+          "result": "All three findings independently closed:44passed/2SQLite skips plus4additionalchecks. Core backend accepted; broader extraction/clarification workflows remain required."
+        },
+        {
+          "type": "independent_integration_review",
+          "path": "docs/reviews/context-integration-review.md",
+          "revision": "43180acb5b9e97d91b5cde05c1d7795dcbb4b109",
+          "result": "Current evidence-to-AI and governance bindings accepted; pre-attribution structuring, clarification and remaining consumers explicitly not implemented by this composition."
+        }
+      ],
+      "findings": [
+        {
+          "id": "J04-R1",
+          "priority": "P1",
+          "description": "Correction republishes an accidentally overbroad sibling excerpt",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J04-R2",
+          "priority": "P2",
+          "description": "Intake completion misreports accepted-unconfirmed and fully rejected fields",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J04-R3",
+          "priority": "P2",
+          "description": "Valid non-UTF-8 8bit MIME email rejected before extraction",
+          "status": "verified_fixed"
+        }
+      ],
+      "remainingWork": [
+        "Automatic structured document-field proposals with source span review, beyond literal paragraph proposals; assigned to /root/j04_structuring.",
+        "Owned clarification workflow for unresolved source attribution and fields; assigned to /root/j04_structuring.",
+        "Consumer integration with profiles/plans/teaching, and independent review of the extended intake flow."
+      ],
+      "activeImplementationAgent": "/root/j04_structuring"
     },
     {
       "id": "J05",
@@ -345,9 +398,9 @@
         "J02",
         "J04"
       ],
-      "status": "queued",
+      "status": "implementing",
       "requiredEvidence": "Profile confirmation/history, scope validation, dated authority, original approval, historical goals preserved",
-      "implementationAgent": null,
+      "implementationAgent": "/root/j05_plans",
       "reviewAgent": null,
       "commits": [],
       "evidence": [],
@@ -417,13 +470,53 @@
         "J01",
         "J02"
       ],
-      "status": "implementing",
+      "status": "verified",
       "requiredEvidence": "Real local protocol tests, no production remote fallback, injection/source limits",
       "implementationAgent": "/root/j08_ai_gateway",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "reviewAgent": "/root/review_j08",
+      "commits": [
+        "9f8ca976dbf03c261e3e33e2f0ebc04a7a762f2c",
+        "69c2572944ebb4a5f8ac2fc7d18cf5e0f24d253d"
+      ],
+      "evidence": [
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J08-review.md",
+          "revision": "9f8ca976dbf03c261e3e33e2f0ebc04a7a762f2c",
+          "result": "Changes required; concrete independently reproduced findings sent to original implementer."
+        },
+        {
+          "type": "implementer_report",
+          "revision": "69c2572944ebb4a5f8ac2fc7d18cf5e0f24d253d",
+          "result": "Recall/deadline fixes plus reviewable evaluation artifacts:94passed/7SQLite skips,8integrationpassed. Independent recheck in progress."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J08-review.md",
+          "revision": "69c2572944ebb4a5f8ac2fc7d18cf5e0f24d253d",
+          "result": "Accepted bounded gateway: 94 passed/7 SQLite skips, independent 23 passed/1 SQLite skip; real socket deadline/interruption close connection and reap child. PostgreSQL migration roundtrip passed. No full F33 or production-quality claim."
+        },
+        {
+          "type": "independent_integration_review",
+          "path": "docs/reviews/context-integration-review.md",
+          "revision": "c1720fc2a9b0a499517fd91b871a01bfeebd8e61",
+          "result": "Assembly independently accepted with test extension 43180ac: 10 integration tests and 13 independent adverse checks passed. Shared PostgreSQL migration/metadata roundtrip clean."
+        }
+      ],
+      "findings": [
+        {
+          "id": "J08-R1",
+          "priority": "P1",
+          "description": "Idempotent replay and obsolete-worker return bypass recalled configuration",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J08-R2",
+          "priority": "P2",
+          "description": "Slow response headers bypass total HTTP wall deadline",
+          "status": "verified_fixed"
+        }
+      ]
     },
     {
       "id": "J09",
@@ -519,13 +612,59 @@
         "J01",
         "J02"
       ],
-      "status": "implementing",
+      "status": "verified",
       "requiredEvidence": "Unresolved applicability, correct triggers, actual action separate from document",
       "implementationAgent": "/root/j13_governance",
-      "reviewAgent": null,
-      "commits": [],
-      "evidence": [],
-      "findings": []
+      "reviewAgent": "/root/review_j13",
+      "commits": [
+        "1c3acfa7e65272994f9b0ddba68875a58b525983",
+        "974833166854f74ce89ada5d6c8730fbc08719d8"
+      ],
+      "evidence": [
+        {
+          "type": "implementer_report",
+          "revision": "1c3acfa7e65272994f9b0ddba68875a58b525983",
+          "result": "35 passing tests across SQLite/isolated PostgreSQL; independent review in progress; not accepted."
+        },
+        {
+          "type": "independent_review",
+          "path": "docs/reviews/J13-review.md",
+          "revision": "1c3acfa7e65272994f9b0ddba68875a58b525983",
+          "result": "35baseline tests and12adverse probes; four concrete findings require repair."
+        },
+        {
+          "type": "independent_recheck",
+          "path": "docs/reviews/J13-review.md",
+          "revision": "974833166854f74ce89ada5d6c8730fbc08719d8",
+          "result": "Accepted bounded governance backend: 47 implementation tests, 12 corrected independent regressions and 6 further checks passed. All four findings closed. UI, protected-case composition and deployment remain separate."
+        }
+      ],
+      "findings": [
+        {
+          "id": "J13-R1",
+          "priority": "P1",
+          "description": "Impact preview leaks inaccessible learner/case obligation metadata",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J13-R2",
+          "priority": "P2",
+          "description": "Changed school facts omitted from rule impact",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J13-R3",
+          "priority": "P2",
+          "description": "Closed workload study prevents withdrawal",
+          "status": "verified_fixed"
+        },
+        {
+          "id": "J13-R4",
+          "priority": "P2",
+          "description": "Remediation uses entry time instead of actual action time",
+          "status": "verified_fixed"
+        }
+      ]
     },
     {
       "id": "J14",
@@ -1073,9 +1212,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/evidence"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J04-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J04-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F03.AC01",
@@ -1103,9 +1251,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/evidence"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J04-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J04-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F04.AC01",
@@ -1133,9 +1290,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/evidence"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J04-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J04-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F05.AC01",
@@ -1163,9 +1329,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/governance"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J13-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J13-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F06.AC01",
@@ -1185,7 +1360,7 @@
       "id": "F07",
       "title": "Henvisning, sakkyndighet og vedtak",
       "context": "BC04",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J05",
@@ -1215,7 +1390,7 @@
       "id": "F08",
       "title": "IOP med mål og versjoner",
       "context": "BC05",
-      "status": "not_started",
+      "status": "in_progress",
       "jobs": [
         "J02",
         "J05",
@@ -1885,9 +2060,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/governance"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J13-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J13-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F29.AC01",
@@ -2005,9 +2189,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/platform"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J08-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J08-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F33.AC01",
@@ -2221,9 +2414,18 @@
         "J27",
         "J28"
       ],
-      "sourcePaths": [],
-      "runtimeEvidence": [],
-      "independentReviews": [],
+      "sourcePaths": [
+        "backend/spesped/contexts/governance"
+      ],
+      "runtimeEvidence": [
+        {
+          "scope": "Partial backend only; full feature and UI remain unverified.",
+          "review": "docs/reviews/J13-review.md"
+        }
+      ],
+      "independentReviews": [
+        "docs/reviews/J13-review.md"
+      ],
       "acceptanceCriteria": [
         {
           "id": "F40.AC01",
@@ -2295,6 +2497,17 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Verified documentation-only repository; established full-domain implementation contracts and 28-job plan; implementation not yet claimed."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Detailed all40 feature contracts and period-based parent email preserved. Independently accepted bounded evidence, AI gateway, governance and composition repairs; all full features remain incomplete. J05 and extended J04 implementation continue.",
+      "verification": {
+        "revision": "974833166854f74ce89ada5d6c8730fbc08719d8",
+        "sourceIsolation": "git archive with explicit PYTHONPATH pointing to archived backend; active worker changes excluded",
+        "backend": "261 passed, 11 intentional SQLite concurrency skips, 90 subtests passed in 178.26s. Configured PostgreSQL variants and real scanner/OCR checks passed. Existing Starlette/httpx deprecation warning only.",
+        "documentation": "Deterministic generation: 40 features, 90 requirements, 71 sources; 29 local Markdown targets valid; manifest retains all86criteria and no completed full features."
+      }
     }
   ]
 }
