@@ -381,6 +381,11 @@
           "type": "integration_candidate",
           "revision": "713f794eb3c8dd34b54782538eb3fdbb699bbfbc",
           "result": "Root b3 schema merge: one95-table head; SQLite/PostgreSQL head/base/head, clean Alembic metadata, legacy checks/new recovery check and partial indexes verified. Initial PostgreSQL probe syntax assumption corrected for canonical ANY expression. Independent schema recheck pending."
+        },
+        {
+          "type": "implementer_report",
+          "revision": "a3488aed170a502e6040dabf654daa897da5d98f",
+          "result": "Frozen repair suite195passed8SQLite concurrency skips/265.36s with actualClamAV/Tesseract and PostgreSQL, including12newHTTPrecoverycases. Original reviewer assigned exact merged713f794 archive and schema recheck; no acceptance yet."
         }
       ],
       "findings": [
