@@ -78,14 +78,18 @@ def review_profile(db, actor, school_id, learner_id, statement_id, command):
     return row
 
 
-def profile_view(db, actor, school_id, learner_id, history=False, brief=False, offset=0, limit=50):
+def profile_view(db, actor, school_id, learner_id, history=False, brief=False, offset=0, limit=50, *, statement_ids=None):
     parent = profile(db, actor, school_id, learner_id, 'profile.brief' if brief else 'profile.read')
     if parent is None: return {'items':[], 'total':0, 'clarifications':[]}
     query = select(ProfileStatement).where(ProfileStatement.school_id == school_id, ProfileStatement.profile_id == parent.id)
+    if statement_ids is not None:
+        # Internal consumers select exact statements independently of UI pages.
+        # All learner, state and source/prose gates below still apply.
+        query = query.where(ProfileStatement.id.in_(statement_ids))
     if not history: query = query.where(ProfileStatement.state.in_(['proposed','confirmed','disputed']))
     if brief: query = query.where(ProfileStatement.state == 'confirmed', ProfileStatement.category.in_(['strength','interest','language','communication','support_strategy']))
     items, clarifications = [], []
-    for row in db.scalars(query.order_by(ProfileStatement.created_at, ProfileStatement.id)):
+    for row in db.scalars(query.order_by(ProfileStatement.created_at, ProfileStatement.id).execution_options(populate_existing=True)):
         if brief:
             # The brief is a curated projection. It contains no original excerpt or
             # document path and does not require dossier/evidence-read authority.

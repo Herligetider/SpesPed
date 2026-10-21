@@ -87,10 +87,10 @@ def basis_current(db,actor,basis,*,curated=False,seen=None):
                 try: source_binding(db,actor,basis.school_id,lid,binding)
                 except DomainError: return False
         if learner['profile'] and not curated:
-            try: current_profile=plans.profile_view(db,actor,basis.school_id,lid,limit=100)['items']
+            try: current_profile=plans.profile_view(db,actor,basis.school_id,lid,limit=len(learner['profile']),statement_ids=[p['id'] for p in learner['profile']])['items']
             except DomainError: return False
             by_id={p['id']:p for p in current_profile}
-            if any(p['id'] not in by_id or canonical_content_digest(by_id[p['id']]) != canonical_content_digest(p) for p in learner['profile']): return False
+            if any(p['id'] not in by_id or canonical_content_digest(jsonable_encoder(by_id[p['id']])) != canonical_content_digest(p) for p in learner['profile']): return False
         # Profile metadata currency is additionally represented in source_bindings;
         # the owning profile port checks revisions and current confirmations.
         if learner['profile'] and curated:
@@ -122,7 +122,7 @@ def create_basis(db,actor,school_id,command):
         goals=[teaching_goal_basis(db,actor,school_id,lid,str(g),at=command.planned_at) for g in selected.goal_revision_ids]
         profiles=[]
         if selected.profile_statement_ids:
-            available={p['id']:p for p in plans.profile_view(db,actor,school_id,lid,limit=100)['items']}
+            available={p['id']:p for p in plans.profile_view(db,actor,school_id,lid,limit=len(selected.profile_statement_ids),statement_ids=[str(pid) for pid in selected.profile_statement_ids])['items']}
             for pid in selected.profile_statement_ids:
                 item=available.get(str(pid))
                 if item is None or item['state'] != 'confirmed' or item['source_status'] != 'current': raise DomainError('profile_unavailable','Select a current confirmed support profile statement.',409)
