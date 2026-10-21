@@ -4,6 +4,7 @@ The metadata predicate authorizes no source text. Callers must first authorize
 an explicit teaching assignment or their own aggregate projection.
 """
 from sqlalchemy import inspect,select
+from sqlalchemy.orm import Session
 from spesped.db import utcnow
 from spesped.errors import DomainError
 from spesped.domain.approval import canonical_content_digest
@@ -23,6 +24,41 @@ def teaching_goal_basis(db, actor, school_id, learner_id, goal_revision_id, at=N
     return {'goal': goal, 'source_bindings': bindings,
             'provisions': [{'decision_id':a.decision_id,'decision_revision_id':a.decision_revision_id,'provision_id':a.provision_id}
                            for a in service.children(db,ProvisionAllocation,revision)]}
+
+
+def reporting_goal_basis(db, actor, school_id, learner_id, goal_revision_id, *, at):
+    """Authorized historical goal with declared dates clipped by supersession.
+
+    Activation was recorded at a distinct instant; it does not replace the
+    declared start of an imported historical plan. Existing teaching projection
+    fields and digests remain unchanged. Readers preserve caller-owned changes.
+    """
+    if any(type(row).__module__.startswith('spesped.contexts.')
+           for row in db.new | db.dirty | db.deleted):
+        raise DomainError('dependency_pending',
+                          'Flush or roll back pending dependencies before reading report goals.', 409)
+    with db.no_autoflush:
+        with Session(bind=db.connection(), join_transaction_mode='rollback_only',
+                     autoflush=False, expire_on_commit=False) as reader:
+            reader.info.update(db.info)
+            value = teaching_goal_basis(reader, actor, school_id, learner_id,
+                                        goal_revision_id, at=at, historical=True)
+            revision = reader.get(PlanRevision, value['goal']['plan_revision_id'])
+            goal = reader.get(GoalRevision, str(goal_revision_id))
+            starts_at = max(goal.effective_from, revision.effective_from)
+            ends_at = min(goal.effective_until, revision.effective_until)
+            if revision.activation_until is not None:
+                ends_at = min(ends_at, revision.activation_until)
+            if not starts_at <= at < ends_at:
+                raise DomainError('goal_period', 'The goal version does not apply at that time.', 409)
+            return {
+                **value,
+                'effective_period': {
+                    'starts_at': starts_at.isoformat(),
+                    'ends_at_exclusive': ends_at.isoformat(),
+                },
+                'activation_recorded_at': revision.activated_at.isoformat(),
+            }
 
 
 
