@@ -5,6 +5,7 @@ import { LocalValidationError } from './userErrors';
 import IntakeWorkspace from './IntakeWorkspace';
 import PlanningWorkspace from './features/planning/PlanningWorkspace';
 import TeachingWorkspace from './features/teaching/TeachingWorkspace';
+import DocumentWorkspace from './features/documents/DocumentWorkspace';
 import GuardianPortal from './features/guardian/GuardianPortal';
 import { localizeApiError, translate } from './i18n';
 import type { Language, MessageKey } from './i18n';
@@ -245,7 +246,7 @@ function LearnerWorkspace({client, schoolId, currentUser, learner, profile, lang
 }) {
   const [tab, setTab] = useState('overview');
   const [opened, setOpened] = useState<string[]>(['overview']);
-  const labels = {overview: t('overview'), planning: language === 'nn' ? 'Grunnlag og planar' : 'Grunnlag og planer', teaching: 'Undervisning'};
+  const labels = {overview: t('overview'), planning: language === 'nn' ? 'Grunnlag og planar' : 'Grunnlag og planer', teaching: 'Undervisning', documents: language === 'nn' ? 'Rapportar og brev' : 'Rapporter og brev'};
   function choose(value: string) {setTab(value);setOpened(previous => previous.includes(value) ? previous : [...previous, value]);}
   const shared = {client, schoolId, learnerId: learner.id, learnerName: learner.display_name, currentUser, language, formatError};
   return <section aria-label={learner.display_name}>
@@ -256,6 +257,7 @@ function LearnerWorkspace({client, schoolId, currentUser, learner, profile, lang
     <div hidden={tab !== 'overview'}><ProfilePanel learner={learner} profile={profile} t={t} formatError={formatError} onBack={onBack} onRetry={onRetry} showBack={false} /></div>
     {opened.includes('planning') && <div hidden={tab !== 'planning'}><PlanningWorkspace {...shared} /></div>}
     {opened.includes('teaching') && <div hidden={tab !== 'teaching'}><TeachingWorkspace {...shared} mode="teaching" /></div>}
+    {opened.includes('documents') && <div hidden={tab !== 'documents'}><DocumentWorkspace {...shared} /></div>}
   </section>;
 }
 

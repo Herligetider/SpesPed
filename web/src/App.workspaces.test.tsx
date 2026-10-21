@@ -10,6 +10,8 @@ vi.mock('./features/planning/PlanningWorkspace', () => ({default: ({learnerName}
   <label>Plan for {learnerName}<input aria-label="Ulagret planutkast" defaultValue="" /></label>}));
 vi.mock('./features/teaching/TeachingWorkspace', () => ({default: ({mode, schoolId, learnerName}: {mode: string; schoolId: string; learnerName?: string}) =>
   <p>{mode === 'assistant' ? `Oppdrag ved ${schoolId}` : `Undervisning for ${learnerName}`}</p>}));
+vi.mock('./features/documents/DocumentWorkspace', () => ({default: ({learnerId}: {learnerId: string}) =>
+  <label>Dokument for {learnerId}<input aria-label="Ulagret rapportutkast" defaultValue="" /></label>}));
 vi.mock('./features/guardian/GuardianPortal', () => ({default: ({schoolId}: {schoolId: string}) =>
   <p>Foresattbrev ved {schoolId}</p>}));
 
@@ -63,8 +65,15 @@ describe('workspace composition', () => {
     const view = render(<App client={first} />);
     await user.click(await screen.findByRole('button', {name: /Test Elev/}));
     expect(await screen.findByText('Original profile prose')).toBeVisible();
+    await user.click(screen.getByRole('button', {name: 'Rapporter og brev'}));
+    await user.type(screen.getByLabelText('Ulagret rapportutkast'), 'Private report draft');
+    await user.click(screen.getByRole('button', {name: 'Undervisning'}));
+    expect(screen.getByLabelText('Ulagret rapportutkast')).not.toBeVisible();
+    await user.click(screen.getByRole('button', {name: 'Rapporter og brev'}));
+    expect(screen.getByLabelText('Ulagret rapportutkast')).toHaveValue('Private report draft');
     view.rerender(<App client={second} />);
     expect(screen.queryByText('Original profile prose')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Ulagret rapportutkast')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', {name: 'Grunnlag og planer'})).not.toBeInTheDocument();
     await act(async () => finish({user: {id: 'u2', display_name: 'New staff', email: 'new@example.invalid'}, csrf_token: 'synthetic',
       schools: [{id: 's2', name: 's2', kind: 'public', timezone: 'Europe/Oslo', role: 'assistant'}]}));
