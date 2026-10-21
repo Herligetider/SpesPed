@@ -39,6 +39,7 @@ export type ListResponse<T> = { items: T[]; total: number };
 
 export type IntakeSource = {
   id: string; version: number; state: string; current_revision: number; revision: number;
+  external_scope: string; external_id: string;
   sender: string; document_type: string; received_at: string; original_at: string | null;
   filename: string; media_type: string; digest: string; byte_size: number;
   scan_state: string; extraction_state: string; issue: string | null; page_count: number;

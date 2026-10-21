@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiClient, ApiError } from './api';
+import SourceMaintenance from './SourceMaintenance';
 import type { Clarification, ExtractionProposal, IntakeSource, Learner, ListResponse } from './types';
 type Load<T> = {
     state: 'loading';
@@ -88,6 +89,7 @@ export default function IntakeWorkspace(props: Props) { if (!clientKeys.has(prop
 function Workspace({ client, schoolId, formatError }: Props) {
     const alive = useRef(true), navigation = useRef(0), pageGeneration = useRef(0), inboxGeneration = useRef(0), originalRef = useRef('');
     const [inbox, setInbox] = useState<Load<ListResponse<IntakeSource>>>({ state: 'loading' }), [selected, setSelected] = useState<IntakeSource | null>(null);
+    const [sourceReady, setSourceReady] = useState(false);
     const [proposals, setProposals] = useState<Load<ListResponse<ExtractionProposal>> | null>(null), [tasks, setTasks] = useState<Clarification[]>([]);
     const [page, setPage] = useState<Page | null>(null), [pageNumber, setPageNumber] = useState(1), [pageError, setPageError] = useState('');
     const [originalUrl, setOriginalUrl] = useState(''), [originalError, setOriginalError] = useState('');
@@ -158,6 +160,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
     }
     async function openSource(source: IntakeSource, refresh = false) {
         const generation = ++navigation.current;
+        setSourceReady(false);
         pageGeneration.current++;
         if (!refresh) {
             clearSource();
@@ -189,6 +192,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
                 setClarification({ assignee_id: '', reason: 'missing_information', detail: '' });
             }
             setSelected(current);
+            setSourceReady(true);
             void client.intakeOriginal(schoolId, current.id, current.current_revision).then(blob => { if (!active(generation))
                 return; const url = URL.createObjectURL(blob); originalRef.current = url; setOriginalUrl(url); setOriginalError(''); }).catch(error => { if (active(generation))
                 setOriginalError(formatError(error)); });
@@ -220,6 +224,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
                 else
                     setProposals({ state: 'error', error });
             }
+            return current;
         }
         catch (error) {
             if (active(generation))
@@ -402,6 +407,7 @@ function Workspace({ client, schoolId, formatError }: Props) {
         </span>{selected.issue && <span role="alert">{selected.issue}
             </span>}
         </div>{alerts}
+    <SourceMaintenance key={selected.id} client={client} schoolId={schoolId} source={selected} disabled={busy} sourceAvailable={sourceReady} formatError={formatError} onBusy={setBusy} onRefresh={async () => { const current = await openSource(selected, true); void reloadInbox(); return current; }}/>
     <div className="source-review-grid">
         <section className="source-card" aria-label="Originalkilde">
         <div className="list-heading">
