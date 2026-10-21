@@ -508,6 +508,10 @@
           "revision": "30fe56394d916956ccdb0802726f41c944c04dd2",
           "result": "Accepted bounded real application composition: 106 regression tests and 16 independent SQLite/PostgreSQL probes passed; one intentional SQLite skip. Denied optional rule context preserves an authorized dossier/export. Exact protected snapshots and plan goal bindings are rechecked. No full feature acceptance.",
           "path": "docs/reviews/composition-review.md"
+        },
+        {
+          "type": "work_assignment",
+          "result": "Generated IEP/goal proposal backend assigned to /root/j05_generation. Root owns typed gateway/assembly additions after contract agreement; agent owns plans consumers, exact provenance and human selection, plus forward migration/tests. Existing reviewed manual plan behavior must remain intact. Independent review required before acceptance."
         }
       ],
       "findings": [
@@ -534,7 +538,8 @@
         "Integrate independently accepted plan/entitlement application composition with J06 teaching and full J07 UI.",
         "F08 generated IEP/goal suggestions from confirmed assessment and decision basis, with source/revision checks and explicit professional selection/apply; implementer confirms this is not yet implemented.",
         "Audit and complete remaining F07/F08 clarification and consumer-impact workflows; full UI acceptance belongs to J07 and later UI jobs."
-      ]
+      ],
+      "activeImplementationAgent": "/root/j05_generation"
     },
     {
       "id": "J06",
@@ -631,12 +636,13 @@
         "J05",
         "J06"
       ],
-      "status": "changes_requested",
+      "status": "awaiting_review",
       "requiredEvidence": "Browser journey against persistent API with negative paths and usable review",
       "implementationAgent": "/root/j07_intake_ui",
       "reviewAgent": "/root/review_j07_intake",
       "commits": [
-        "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8"
+        "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8",
+        "29bcbc0bf5d03afe0ea250bd8acfc6f119171328"
       ],
       "evidence": [
         {
@@ -644,6 +650,11 @@
           "revision": "53e79b98eb02d6f9e7d8e920ee13f21a4fe55bb8",
           "result": "Changes required:9 findings independently reproduced using realChromium/PostgreSQL, jsdom and actualAPI.26 webchecks+build and2 recallAPIprobes establish normal path and defects, not acceptance.",
           "path": "docs/reviews/J07-intake-review.md"
+        },
+        {
+          "type": "implementer_report",
+          "revision": "29bcbc0bf5d03afe0ea250bd8acfc6f119171328",
+          "result": "All nine intake findings addressed; 32 web tests and production build passed. Real Chromium/PostgreSQL checks exercised exact reviewed values, explicit local occurrence, named clarifications, Unicode transport/spans, same-command retry after committed-response loss, retained409 edits, model recall manual recovery and delayed source/page/write races. Independent recheck assigned; no full J07 acceptance."
         }
       ],
       "findings": [
@@ -651,55 +662,55 @@
           "id": "J07-R1",
           "priority": "P1",
           "description": "School change retains source content and drafts from prior school.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R2",
           "priority": "P1",
           "description": "Late source/page responses and unbound drafts replace current scope.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R3",
           "priority": "P1",
           "description": "Confirmation displays proposed value instead of persisted reviewed value.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R4",
           "priority": "P1",
           "description": "Model recall hides independent manual recovery through unfiltered proposal list.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R5",
           "priority": "P1",
           "description": "Ambiguous note-save retry creates duplicate source identity.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R6",
           "priority": "P2",
           "description": "Stale-review409 erases notice and hides unsaved human edit.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R7",
           "priority": "P2",
           "description": "Unicode filename/metadata cannot be sent as raw browser headers.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R8",
           "priority": "P2",
           "description": "UTF16 default spans do not match backend Unicode character offsets.",
-          "status": "open"
+          "status": "awaiting_verification"
         },
         {
           "id": "J07-R9",
           "priority": "P2",
           "description": "Occurrence date silently defaults to now with incorrect local/UTC conversion.",
-          "status": "open"
+          "status": "awaiting_verification"
         }
       ],
       "activeImplementationAgent": "/root/j07_intake_repairs",
