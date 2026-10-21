@@ -1486,9 +1486,40 @@
           "type": "implementation_candidate",
           "revision": "35845e984e9311b679695a7a7fdf2c270b1ad691",
           "result": "Native BC10 candidate pinned across 16 files: immutable interval/cutoff evidence snapshots, reviewed templates and annual obligation binding, historical goals/actuals/human assessment sources, scoped contributions and exact approvals, guardian-only interval drafts and optional schedules, typed AI selection/lineage, atomic durable scheduled requests with lost-ack reconciliation, approved frozen-revision owner port, static 17-table migration and production registration. Root verified all 13 author file hashes. Author final 49 tests passed, 1 SQLite-only concurrency skip; actual PostgreSQL concurrency, migration parity/retained prior rows, fresh application restart and loopback generation ran. Distinct reviewer /root/review_j11_documents assigned. Ordinary-report source applicability, generated-content reviewer scope and migration integration are explicit review questions. J20/J21 UI, J12 disclosure/history/portal, J26 worker deployment and configured production model quality remain required; no whole feature acceptance."
+        },
+        {
+          "type": "independent_review",
+          "revision": "35845e984e9311b679695a7a7fdf2c270b1ad691",
+          "path": "docs/reviews/J11-review.md",
+          "result": "Changes required. Exact archived candidate suite reproduced 49 passes and one SQLite-only concurrency skip. Independent SQLite/PostgreSQL probes reproduced consumer authorization, concrete reporting-period and in-flight schedule reconciliation issues; prior J19 retained-history test is intercepted by the newer unconditional empty-table migration guard. DST and distinct-key PostgreSQL review-race checks passed. Original author owns repairs; concrete reviewed report coverage belongs to BC03. No bounded J11 or full-feature acceptance."
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "J11-R1",
+          "priority": "P2",
+          "description": "Generated document consumers incorrectly require AI generation and write permissions",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J11-R2",
+          "priority": "P1",
+          "description": "Annual report can finalize against an obligation for a different reporting period",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J11-R3",
+          "priority": "P2",
+          "description": "Scheduled generation does not reconcile current availability after a scope change during the provider call",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J11-R4",
+          "priority": "P2",
+          "description": "Unconditional empty-BC10 downgrade intercepts prior J19 retained-history regression",
+          "status": "repair_in_progress"
+        }
+      ]
     },
     {
       "id": "J12",
@@ -1510,6 +1541,10 @@
         {
           "type": "work_assignment",
           "result": "Native BC11 recipient-specific disclosure packages, reviewed channel/recipient policy, explicit secure dispatch/receipts/reconciliation, controlled export and guardian portal backend assigned to /root/j12_communication (Sol high), disjoint communication module/migration/tests. Integrate native approved BC10 frozen revisions and supply exact confirmed-period history adapter. Native portal publication is distinct from external notification/read receipt; no external message or provider deployment authorized. Root owns application registration; independent review required before bounded acceptance, J21 UI/J18 deployed integrations/J26 worker wiring remain required."
+        },
+        {
+          "type": "integration_in_progress",
+          "result": "Root registered candidate communication router/models and default native dispatch-history/portal transport composition in create_app; actual OpenAPI exposes 32 communication paths. Fresh-application restart/history/current-guardian-rights checks are being added in test_bc11_application_composition.py. Candidate author tests and migration checks are in progress; no acceptance or externally deployed delivery claim. Migration chain is j11_documents -> j13_report_period -> j12_communication, with safe empty-only downgrade and retained-history protection."
         }
       ],
       "findings": []
@@ -1551,6 +1586,10 @@
           "path": "docs/reviews/J13-review.md",
           "revision": "974833166854f74ce89ada5d6c8730fbc08719d8",
           "result": "Accepted bounded governance backend: 47 implementation tests, 12 corrected independent regressions and 6 further checks passed. All four findings closed. UI, protected-case composition and deployment remain separate."
+        },
+        {
+          "type": "work_assignment",
+          "result": "Accepted bounded governance baseline remains at 9748331. New report-period coverage extension assigned to /root/j13_report_period (Sol high): immutable human-reviewed exact obligation/report-kind/interval binding with current source/profile/input/authority checks; legacy coverage unresolved; actor-aware non-mutating public projection. Native POST/GET, explicit preview digest, migration, both-database tests and independent review required. This extension addresses J11-R2; prior bounded verification does not accept the new extension."
         }
       ],
       "findings": [
@@ -3671,6 +3710,11 @@
       "date": "2026-10-21",
       "classification": "progress",
       "result": "Pinned native document candidate35845e9 after 49 author/root composition passes and one deliberate SQLite concurrency skip; dispatched independent full J11 review. Native BC11 communication work started in disjoint files. User-requested detailed catalog and chosen-interval guardian email specification are verified and committed; all40features/86examples/28jobs preserved. Full product goal remains active."
+    },
+    {
+      "date": "2026-10-21",
+      "classification": "progress",
+      "result": "Recorded independent J11 changes-required review and dispatched original-author repairs plus BC03-owned exact report-period dependency. Root registered native BC11 application composition and added fresh-app communication/restart verification. Current detailed catalog and chosen-interval guardian draft request remain fulfilled and pushed through f186daf. Four previously verified bounded jobs remain recorded; new extensions are not accepted and no full feature is complete."
     }
   ]
 }
