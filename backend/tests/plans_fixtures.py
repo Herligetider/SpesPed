@@ -37,14 +37,9 @@ def env(request,tmp_path):
         url=make_url(url).update_query_dict({'options':f'-csearch_path={schema}'}).render_as_string(hide_password=False)
     else: url=f'sqlite:///{tmp_path}/plans.db'
     config=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));config.attributes['database_url']=url
-    command.upgrade(config,'j05_comparison_basis')
-    # Shared checkout can contain the parallel evidence branch before the root
-    # merge migration lands; exercise both explicit compatible heads.
-    migration_versions=Path(__file__).resolve().parents[1]/'migrations/versions'
-    if (migration_versions/'j04_manual_recovery.py').exists():
-        command.upgrade(config,'j04_manual_recovery')
-    elif (migration_versions/'j04_structuring.py').exists():
-        command.upgrade(config,'j04_structuring')
+    # Exercise the application's current schema, including compatible parallel
+    # forward migrations before the orchestrator adds their merge revision.
+    command.upgrade(config,'heads')
     factory=make_session_factory(url)
     with factory.begin() as db:
         school,leader=provision_school(db,school_name='Synthetic plan school',kind='public',timezone='Europe/Oslo',email='leader@example.invalid',display_name='Synthetic leader',password=PASSWORD)

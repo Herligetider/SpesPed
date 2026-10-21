@@ -246,7 +246,7 @@ def test_atomic_audit_outbox_idempotency_optimistic_versions_and_migration_round
     command.downgrade(config,'b1_integrate_contexts')
     assert 'plans_learning_goals' not in inspect(factory.kw['bind']).get_table_names()
     with factory() as db: assert db.get(Learner,ids['a']) is not None
-    command.upgrade(config,'j05_plans')
+    command.upgrade(config,'heads')
     assert 'plans_learning_goals' in inspect(factory.kw['bind']).get_table_names()
 
 
@@ -723,7 +723,7 @@ def test_comparison_lineage_migration_backfills_exact_retained_event_and_fails_c
     config=Config(str(Path(__file__).resolve().parents[1]/'alembic.ini'));config.attributes['database_url']=app.state.settings.database_url
     command.downgrade(config,'j05_comparison_basis-1')
     assert 'comparison_basis' not in {c['name'] for c in inspect(factory.kw['bind']).get_columns('entitlements_case_clarifications')}
-    command.upgrade(config,'j05_comparison_basis')
+    command.upgrade(config,'heads')
     values={v['id']:v for v in client.get(path).json()['items']}
     assert values[original['id']]['comparison_basis'] == original_basis
     assert values[original['id']]['resolution'] == resolve_cmd['resolution']
