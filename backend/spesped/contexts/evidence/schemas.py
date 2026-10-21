@@ -1,0 +1,175 @@
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from typing import Annotated, Literal
+from uuid import UUID
+
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, model_validator
+
+
+class Command(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+
+class IntakeMetadata(Command):
+    request_key: str = Field(min_length=1, max_length=120)
+    external_scope: str = Field(min_length=1, max_length=100)
+    external_id: str = Field(min_length=1, max_length=320)
+    sender: str = Field(min_length=1, max_length=320)
+    document_type: str = Field(min_length=1, max_length=80)
+    received_at: AwareDatetime
+    original_at: AwareDatetime | None = None
+
+
+class NoteIntake(IntakeMetadata):
+    text: Annotated[str, StringConstraints(strip_whitespace=False)] = Field(min_length=1, max_length=100_000)
+
+
+class Expected(Command):
+    expected_version: int = Field(ge=1)
+
+
+FieldName = Literal["content", "learner", "document_date", "goal", "measure", "follow_up", "hours", "document_type", "mentioned_learner"]
+
+
+def validate_field(name, value):
+    if name == "hours":
+        try:
+            amount = Decimal(value)
+            if not amount.is_finite() or amount < 0 or amount > 100000:
+                raise ValueError()
+        except (ValueError, InvalidOperation):
+            raise ValueError("Hours must be a nonnegative finite decimal") from None
+    elif name == "document_date":
+        from datetime import date
+        date.fromisoformat(value)
+    elif name == "learner":
+        UUID(value)
+    elif name == "mentioned_learner":
+        if len(value) > 320 or any(ord(c) < 32 for c in value):
+            raise ValueError("A mentioned learner requires a bounded name")
+        try:
+            UUID(value)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("A name proposal cannot assign a learner identity")
+    return value
+
+
+class ProposeField(Expected):
+    page: int = Field(ge=1, le=200)
+    span_start: int = Field(ge=0)
+    span_end: int = Field(ge=1)
+    field_name: FieldName
+    proposed_value: str = Field(min_length=1, max_length=20000)
+
+    @model_validator(mode="after")
+    def typed_field(self):
+        validate_field(self.field_name, self.proposed_value)
+        return self
+
+
+class ReviewField(Expected):
+    outcome: Literal["accepted", "edited", "rejected"]
+    value: str | None = Field(default=None, min_length=1, max_length=20000)
+    reason: str = Field(min_length=1, max_length=1000)
+
+    @model_validator(mode="after")
+    def edit_value(self):
+        if (self.outcome == "edited") != (self.value is not None):
+            raise ValueError("Only an edit requires a replacement value")
+        return self
+
+
+class Attributed(Command):
+    learner_id: UUID
+    claim_type: Literal["report", "observation", "professional_judgement"]
+    reporter: str = Field(min_length=1, max_length=320)
+    observer: str | None = Field(default=None, min_length=1, max_length=320)
+    source_type: Literal["direct_observation", "reported_information", "imported_document"]
+    certainty: Literal["confirmed", "uncertain", "disputed"]
+    occurred_at: AwareDatetime
+    topic: str = Field(min_length=1, max_length=100)
+    goal_revision_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def observer_required(self):
+        if self.source_type == "direct_observation" and not self.observer:
+            raise ValueError("Direct observation requires an observer")
+        return self
+
+
+class ConfirmEvidence(Attributed, Expected):
+    """Each confirmation selects exactly the source span released to this pupil."""
+    excerpt_page: int = Field(ge=1, le=200)
+    excerpt_start: int = Field(ge=0)
+    excerpt_end: int = Field(ge=1)
+
+
+class CorrectEvidence(Attributed, Expected):
+    content: str = Field(min_length=1, max_length=20000)
+    reason: str = Field(min_length=1, max_length=1000)
+    excerpt_page: int | None = Field(default=None, ge=1, le=200)
+    excerpt_start: int | None = Field(default=None, ge=0)
+    excerpt_end: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def replacement_span(self):
+        supplied = (self.excerpt_page, self.excerpt_start, self.excerpt_end)
+        if any(value is not None for value in supplied) and not all(value is not None for value in supplied):
+            raise ValueError("A replacement excerpt requires page, start and end")
+        if self.excerpt_start is not None and self.excerpt_start >= self.excerpt_end:
+            raise ValueError("A replacement excerpt requires a nonempty span")
+        return self
+
+
+class RegisterDerivative(Command):
+    evidence_revision: int = Field(ge=1)
+    target_type: str = Field(min_length=1, max_length=80)
+    target_id: UUID
+    target_revision: int = Field(ge=1)
+    state: Literal["draft", "shared"]
+
+
+class ApplyStructuring(Expected):
+    job_id: UUID
+    assignee_id: UUID
+
+
+ClarificationReason = Literal['unresolved_attribution', 'ambiguous_field', 'unsupported_field', 'missing_source_span', 'disagreement', 'invalid_structuring_output', 'missing_information']
+
+
+class CreateClarification(Expected):
+    assignee_id: UUID
+    reason: ClarificationReason
+    detail: str = Field(min_length=1, max_length=2000)
+    proposal_id: UUID | None = None
+    field_name: FieldName | None = None
+    page: int | None = Field(default=None, ge=1, le=200)
+    span_start: int | None = Field(default=None, ge=0)
+    span_end: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode='after')
+    def complete_span(self):
+        supplied = (self.page, self.span_start, self.span_end)
+        if any(x is not None for x in supplied) and not all(x is not None for x in supplied):
+            raise ValueError('Supply a complete source span')
+        return self
+
+
+class ReassignClarification(Expected):
+    assignee_id: UUID
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class ResolveClarification(Expected):
+    resolution: str = Field(min_length=1, max_length=2000)
+
+
+class ReopenClarification(Expected):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RecoverManualField(ProposeField):
+    recovery_of_proposal_id: UUID
+    source_revision: int = Field(ge=1)

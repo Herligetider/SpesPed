@@ -1,0 +1,28 @@
+.guardian-portal { max-width: 56rem; margin: 0 auto; padding: 1.5rem; color: #18242c; }
+.guardian-portal header { margin-bottom: 1.25rem; }
+.guardian-portal h1, .guardian-portal h2, .guardian-portal h3 { line-height: 1.25; }
+.guardian-toolbar, .guardian-letter-heading, .guardian-receipt, .guardian-list > li, .guardian-list > li > div, .guardian-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.guardian-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+.guardian-list > li { padding: 1rem; border: 1px solid #c7d1d6; border-radius: .5rem; background: #fff; }
+.guardian-list > li > div { align-items: flex-start; flex-direction: column; gap: .25rem; }
+.guardian-list p { margin: 0; }
+.guardian-portal button { min-height: 2.75rem; padding: .5rem .9rem; border: 1px solid #536b75; border-radius: .35rem; background: #f8fbfc; color: inherit; font: inherit; cursor: pointer; }
+.guardian-portal button:disabled { opacity: .6; cursor: not-allowed; }
+.guardian-portal button:focus-visible { outline: 3px solid #176b9a; outline-offset: 2px; }
+.guardian-error { color: #8b1e1e; }
+.guardian-error button { margin-left: .75rem; }
+.guardian-pagination { justify-content: flex-end; margin-top: 1rem; }
+.guardian-letter { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid #aebbc2; border-radius: .5rem; background: #fff; }
+.guardian-letter-heading { align-items: flex-start; }
+.guardian-letter-heading h2 { margin-top: .25rem; }
+.guardian-letter-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; margin: 1rem 0 1.5rem; }
+.guardian-letter section ul { list-style: none; padding: 0; }
+.guardian-letter section li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .5rem 0; }
+.guardian-receipt { justify-content: flex-start; flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .guardian-portal { padding: 1rem; }
+  .guardian-list > li { align-items: flex-start; flex-direction: column; }
+  .guardian-letter-heading { flex-direction: column-reverse; }
+  .guardian-letter section li { align-items: flex-start; flex-direction: column; }
+  .guardian-pagination { justify-content: space-between; }
+}

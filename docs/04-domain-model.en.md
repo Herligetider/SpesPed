@@ -1,6 +1,6 @@
 # Domain model – Spesped
 
-Version 0.2 · 8 September 2026. Derived from [event storming](03-event-storming.en.md), with unresolved hotspots retained. This is a proposed model, not a database schema or validated implementation.
+Version 0.3 · 21 October 2026. Implementation ownership and contracts are specified in [Domain implementation contracts](09-domain-implementation.en.md); all original bounded contexts and capabilities are retained. Derived from [event storming](03-event-storming.en.md), with unresolved hotspots retained. This is a proposed model, not a database schema or validated implementation.
 
 Use a shared vocabulary inside each bounded context, keep transaction boundaries small, and reference other aggregates by identity. These principles follow [Eric Evans' DDD reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf); the contexts, classes and invariants below are specific design proposals for this product.
 
@@ -158,12 +158,14 @@ Relationship choices:
 | `SchoolId`, `LearnerId`, `CaseId`, `RevisionId` | Typed opaque identifiers; include school/tenant context in contracts |
 | `EffectivePeriod` | Inclusive/exclusive semantics specified; start precedes end; open-ended periods supported |
 | `AcademicPeriod` | School year, term, start/end dates, school calendar reference |
-| `SummaryPeriod` | Inclusive UI dates with start ≤ end and school timezone; convert to a half-open interval ending at the following local midnight, without assuming every day has 24 hours |
+| `SummaryPeriod` | Inclusive UI dates with start ≤ end and school timezone; use first-real-instant boundaries through the day after the end date, including midnight gaps/overlaps; reject ranges containing no real instants |
 | `EvidenceCutoff` | Snapshot creation instant and source-version manifest; occurrence date controls period membership, recorded time determines what was known |
 | `DraftRecurrence` | Explicit cadence, anchor, next run, end condition and period selection rule; separate from summary duration and dispatch |
+| `ManualDraftRequest` | One-off subject/period request with a logical command key and payload fingerprint; no schedule activation required; retries and deliberate new requests have distinct meanings |
 | `OccurrenceTime` / `RecordedTime` | Event time versus when staff entered it; corrections preserve both |
 | `DurationMinutes` | Non-negative integer for actual duration; no assumed 45/60-minute lesson unit |
-| `EntitlementQuantity` | Quantity, unit, reference period, support category, decision clause and counting basis |
+| `EntitlementQuantity` | Quantity, unit, reference period, support category, decision clause, counting basis and exact `DecisionProvisionReference`; refuse addition across any differing identity or basis |
+| `DecisionProvisionReference` | School/learner/case scope, decision ID, decision revision ID and provision ID; resolved against an authoritative decision by the application |
 | `SourceReference` | SourceItemId, revision, page/span and digest; access checked when followed |
 | `EvidenceAttribution` | Reporter, observer if different, source type, certainty/dispute marker |
 | `LegalBasisReference` | Legal source/version, provision, purpose and applicability decision |
@@ -191,7 +193,7 @@ Domain services express policy; ports isolate external dependencies. A domain se
 | `ScheduleConstraintChecker` | Check fixed requirements; combine with an optimizer through a port |
 | `EvidenceSelectionPolicy` | Select minimal permitted inputs by occurrence period and cutoff, preserving versions, explicit background and exclusions |
 | `EmailDraftPeriodResolver` | Resolve manual/relative periods and recurrence rules; “since last” is recipient/purpose-specific; show overlap, late evidence and missed periods |
-| `EmailDraftEligibilityPolicy` | Validate active schedule, assigned owner, current access and duplicate run key before requesting a draft |
+| `EmailDraftEligibilityPolicy` | Validate current access and logical request identity for manual drafts; scheduled drafts additionally require an active schedule and assigned owner; no path grants dispatch permission |
 | `DocumentCompletenessPolicy` | Validate a template's required elements without judging pedagogical truth |
 | `RecordDispositionPolicy` | Combine record category, statutory/local rule, legal hold and archive state |
 | `IdentityProviderPort` / `SchoolRegistryPort` | Authentication and scoped master-data synchronization |

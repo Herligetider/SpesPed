@@ -1,0 +1,27 @@
+.documents-workspace { display: grid; gap: 1.25rem; max-width: 74rem; margin: 0 auto; padding: 1rem; }
+.documents-workspace form, .documents-workspace article, .documents-workspace > section { border: 1px solid var(--border, #cbd5e1); border-radius: .5rem; padding: 1rem; background: var(--surface, #fff); }
+.documents-create { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .9rem; }
+.documents-create h3, .documents-create > p, .documents-create fieldset, .documents-create button { grid-column: 1 / -1; }
+.documents-workspace label { display: grid; gap: .35rem; font-weight: 600; }
+.documents-workspace input, .documents-workspace select, .documents-workspace textarea { box-sizing: border-box; width: 100%; min-height: 2.5rem; padding: .5rem; font: inherit; }
+.documents-workspace textarea { min-height: 5rem; }
+.documents-workspace fieldset { display: grid; gap: .75rem; border: 1px solid var(--border, #cbd5e1); }
+.documents-workspace button { min-height: 2.5rem; padding: .4rem .75rem; cursor: pointer; }
+.documents-workspace button:disabled { cursor: not-allowed; opacity: .6; }
+.documents-layout { display: grid; grid-template-columns: minmax(15rem, .8fr) minmax(22rem, 1.4fr); gap: 1rem; align-items: start; }
+.documents-layout ul { list-style: none; padding: 0; }
+.documents-layout li { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .5rem 0; }
+.document-current { display: grid; gap: .75rem; }
+.documents-edit { display: grid; gap: .75rem; }
+.document-source-choice { display: flex !important; align-items: center; gap: .5rem !important; font-weight: 400 !important; }
+.document-source-choice input { width: auto; min-height: auto; }
+.document-current section { border-bottom: 1px solid var(--border, #cbd5e1); padding: .5rem 0; }
+.documents-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.documents-disclosure { padding: .75rem; border-inline-start: .25rem solid var(--accent, #2563eb); }
+.documents-ai-unavailable { color: var(--muted, #475569); }
+.documents-proposal { display: grid; gap: .75rem; margin-block-start: 1rem; padding: 1rem; border: 1px solid var(--border, #cbd5e1); border-radius: .4rem; }
+.documents-proposal > label { display: flex; flex-direction: row; align-items: center; gap: .5rem; }
+.documents-proposal > label input { width: auto; }
+.documents-diff { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.documents-diff section { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 720px) { .documents-layout { grid-template-columns: 1fr; } }

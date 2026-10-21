@@ -1,18 +1,20 @@
 # Funksjonskatalog
 
-Arbeidsversjon 0.2 · 8. september 2026. Alle 40 funksjonsområder er beholdt og konkretisert for faglig gjennomgang. Beskrivelsene er produktforslag, ikke implementerte funksjoner eller en ny juridisk kontroll. Akseptansekriteriene beskriver observerbar atferd som en leveranse senere skal verifiseres mot.
+Arbeidsversjon 0.3 · 21. oktober 2026. Alle 40 funksjonsområder er beholdt og konkretisert for faglig gjennomgang. Denne revisjonen utdyper arbeidsflater, statusendringer, automatikk og håndtering av mangler. Beskrivelsene er produktkrav, ikke en bekreftelse på implementerte funksjoner eller en ny juridisk kontroll. Akseptansekriteriene beskriver observerbar atferd som en leveranse senere skal verifiseres mot.
 
 Første komplette arbeidsflyt prioriterer innsamling → bekreftet elev-/plangrunnlag → undervisningsøkt → assistentkort → faktisk gjennomføring og kort notat. [Arbeidsflyten for faglig gjennomgang](08-first-workflow-review.no.md) viser et konkret eksempel og avvik som må fungere.
 
 F20 støtter e-postutkast til foresatte for et valgt tidsintervall og valgfri gjentakelse av utkast. En fast ukerytme er ikke prioritert eller aktivert som standard. Foreldre-e-post ligger i P4 og er ikke nødvendig for første pilotflyt. Første versjon av denne kommunikasjonen går bare til foresatte med relevant informasjonsrett. Elevtilpasset mottak inngår senere; lovpålagt informasjon til eleven har egne mottakerregler.
 
-Hver funksjon beskriver brukere, inndata, arbeidssteg, resultat, regler, akseptansekriterier og et eksempel. Avhengigheter viser funksjoner som må bidra med relevant grunnstøtte, ikke at alle deres senere utvidelser må være ferdige først. «Første leveranse» avgrenser hva fasen faktisk skal inneholde; hele beskrivelsen dekker også senere utvidelser.
+Hver funksjon beskriver brukere, inndata, arbeidsflate, arbeidssteg, statusendringer, automatikk og menneskelige valg, håndtering av feil, resultat, regler, akseptansekriterier og et eksempel. Arbeidsflaten beskriver hva brukeren skal se og gjøre; endelig visuell utforming avklares med fagpersonene. Statusbeskrivelsene er faglige begreper, ikke låste tekniske feltnavn. Avhengigheter viser funksjoner som må bidra med relevant grunnstøtte, ikke at alle deres senere utvidelser må være ferdige først. «Første leveranse» avgrenser hva fasen faktisk skal inneholde; hele beskrivelsen dekker også senere utvidelser.
 
 Produktmålet og dokumenttypene finnes i [produktgrunnlaget](00-product-brief.no.md). BC-numrene viser til [domenemodellen](04-domain-model.en.md), og fasene til [implementasjonsplanen](05-implementation-plan.en.md). Generelle krav til tilgang, kilder, menneskelig kontroll og manuell reserve gjelder på tvers av funksjonene.
 
 ## Til den som gjør faglig gjennomgang
 
-Les først arbeidsflyten og funksjonene F03–F08, F12–F16, F33 og F39–F40. Vurder om eksemplene ligner hverdagen, hva som mangler, hvilke felt som skaper merarbeid og hva som må endres i akseptansekriteriene. Spørsmålet på slutten av hver funksjon er et konkret punkt til gjennomgangen, ikke et krav om å avklare alt før dokumentene kan leses.
+Les først arbeidsflyten og funksjonene F03–F08, F12–F16, F33 og F39–F40. Vurder om eksemplene ligner hverdagen, hva som mangler, hvilke felt som skaper merarbeid og hva som må endres i akseptansekriteriene. Prøv også å beskrive hva brukeren gjør når grunnlaget mangler eller noe feiler. Spørsmålet på slutten av hver funksjon er et konkret punkt til gjennomgangen, ikke et krav om å avklare alt før dokumentene kan leses.
+
+Forslag til tilbakemelding: funksjons-ID → konkret situasjon → ønsket endring → hvorfor det sparer arbeid eller gir bedre kvalitet → nødvendig i første flyt eller senere. Detaljene gjelder hele funksjonens omfang og skal følges opp i implementasjonsjobbene; de eksisterende akseptansekriteriene er fortsatt eksempler, ikke hele kravlisten.
 
 ## Funksjonsoversikt
 
@@ -74,11 +76,28 @@ Skoleslag, godkjenning, trinn, skoleår, ansatte, kompetanse, elevtilknytning og
 - Skoleslag, eier, godkjenning, trinn og skoleår.
 - Ansatte, kvalifikasjonsreferanser, elev-/sakstilknytning og fullmaktenes gyldighet.
 
+### Arbeidsflate og handlinger
+
+- Skoleoppsettet viser skoleslag, trinn, skoleår og om regelprofilen er avklart. Ansattlisten viser aktive oppdrag, fullmakter og utløpsdatoer; leder kan åpne én person og se den samlede tilgangen.
+- Ved «Tildel oppdrag» velges konkrete elever eller saker, handlinger og gyldighetsperiode. Før lagring vises hvem og hvilket innhold tildelingen gjelder. Tilbakekalling krever ikke sletting av historikken.
+
 ### Slik fungerer det
 
 1. Administrator oppretter skolen og velger en regelprofil som må bekreftes av ansvarlig person.
 2. Leder knytter ansatte til grupper, elever eller saker og velger hvilke handlinger hver tilknytning tillater.
 3. Et vikariat får start og slutt. Systemet viser virkningen før endringen lagres og trekker tilgangen tilbake når perioden utløper.
+
+### Status og overganger
+
+Tildelinger vises som kommende, aktive, utløpte eller tilbakekalte. En konto kan være aktiv selv om den ikke har et gyldig elevoppdrag. Uavklart godkjenningsmyndighet vises separat.
+
+### Automatikk og menneskelige valg
+
+Programmet beregner gyldighet og varsler om kommende utløp. Leder avgjør oppdrag, kvalifikasjoner og fullmakter; en ny stillingstittel gir ikke automatisk tilgang til alle elever.
+
+### Når noe mangler eller feiler
+
+Ved manglende myndighet vises ansvarlig avklaringsvei. Dersom en samtidig endring har påvirket oppdraget, må leder kontrollere den nye oversikten før sin endring lagres.
 
 ### Resultat
 
@@ -119,11 +138,28 @@ Styrker, interesser, språk, kommunikasjon og støtte som virker. Foreldreansvar
 - Elevidentitet, innskriving, gruppe og kontaktopplysninger.
 - Bekreftede styrker, interesser, språk og støttestrategier; kildebelagte foresattrelasjoner og begrensninger.
 
+### Arbeidsflate og handlinger
+
+- Elevsiden har en kort oversikt over styrker, interesser, kommunikasjon og støtte som virker, samt aktive mål og neste oppgave. Hver opplysning kan åpnes med kilde, dato og hvem som har bekreftet den.
+- En egen fane viser foresattrelasjoner med gyldighet, kontaktmåte og uavklarte begrensninger for autoriserte ansatte. «Foreslå retting» lar lærer sende inn en endring uten å overskrive bekreftet informasjon.
+
 ### Slik fungerer det
 
 1. Elevsiden viser først en kort pedagogisk oversikt og aktuelle oppgaver som brukeren har tilgang til.
 2. Ansatte kan foreslå endringer i det pedagogiske innholdet med kilde og dato; ansvarlig person bekrefter vesentlige opplysninger.
 3. Foresattrelasjoner forvaltes separat. Brukeren ser hvem som kan kontaktes, hvilke forhold som må avklares og gyldigheten til grunnlaget.
+
+### Status og overganger
+
+Profilopplysninger er foreslåtte, bekreftede, bestridte eller erstattede. Historiske verdier beholdes med dato, mens den korte oversikten viser gjeldende informasjon og synlige avklaringsbehov.
+
+### Automatikk og menneskelige valg
+
+Programmet samler allerede bekreftede opplysninger og fremhever motstrid. Fagperson avgjør hvilke støttestrategier som fortsatt gjelder; autorisert person avklarer foresattrelasjoner.
+
+### Når noe mangler eller feiler
+
+Ukjent familieforhold blir et avklaringspunkt. Elevens undervisningsplanlegging kan fortsette innenfor bekreftet tilgang, mens utlevering til en uavklart mottaker avventer kontroll.
 
 ### Resultat
 
@@ -164,11 +200,28 @@ Notater, e-post fra foresatte, vedlegg, PDF, Word, skannede dokumenter, rapporte
 - Fritekst, PDF, Word, skannede dokumenter, lagrede e-poster og vedlegg.
 - Avsender, mottakstid, opprinnelig dato og foreslått elev dersom kjent.
 
+### Arbeidsflate og handlinger
+
+- Innboksen viser filnavn, kildetype, avsender, mottakstid, foreslått elev og behandlingstilstand. Brukeren kan opprette et notat, laste opp filer eller importere en lagret e-post med vedlegg.
+- Ved åpning vises original og foreslått elevkobling. Brukeren kan dele relevant tekst i elevspesifikke utdrag, velge dokumenttype og sende materialet til kontroll uten å gjøre hele originalen synlig for elevteamet.
+
 ### Slik fungerer det
 
 1. Brukeren skriver et notat eller laster opp en fil til en innboks med status mottatt, under behandling, må avklares eller ferdig.
 2. Systemet kontrollerer filtype, skadelig innhold og mulige dubletter før dokumentlesing.
 3. Brukeren vurderer elevkobling og avgrenser nødvendig innhold før materialet blir tilgjengelig i elevens ordinære arbeidsflate.
+
+### Status og overganger
+
+Hvert importelement viser mottatt, filkontroll pågår, karantene, klart for uttrekk, må avklares eller behandlet. En ferdig opplasting er ikke det samme som en bekreftet elevopplysning.
+
+### Automatikk og menneskelige valg
+
+Filkontroll og dublettsøk starter ved import. Systemet kan foreslå elevkobling, men en ansatt bekrefter tilordning og nødvendig innhold før ordinær gjenbruk.
+
+### Når noe mangler eller feiler
+
+Uleselig, passordbeskyttet eller ikke støttet fil får en konkret feilmelding og mulighet for ny kopi eller separat manuelt notat med kildehenvisning. Karanteneinnhold brukes ikke til forslag.
 
 ### Resultat
 
@@ -209,11 +262,28 @@ Dokumentlesing og OCR foreslår elevkobling, datoer, mål og tiltak. Bevar avsen
 - Original dokumentversjon med tekst eller skannede sider.
 - Forslag til elev, dokumenttype, datoer, mål, tiltak og oppfølgingspunkter.
 
+### Arbeidsflate og handlinger
+
+- Kontrollflaten viser original side eller tekstutdrag til venstre og foreslåtte felt til høyre. Feltet viser verdi, enhet, type opplysning og kilde; valg er «Godta», «Rett» og «Forkast».
+- Brukeren kan filtrere på ubekreftede og motstridende felt og hoppe fra et felt til riktig kildeutsnitt. Opplysninger som ikke kan bekreftes får en avklaringsmerknad og ansvarlig.
+
 ### Slik fungerer det
 
 1. Systemet viser originalen ved siden av foreslåtte felt og lar brukeren hoppe til relevant side eller tekstutdrag.
 2. Brukeren godtar, retter eller forkaster hvert viktig uttrekk; uklar tekst merkes for manuell avklaring.
 3. Bekreftede felt blir gjenbrukbare opplysninger med kobling til original, avsender og dokumentversjon.
+
+### Status og overganger
+
+Et felt går fra forslag til bekreftet, rettet eller forkastet; dokumentet kan være delvis gjennomgått. Uavklarte felt skal fortsatt være synlige når de øvrige brukes videre.
+
+### Automatikk og menneskelige valg
+
+OCR og AI foreslår struktur og kildekoblinger. Den ansatte kontrollerer faktainnhold, datoer, omfang og elevtilordning; teknisk lesesikkerhet erstatter ikke denne kontrollen.
+
+### Når noe mangler eller feiler
+
+Når kildeutsnitt mangler eller teksten er utydelig, kan feltet stå åpent eller fylles manuelt med synlig kilde og forbehold. Nytt uttrekk erstatter ikke tidligere bekreftede verdier uten gjennomgang.
 
 ### Resultat
 
@@ -254,11 +324,28 @@ Søk i relevant, autorisert informasjon. Hendelsesdato og registreringsdato hold
 - Bekreftede opplysninger og kildelenker.
 - Hendelsesdato, registreringsdato, emne, måltilknytning og eventuell uenighet.
 
+### Arbeidsflate og handlinger
+
+- Tidslinjen har periodevalg og filtre for mål, tema, kilde og dokumenttype. Hvert element viser hendelsesdato, registreringsdato, avsender og opplysningstype, slik at en sen registrering kan forstås riktig.
+- Detaljvisningen har «Åpne kilde», «Foreslå retting» og oversikt over hvor opplysningen er brukt. En retting forhåndsviser hvilke utkast, økter og delte dokumenter som trenger oppfølging.
+
 ### Slik fungerer det
 
 1. Brukeren filtrerer tidslinjen etter periode, tema, mål, kilde eller dokumenttype.
 2. Et element kan åpnes for kontekst, kildelesing og oversikt over planer eller rapporter som har brukt det.
 3. Ved retting registreres begrunnelse og ny versjon. Systemet viser berørte utkast og sender allerede delte dokumenter til en egen oppfølgingsvurdering.
+
+### Status og overganger
+
+Opplysninger vises som gjeldende, bestridte, korrigerte eller erstattede. Berørte utkast merkes for ny gjennomgang; tidligere delte versjoner beholder sin faktiske delingshistorikk.
+
+### Automatikk og menneskelige valg
+
+Programmet filtrerer, finner avledninger og markerer følger av en retting. Ansvarlig bestemmer ny formulering og eventuell korrigerende kommunikasjon.
+
+### Når noe mangler eller feiler
+
+Ved feil elevtilordning fjernes den operative tilgangen fra feil elevs arbeidsflate. Rettelsen får en ansvarlig oppfølgingsoppgave dersom tidligere delte dokumenter eller andre systemer kan være berørt.
 
 ### Resultat
 
@@ -299,11 +386,28 @@ Versjonerte lovkrav, forskrifter, godkjenningsvedtak, lokale rutiner og produktv
 - Kravregister, skoleprofil, lokale rutiner, dokumentmaler og godkjente tidsregler.
 - Elev-/saksforhold som avgjør om et krav gjelder.
 
+### Arbeidsflate og handlinger
+
+- Arbeidslisten kan vises som kalender eller tabell med oppgave, elev/sak der tilgang finnes, ansvarlig, tidsregel, lokal påminnelse og status. Lovkrav, lokal rutine og frivillig oppgave er tydelig merket.
+- Regelredaktøren åpner et kravkort med kildeversjon, anvendelsesvilkår og godkjenning. Før aktivering av en endring vises berørte oppgaver og hva som vil endres.
+
 ### Slik fungerer det
 
 1. Regelansvarlig vurderer hvilke regler og lokale rutiner som gjelder skolen, med kilde og gyldighet.
 2. Systemet oppretter konkrete oppgaver med ansvarlig, tidsregel og eventuell lokal påminnelsesdato.
 3. Ansatte ser sin arbeidsliste, legger til utført handling eller dokumentasjon og sender uavklarte spørsmål til rett ansvarlig.
+
+### Status og overganger
+
+Regler har utkast, til vurdering, godkjent og erstattet versjon. Oppgaver viser blant annet uavklart anvendelse, åpen, under arbeid, til kontroll og avsluttet med dokumentert handling.
+
+### Automatikk og menneskelige valg
+
+Godkjente regler kan opprette oppgaver og påminnelser fra registrerte hendelser. Regelansvarlig avgjør anvendelse og tidsgrunnlag; den ansvarlige bekrefter at handlingen faktisk er utført.
+
+### Når noe mangler eller feiler
+
+Ukjent skoleprofil eller manglende utløserdato gir en avklaringsoppgave. Programmet skal vise hva som mangler fremfor å produsere en tilsynelatende presis frist.
 
 ### Resultat
 
@@ -344,11 +448,28 @@ Samle henvisningsgrunnlag, nødvendig samtykke/tillatelse og PPT-dokumentasjon. 
 - Tidligere tiltak og utbytte, relevant samtykke, PPT-dokumenter og vedtaksoriginal.
 - Myndighet, gyldighetsperiode, fag, omfang, organisering og kompetansekrav.
 
+### Arbeidsflate og handlinger
+
+- Saksoversikten samler henvisning, sakkyndig vurdering, vedtak og avklaringer i et datert forløp. Et sammenligningsbilde viser PPTs anbefalinger ved siden av vedtakets bestemmelser.
+- Ved registrering bekreftes kategori, fag, omfang med enhet og periode, organisering, kompetansekrav og vedtaksmyndighet. Brukeren kan åpne bestemmelsens kilde direkte fra hvert felt.
+
 ### Slik fungerer det
 
 1. Brukeren oppretter en sak eller registrerer dokumenter i en eksisterende sak.
 2. Systemet skiller anbefalinger i sakkyndig vurdering fra rettigheter og vilkår i vedtaket; brukeren bekrefter nøkkelfeltene.
 3. Ansvarlig kan følge henvisning, ventende avklaringer, mottatt vedtak og behov for ny vurdering fra én saksoversikt.
+
+### Status og overganger
+
+Saksforløpet viser forberedelse, henvisning sendt, venter på grunnlag, vedtak mottatt og oppfølging. Dokumentenes bekreftelse og gyldighet vises separat fra sakens fremdrift.
+
+### Automatikk og menneskelige valg
+
+Programmet foreslår uttrekk, sammenstiller forskjeller og oppretter avklaringspunkter. Ansvarlig bekrefter grunnlaget, og vedtaksmyndigheten treffer avgjørelsen.
+
+### Når noe mangler eller feiler
+
+Manglende vedtak, uklare enheter eller motstridende datoer markeres konkret. En manuell økt kan forberedes med synlige forbehold, uten at uavklart omfang registreres som en bekreftet rettighet.
 
 ### Resultat
 
@@ -389,11 +510,28 @@ Generer og rediger IOP-utkast innenfor vedtaket. Koble mål, delmål, tiltak, ar
 - Aktuelt vedtak, sakkyndige anbefalinger, læreplan og bekreftet elevgrunnlag.
 - Eksisterende IOP, delmål, tiltak, ansvar, organisering og vurderingsmåte.
 
+### Arbeidsflate og handlinger
+
+- IOP-redigeringen viser mål, delmål, tiltak, arena, ansvar og evalueringsmåte, med gjeldende vedtak tilgjengelig ved siden av. Elev- og foresattinnspill kan knyttes til den delen de gjelder.
+- Hvert mål har en stabil identitet og daterte versjoner. «Sammenlign versjoner» viser hvilke mål som er endret, videreført eller avsluttet, og hvilke kommende økter som kan påvirkes.
+
 ### Slik fungerer det
 
 1. Brukeren registrerer en eksisterende IOP eller ber om et nytt utkast og kontrollerer koblingen til vedtaket.
 2. Mål og tiltak redigeres med forventet handling, arena, støtte og hvordan utvikling skal observeres; elev- og foresattinnspill tas med.
 3. Ansvarlig gjennomgår og aktiverer en datert revisjon. Endringer som krever nytt vedtak blir en avklaringsoppgave.
+
+### Status og overganger
+
+Planen har utkast, til faglig gjennomgang, godkjent gjeldende versjon og historiske versjoner. Et endret mål i utkast endrer ikke målet som tidligere undervisning ble dokumentert mot.
+
+### Automatikk og menneskelige valg
+
+Programmet kan foreslå målformuleringer og struktur fra bekreftet grunnlag og kontrollere manglende felt. Faglig ansvarlig velger innhold, vurderer medvirkning og godkjenner planen.
+
+### Når noe mangler eller feiler
+
+Nytt eller endret vedtak oppretter en revisjonsoppgave med synlig forskjell. Systemet overskriver ikke gjeldende IOP eller flytter historiske observasjoner til nye mål uten eksplisitt vurdering.
 
 ### Resultat
 
@@ -434,11 +572,28 @@ Skolens godkjente læreplan, fag- og timefordeling, halvårsplaner og ukeplaner.
 - Skolens godkjente læreplan og vurderingsordning.
 - Klasse-/gruppeplaner med tema, periode, læringsmål og planlagte aktiviteter.
 
+### Arbeidsflate og handlinger
+
+- Klasseplanen viser tema, periode, læreplanreferanser, aktiviteter og materiell i en periodeoversikt. Brukeren kan importere en eksisterende halvårsplan og kontrollere feltene før publisering.
+- Fra elevens planlegging vises aktuelle klassetemaer sammen med egne mål. Pedagogen velger hva eleven skal delta i, hva som tilpasses og hvilke koblinger som ikke er relevante.
+
 ### Slik fungerer det
 
 1. Læreren importerer eller skriver en plan og bekrefter perioder og målreferanser.
 2. Spesialpedagogen ser aktuelle klassetemaer sammen med elevens mål og velger meningsfulle koblinger.
 3. Når en plan publiseres i ny versjon, vises berørte kommende økter slik at ansvarlig kan beholde eller endre dem.
+
+### Status og overganger
+
+Klasseplanen har utkast, publisert og erstattet versjon. En berørt økt viser hvilken versjon den bygger på og om en senere planendring trenger vurdering.
+
+### Automatikk og menneskelige valg
+
+Programmet foreslår koblinger mellom tema og elevmål og finner berørte økter ved endring. Pedagogen avgjør faglig relevans og tilpasning.
+
+### Når noe mangler eller feiler
+
+En ustrukturert import kan lagres som kilde mens perioder legges inn manuelt. Manglende klasseplan skal ikke hindre planlegging ut fra bekreftede elevmål.
 
 ### Resultat
 
@@ -479,11 +634,28 @@ Import, søk, gjenbruk og deling av pedagogens opplegg med rettigheter, alder, f
 - Egne dokumenter, presentasjoner og praktiske opplegg.
 - Mål, forkunnskaper, varighet, materiell, plassering, antall og bruksrettigheter.
 
+### Arbeidsflate og handlinger
+
+- Biblioteket kan filtreres etter fag, målområde, nivå, varighet, gruppestørrelse og materiell. Ressurskortet viser original, opphav, bruksrett, forberedelser og tidligere registrerte erfaringer.
+- «Bruk i økt» lager en tilpasning knyttet til originalversjonen. For fysisk materiell vises plassering og tilgjengelighet; pedagogen kan velge et alternativ som allerede finnes ved skolen.
+
 ### Slik fungerer det
 
 1. Brukeren legger inn opplegget og bekrefter forslag til beskrivende merker.
 2. Ved øktplanlegging søkes det etter passende egne ressurser; pedagogen ser originalen og hvorfor den kan passe.
 3. En tilpasning lagres som egen versjon eller variant, med kobling til originalen og registrert erfaring etter bruk.
+
+### Status og overganger
+
+Ressurser vises som private utkast, tilgjengelige for avtalt team eller trukket fra videre bruk. Varianter beholder koblingen til originalen og overskriver ikke andres opplegg.
+
+### Automatikk og menneskelige valg
+
+Programmet foreslår merking og relevante ressurser fra det avgrensede biblioteket. Pedagogen bekrefter egnethet og tilpasning; eier eller ansvarlig avklarer bruksrett.
+
+### Når noe mangler eller feiler
+
+Manglende materiell eller uklar delingsrett vises før opplegget tas i bruk. Brukeren kan velge en annen ressurs eller lage et eget opplegg; systemet antar ikke at alt kan kopieres.
 
 ### Resultat
 
@@ -524,11 +696,28 @@ Registrer instrument, versjon, resultater og gjennomføringsbetingelser. Hold st
 - Instrument, versjon, bruksrett, aktuelle mål og faglig intervallveiledning.
 - Dato, råresultat, skala, tilpasninger og gjennomføringsbetingelser.
 
+### Arbeidsflate og handlinger
+
+- Kartleggingskortet viser instrument, versjon, formål, skala, instruksjon, lisens og relevante tidligere gjennomføringer. Registreringsbildet skiller råresultat, betingelser og faglig tolkning.
+- Tidslinjen kan vise gjentatte målinger med merknader om støtte, språk og andre endrede betingelser. Et forslag om neste kartlegging viser kilde og hvorfor tidspunktet foreslås.
+
 ### Slik fungerer det
 
 1. Pedagogen velger kartlegging og ser forkunnskaper, lisensbegrensninger og eventuelle tidligere resultater.
 2. Resultatet registreres med instrumentets skala og forhold som kan påvirke tolkingen; ansvarlig bekrefter registreringen.
 3. Systemet foreslår oppfølging og eventuelt tidspunkt for ny kartlegging med synlig kilde og begrunnelse. Pedagogen velger videre bruk.
+
+### Status og overganger
+
+En gjennomføring er planlagt, påbegynt, registrert eller faglig vurdert; avbrutt og ikke sammenlignbar er synlige utfall. En påminnelse om ny måling kan godtas, flyttes eller avvises med begrunnelse.
+
+### Automatikk og menneskelige valg
+
+Programmet kan validere format og skala og foreslå oppfølging ut fra godkjente instrumentopplysninger. Fagperson gjennomfører, tolker og velger hva resultatet betyr for undervisningen.
+
+### Når noe mangler eller feiler
+
+Feil skala eller manglende instrumentversjon må avklares før sammenstilling. Usammenlignbare resultater vises hver for seg; manglende målinger erstattes ikke med beregnede elevresultater.
 
 ### Resultat
 
@@ -569,11 +758,28 @@ Bruk aktive mål, siste gjennomføring, klassens tema og tilgjengelige ressurser
 - Aktive mål og rammer, siste relevante notat, bekreftede støttestrategier og klassens tema.
 - Tilgjengelig tid, arena, deltakere, materiell og pedagogens egne ressurser.
 
+### Arbeidsflate og handlinger
+
+- Planleggingsbildet starter med elev, mål, varighet, tema, arena og materiell. Et grunnlagspanel viser valgte IOP-mål, støttestrategier, siste relevante observasjoner og eventuelle mangler.
+- Økten redigeres som forberedelse, steg med tidsanslag, støtte, avtalt forenkling og observasjonspunkt. «Lag nytt forslag» viser endringene før pedagogen velger hva som skal erstatte egen tekst.
+
 ### Slik fungerer det
 
 1. Pedagogen velger elev, mål og øktlengde; systemet viser hvilket grunnlag det vil bruke.
 2. Et utkast beskriver mål, forberedelse, materiell, konkrete steg, støtte, alternativ ved vansker og hva som skal observeres.
 3. Pedagogen endrer eller avviser forslag, kontrollerer at det passer eleven og godkjenner økten for gjennomføring.
+
+### Status og overganger
+
+Økten er utkast, til gjennomgang, godkjent for gjennomføring eller trenger ny kontroll etter endring. Planlagt tidspunkt og faktisk gjennomføring har egne statuser.
+
+### Automatikk og menneskelige valg
+
+Programmet foreslår et konkret opplegg fra valgt grunnlag og egne ressurser. Pedagogen avgjør om aktivitet, støtte, tempo og observasjonspunkt passer eleven og godkjenner versjonen.
+
+### Når noe mangler eller feiler
+
+Når AI ikke svarer, kan pedagogen bruke samme felter manuelt og beholde lagret arbeid. Manglende kilder og uavklart plangrunnlag blir synlige, uten oppdiktet innhold eller automatisk stans i elevens støtte.
 
 ### Resultat
 
@@ -615,11 +821,28 @@ Gjennomføringskort som kan forstås på omtrent fem minutter. Materiell, tre–
 - Godkjent økt, avtalt assistentrolle, nødvendig elevstøtte og kontaktperson.
 - Materiell, plassering, praktiske steg og avtalte forenklinger.
 
+### Arbeidsflate og handlinger
+
+- Assistenten åpner dagens tildelte kort med sted, tidspunkt, materiellplassering, mål i enkelt språk og tre–fem trinn. Avtalt forenkling, når hjelp skal hentes og kontaktperson vises uten ekstra søk.
+- Kortet har «Still spørsmål» og en kort etterregistrering av hva som ble gjort og hva som var vanskelig. Pedagogen kan se spørsmål og gi oppdatert veiledning til det konkrete oppdraget.
+
 ### Slik fungerer det
 
 1. Systemet lager et kort fra den godkjente økten med mål i enkelt språk, materiell og tre–fem hovedsteg.
 2. Ansvarlig pedagog kontrollerer kortet og tildeler det til assistenten for en bestemt økt/periode.
 3. Assistenten åpner kortet, kan stille et spørsmål og etterpå gi en kort tilbakemelding om hva som ble gjort og hvor hjelp trengs.
+
+### Status og overganger
+
+Kortet vises som utkast, godkjent, tildelt eller utdatert. Åpnet kort viser bare tilgangshendelsen; det regnes ikke som dokumentert forståelse eller utført oppdrag.
+
+### Automatikk og menneskelige valg
+
+Programmet kan forkorte en godkjent økt til et praktisk kort. Pedagogen kontrollerer at nødvendig støtte og kontaktvei er med; assistenten bekrefter faktisk gjennomføring separat.
+
+### Når noe mangler eller feiler
+
+Når økten endres, markeres kortet for ny kontroll. Hvis assistenten er usikker eller tildelingen mangler, vises ansvarlig kontakt og avklaringsbehov fremfor tilgang til hele elevmappen.
 
 ### Resultat
 
@@ -660,11 +883,28 @@ Faste krav, pedagogiske preferanser, kompetanse, elevbehov, inkludering, rom og 
 - Klasse- og elevplaner, vedtaksrammer, kompetanse, tilgjengelighet, rom og materiell.
 - Pedagogisk vurderte gruppevalg, faste begrensninger, ønskede tidspunkter og låste økter.
 
+### Arbeidsflate og handlinger
+
+- Timeplanen viser elever, ansatte, rom og materiell i en ukevisning. Planleggeren registrerer tilgjengelighet, vedtaksrammer, skjermede klasseperioder og krav som ikke kan brytes, adskilt fra ønsker.
+- Forslag kan sammenlignes med forklaring på gruppesammensetning, reisetid, ressurskonflikter og udekkede behov. Manuelle flyttinger og låste økter tas med ved ny beregning.
+
 ### Slik fungerer det
 
 1. Planleggeren registrerer hva som er ufravikelig, og hva som er en preferanse.
 2. Systemet foreslår gjennomførbare plasseringer og grupper med forklaring på valg, ressursbruk og eventuelle udekkede behov.
 3. Planleggeren sammenligner alternativer, låser gode økter og publiserer etter pedagogisk kontroll; senere endringer vises som en konkret differanse.
+
+### Status og overganger
+
+Planversjoner er forslag, til kontroll, publisert eller erstattet. Publisering viser en endringsliste til berørte ansatte; en uløst konflikt beholdes som konkret avvik.
+
+### Automatikk og menneskelige valg
+
+Programmet søker etter plasseringer innenfor bekreftede rammer. Pedagogen vurderer om elever kan arbeide sammen, og planansvarlig godkjenner den samlede planen.
+
+### Når noe mangler eller feiler
+
+Når ingen fullstendig plan finnes, vises hvilke krav som kolliderer og mulige valg for ansvarlig. Programmet skal ikke skjule underdekning eller gjøre harde krav til preferanser for å vise en ferdig plan.
 
 ### Resultat
 
@@ -705,11 +945,28 @@ Registrer per elev faktisk deltakelse, varighet, støtteform, bemanning og årsa
 - Planlagt økt som valgfritt utgangspunkt.
 - Faktisk deltakelse, varighet, støtteform, bemanning og årsak til avvik.
 
+### Arbeidsflate og handlinger
+
+- Etterregistreringen åpnes fra økten med planlagte deltakere, tid og støtte som forslag. Brukeren bekrefter faktisk start/slutt eller varighet, hvem som deltok og hvilken støtte som ble gitt.
+- Ved delvis gjennomføring eller avlysning registreres årsak og eventuell oppfølgingsansvarlig. Oversikten sammenstiller planlagt og faktisk støtte per elev og kategori, med kilde til vedtaksrammen.
+
 ### Slik fungerer det
 
 1. Brukeren bekrefter hvem som deltok og registrerer faktisk tid og aktivitet; planlagte verdier vises bare som forslag.
 2. Ved avvik velges relevant årsak, for eksempel elevfravær, manglende bemanning eller endret opplegg, med oppfølgingsansvar ved behov.
 3. Systemet viser sammenstilling av planlagt og gjennomført støtte etter registrerte kategorier og vedtaksrammer.
+
+### Status og overganger
+
+En økt viser ikke registrert, gjennomført, delvis gjennomført eller avlyst. En korrigert registrering beholder tidligere verdier og begrunnelse; oppfølgingsoppgaven har egen status.
+
+### Automatikk og menneskelige valg
+
+Programmet kan foreslå kjente felt og summere bekreftede registreringer. Den som fulgte økten bekrefter hva som faktisk skjedde; en passert kalenderavtale gir ingen automatisk gjennomføring.
+
+### Når noe mangler eller feiler
+
+Ufullstendig registrering vises som manglende dokumentasjon. Ved uklart lagringssvar kontrolleres eksisterende registrering før nytt forsøk, slik at samme gjennomføring ikke telles to ganger.
 
 ### Resultat
 
@@ -750,11 +1007,28 @@ Strukturert kortnotat på cirka ett minutt, med valgfri fritekst. Senere dikteri
 - Valgt elev/økt, tidspunkt og eventuelt mål.
 - Kort observasjon, grad/type støtte og valgfritt forslag til neste steg.
 
+### Arbeidsflate og handlinger
+
+- Kortloggen viser riktig elev, økt, dato og mål ferdig valgt når den åpnes fra en økt. Feltene er konkret observasjon, støtte som ble gitt og eventuelt neste steg; ekstra felter vises ved behov.
+- Brukeren kan åpne kilde og redigere eget notatutkast. Ved senere diktering vises transkripsjonen til kontroll før lagring, med synlig informasjon om behandling og håndtering av lyd.
+
 ### Slik fungerer det
 
 1. Brukeren åpner en kort logg fra økten eller elevsiden; kjente felt fylles som synlige forslag.
 2. Brukeren skriver et kort notat eller senere dikterer og kontrollerer transkripsjonen.
 3. Notatet lagres én gang og kan gjenbrukes i tidslinje, neste økt, vurdering og rapport med opprinnelig avsender.
+
+### Status og overganger
+
+Et notat er utkast, lagret eller korrigert; diktert tekst er ubekreftet inntil brukeren har kontrollert den. Faglig tolkning merkes separat fra den konkrete observasjonen.
+
+### Automatikk og menneskelige valg
+
+Programmet gjenbruker øktens kontekst og kan foreslå struktur eller transkribere. Forfatteren bekrefter innholdet; teksten skal ikke utvides med mestring eller hendelser som ikke er oppgitt.
+
+### Når noe mangler eller feiler
+
+Brukeren kan skrive manuelt hvis talegjenkjenning feiler. Ved lagringsfeil vises at notatet ikke er bekreftet lagret, og innholdet beholdes i den åpne redigeringen så lenge tilgang og økt er gyldig.
 
 ### Resultat
 
@@ -795,11 +1069,28 @@ Vis utvikling per mål og hvilke observasjoner den bygger på. Manglende belegg 
 - Målversjoner, relevante observasjoner, kartlegginger og gjennomførte tiltak.
 - Tidligere faglige vurderinger og gjennomføringsbetingelser.
 
+### Arbeidsflate og handlinger
+
+- Målvisningen kombinerer gjeldende målversjon, observasjoner, faktisk støtte og sammenlignbare kartlegginger for valgt periode. Brukeren kan åpne hvert støttepunkt og se variasjon eller manglende grunnlag.
+- Vurderingsbildet har forslag til oppsummering og valg for videreføring, tilpasning eller mer kartlegging. Pedagogen skriver sin vurdering og knytter neste tiltak til et mål eller en oppgave.
+
 ### Slik fungerer det
 
 1. Pedagogen velger et mål og en periode og får en oversikt over støttepunkter, variasjon og manglende belegg.
 2. Systemet foreslår en forsiktig oppsummering og mulige neste steg med kildehenvisninger.
 3. Pedagogen bekrefter sin vurdering og velger videreføring, tilpasning eller behov for mer informasjon.
+
+### Status og overganger
+
+En utviklingsvurdering er utkast, til gjennomgang eller bekreftet av fagperson. Nytt grunnlag kan markere behov for ny vurdering uten å overskrive den historiske vurderingen.
+
+### Automatikk og menneskelige valg
+
+Programmet sammenstiller dokumenterte observasjoner og foreslår formuleringer med kilder. Fagpersonen avgjør måloppnåelse og videre tiltak; få observasjoner gir ikke automatisk en sikker trend.
+
+### Når noe mangler eller feiler
+
+Ved motstridende observasjoner vises begge med kontekst. Dersom mål eller målebetingelser er endret, markeres bruddet i sammenligningen og pedagogen kan velge en kortere, sammenlignbar periode.
 
 ### Resultat
 
@@ -840,11 +1131,28 @@ Rapporttyper og maler styres av gjeldende krav. Generer blant annet årlig ITO-e
 - Dokumenttype, gjeldende regel/mal, elev, periode og ansvarlig.
 - Vedtak, historiske IOP-mål, gjennomført opplæring, kartlegginger og faglige vurderinger.
 
+### Arbeidsflate og handlinger
+
+- Rapportarbeidsflaten viser dokumenttype, periode, gjeldende mal, ansvarlig og manglende bidrag. Teksten redigeres seksjonsvis med kilder og målversjoner tilgjengelig ved siden av.
+- Lærer og spesialpedagog kan tildeles avgrensede deler, kommentere og levere inn bidrag. Godkjenningsvisningen viser hele dokumentet, endringer og uløste felt før det går til mottakerkontroll.
+
 ### Slik fungerer det
 
 1. Brukeren åpner rapportoppgaven og ser hvilke innholdskrav, kilder og bidrag som mangler.
 2. Systemet lager et redigerbart utkast med kildehenvisninger for faktapåstander og tydelige avklaringsfelt.
 3. Bidragsytere kontrollerer sine deler; ansvarlig godkjenner riktig dokumentversjon og sender den videre til mottakerkontroll i F21.
+
+### Status og overganger
+
+Dokumentet er utkast, venter på bidrag, til kontroll, godkjent eller erstattet. Utsending og arkivering vises som egne forløp; godkjent tekst betyr ikke at mottaker har fått den.
+
+### Automatikk og menneskelige valg
+
+Programmet kan hente bekreftet grunnlag og generere malbasert tekst. Ansvarlig fagperson vurderer konklusjonene, kontrollerer at innholdet dekker formålet og godkjenner riktig versjon.
+
+### Når noe mangler eller feiler
+
+Manglende dokumentgrunnlag blir konkrete avklaringsfelt, ikke automatisk positive formuleringer. Ved ukjent eller ikke godkjent mal kan et manuelt arbeidsutkast lages uten merking som ferdig lovpålagt rapport.
 
 ### Resultat
 
@@ -885,11 +1193,28 @@ Samle lærernes innspill og elevens egenvurdering. Lag utkast til veiledende vur
 - Gjeldende læreplan/vurderingsordning, fagets avslutning, eventuelle fritak og relevant IOP.
 - Lærerens faglige grunnlag, elevens egenvurdering og relevante dokumenterte observasjoner.
 
+### Arbeidsflate og handlinger
+
+- Vurderingsbildet tilpasses fag, trinn, periode og skolens bekreftede vurderingsordning. Det viser kompetansegrunnlag, elevinnspill og innspill fra andre ansatte med tydelig opphav.
+- Læreren kan redigere formuleringer om kompetanse og videre arbeid og registrere sin egen vurdering. Eventuell karakter har et separat felt med riktig myndighet, og formidlingsmåte registreres for seg.
+
 ### Slik fungerer det
 
 1. Læreren velger vurderingstype og får riktige felt for trinn, fag og skolens ordning.
 2. Systemet samler innspill og foreslår formuleringer om kompetanse og videre arbeid som læreren kan redigere.
 3. Faglærer fastsetter vurdering og eventuell karakter; faktisk formidling eller registrering i autoritativt system dokumenteres separat.
+
+### Status og overganger
+
+Vurderingen viser under arbeid, trenger grunnlag og fastsatt. Formidlet til eleven, delt med berettigede foresatte og overført til skolens hovedsystem er separate hendelser.
+
+### Automatikk og menneskelige valg
+
+Programmet foreslår struktur og tekst basert på dokumentert grunnlag. Læreren fastsetter vurdering og eventuell karakter; systemet produserer ikke karakterer fra IOP-mål, fravær eller AI-forslag.
+
+### Når noe mangler eller feiler
+
+Uavklart Montessori-ordning eller manglende vurderingsgrunnlag gir avklaring. Programmet skal ikke velge en generell karakterordning for å fylle tomme felter eller likestille IOP-evaluering med fagvurdering.
 
 ### Resultat
 
@@ -931,6 +1256,11 @@ Generer redigerbare e-poster per elev basert på et valgt fra-/til-intervall. An
 - Bekreftede opplysninger fra perioden, nødvendige bakgrunnsreferanser og eventuelle separat merkede fremtidige planer.
 - Valgfritt: utkastfrekvens, periodeavgrensning, første tidspunkt, ansvarlig og sluttdato for gjentakelse.
 
+### Arbeidsflate og handlinger
+
+- «Lag e-post» åpner elev, formål, fra-/til-dato, temaer, språk og ønsket lengde. Datovelgeren viser den faktiske perioden også ved snarveier som siste 14 dager; ingen ukentlig rutine er forhåndsvalgt.
+- Gjennomgangen viser emne og redigerbar brødtekst sammen med inkluderte observasjoner, mangler og overlapp med tidligere delte perioder. En separat oversikt lar brukeren aktivere, pause eller avslutte gjentatte utkast og se neste tidspunkt.
+
 ### Slik fungerer det
 
 1. Brukeren åpner «Lag e-post», velger datoer direkte eller en snarvei som siste 14 dager, forrige måned eller siden forrige sendte periode. Beregnede datoer vises alltid før generering.
@@ -938,6 +1268,18 @@ Generer redigerbare e-poster per elev basert på et valgt fra-/til-intervall. An
 3. Systemet lager emne og brødtekst med arbeid, konkrete observasjoner, relevante avtaler og eventuelle neste steg. Kildene vises i en intern gjennomgangsflate.
 4. Pedagogen redigerer, kontrollerer faktapåstander og velger mottakerspesifikt innhold. F21 håndterer godkjenning og eventuell utsending gjennom skolens tillatte kanal.
 5. Hvis gjentakelse ønskes, aktiverer brukeren en egen utkastplan, for eksempel hver 14. dag eller månedlig. Nye utkast går til ansvarlig for gjennomgang; planen kan pauses, endres og avsluttes.
+
+### Status og overganger
+
+Et brev er utkast, til gjennomgang, godkjent eller forkastet. Utkastplanen er inaktiv, aktiv, pauset eller avsluttet; sendestatus kommer fra F21 og kan ikke utledes av at et utkast er generert.
+
+### Automatikk og menneskelige valg
+
+Programmet kan lage emne og tekst for valgt periode og klargjøre nye utkast ved uttrykkelig valgt intervall. Pedagogen kontrollerer innhold og mottakere for hvert brev og velger eventuell utsending separat.
+
+### Når noe mangler eller feiler
+
+Tom periode viser «Ingen bekreftede observasjoner i valgt periode» og valg om ny periode eller manuelt brev. Manglende ansvarlig eller genereringsfeil gir oppfølging; forsinkede kjøringer lager ikke en bunke brev automatisk.
 
 ### Resultat
 
@@ -988,12 +1330,29 @@ Godkjenn eksakt innhold, vedlegg, mottakere og kanal. Endringer gjør godkjennin
 - Eksakt dokumentrevisjon, emne, brødtekst, vedlegg og eventuell språkvariant.
 - Mottakergrunnlag, formål, valgt kanal og godkjenningsfullmakter.
 
+### Arbeidsflate og handlinger
+
+- Godkjenningsbildet viser eksakt dokumentversjon, kilder, språkvariant og vedlegg. Avsenderen får en egen forhåndsvisning for hver mottaker med kanal og hva vedkommende faktisk får tilgang til.
+- Utsendingsoversikten viser tidspunkt, ansvarlig avsender og transportutfall. Ved avvik kan avsender undersøke kvittering, rette mottakergrunnlag eller klargjøre en korrigert versjon.
+
 ### Slik fungerer det
 
 1. Faglig ansvarlig ser teksten sammen med kilder, endringer og mangler og godkjenner den konkrete versjonen.
 2. Avsender velger mottaker og ser en forhåndsvisning av akkurat det vedkommende vil motta, inkludert vedlegg.
 3. Systemet kontrollerer gjeldende mottakerrett og kanal før eksplisitt utsending og følger resultatet til bekreftet transportutfall eller avklaringsbehov.
 4. Ved feil velges retting, ny versjon eller videre oppfølging; tidligere utsending beholdes som eget faktisk hendelsesforløp.
+
+### Status og overganger
+
+Innholdsgodkjenning, tillatelse til deling og transportutfall vises hver for seg. Transport kan være i kø, under sending, bekreftet akseptert, feilet eller uavklart; akseptert transport betyr ikke lest.
+
+### Automatikk og menneskelige valg
+
+Programmet kan kontrollere versjon, gjeldende rettigheter og kanal og utføre en uttrykkelig bestilt utsending. Godkjenner vurderer innhold, og autorisert avsender beslutter utleveringen.
+
+### Når noe mangler eller feiler
+
+Endret tekst eller vedlegg krever ny relevant godkjenning. Ved uavklart sendingsutfall avstemmes med transporttjenesten før nytt forsøk; eksport eller kopiering til e-postklient merkes ikke automatisk sendt.
 
 ### Resultat
 
@@ -1036,11 +1395,28 @@ Møteforberedelse, innspill, referatutkast, ansvar, oppgaver og frister. Samarbe
 - Møtetype, deltakere, formål, relevant elevgrunnlag og tidligere avtaler.
 - Innspill fra elev, foresatte og tjenester med avklart delingsgrunnlag.
 
+### Arbeidsflate og handlinger
+
+- Møtekortet viser formål, deltakere, agenda, relevant grunnlag og åpne avtaler. Referatet har egne felt for elevens syn, faglige innspill, beslutninger og tiltak med ansvarlig og dato.
+- Møtelederen kan gi deltakere avgrensede bidragsoppgaver og lage en mottakertilpasset referatversjon. En individuell plan fra andre tjenester lenkes som egen plantype, tydelig atskilt fra IOP.
+
 ### Slik fungerer det
 
 1. Møteleder velger formål og deltakere og får forslag til agenda, utestående oppgaver og relevant grunnlag.
 2. Under eller etter møtet registreres konkrete avtaler, elevens syn, ansvarlige og frister; referatutkast kan genereres fra notater.
 3. Møteleder bekrefter referatet og fordeler oppfølging; deltakere får avgrenset informasjon etter sin rolle.
+
+### Status og overganger
+
+Møtet er planlagt, gjennomført eller avlyst; referatet er utkast eller bekreftet. Hvert tiltak følges separat som åpent, under arbeid eller utført med registrert resultat.
+
+### Automatikk og menneskelige valg
+
+Programmet kan foreslå agenda fra åpne oppgaver og skrive referatutkast fra registrerte notater. Møteleder bekrefter hva som ble avtalt og hvem som får hvilke opplysninger.
+
+### Når noe mangler eller feiler
+
+Uenighet beholdes med avsender fremfor å omskrives til enighet. En deltaker uten avklart delingsgrunnlag får ikke hele elevgrunnlaget som følge av å være invitert til møtet.
 
 ### Resultat
 
@@ -1081,11 +1457,28 @@ Hent eller før fravær, registrer kontakt og tiltak, foreslå oppfølging og gj
 - Fraværsregistrering fra autoritativt system eller manuell føring med kilde.
 - Berørte timer, kontaktforsøk, nødvendige årsaksopplysninger og avtalte tiltak.
 
+### Arbeidsflate og handlinger
+
+- Fraværsoversikten viser registrert elevfravær ved siden av planlagte økter og faktisk gjennomføring. Brukeren kan åpne perioder for å skille elevens fravær fra avlyst tilbud eller manglende registrering.
+- Oppfølgingskortet samler kontakt, elev-/foresattinnspill, tiltak, ansvarlig og avtalt evaluering. Neste oppfølging vises i den ansvarliges arbeidsliste.
+
 ### Slik fungerer det
 
 1. Systemet viser fravær sammen med planlagt og faktisk undervisning uten å slå kategoriene sammen.
 2. Ansvarlig vurderer situasjonen og registrerer kontakt, elev-/foresattinnspill og oppfølging.
 3. Ved avtalt oppfølgingsdato vises hva som er gjort, hva som mangler og om tiltak må endres.
+
+### Status og overganger
+
+Et fravær kan være registrert, avklart eller korrigert; oppfølgingen har egen status. En avsluttet oppfølgingsoppgave betyr ikke at elevens fraværsutfordring er løst.
+
+### Automatikk og menneskelige valg
+
+Programmet avstemmer registreringer og fremhever mønstre etter skolens avklarte regler. Ansvarlig vurderer årsaker og tiltak; systemet stiller ingen diagnose eller automatisk risikoklassifisering.
+
+### Når noe mangler eller feiler
+
+Motstrid mellom import og manuell føring vises med begge kilder. Identiske importhendelser skal ikke doble fraværet, og manglende import skal vises som ukjent fremfor null fravær.
 
 ### Resultat
 
@@ -1126,11 +1519,28 @@ Egen begrenset sak med varsel, undersøkelser, elevens syn, tiltak, ansvar og ev
 - Bekymring, tidspunkt, berørte personer og faktisk varsling.
 - Undersøkelser, elevens syn, problemforståelse, tiltak, ansvarlige og evalueringsdatoer.
 
+### Arbeidsflate og handlinger
+
+- Et separat saksrom viser mottatt bekymring, ansvarlig, elevens opplevelse, undersøkelser og aktivitetsplan. Skjermet innhold inngår ikke i den vanlige elevtidslinjen for ansatte uten sakstilgang.
+- Aktivitetsplanen redigeres med problem som skal løses, tiltak, ansvar, tid og evaluering. Ansvarlig registrerer utførte handlinger og elevens opplevelse ved oppfølging direkte på planen.
+
 ### Slik fungerer det
 
 1. Ansatt registrerer bekymringen i en egen begrenset sak og ser riktig varslingsvei.
 2. Ansvarlig følger undersøkelser og lager en konkret aktivitetsplan med tiltak og ansvar.
 3. Utførte handlinger registreres separat fra planen; ved evaluering vurderes elevens situasjon og behov for videre tiltak.
+
+### Status og overganger
+
+Saken viser mottatt, varslet, under undersøkelse, tiltak pågår og til evaluering. Avslutning krever ansvarlig vurdering; en ferdig plan lukker ikke saken automatisk.
+
+### Automatikk og menneskelige valg
+
+Programmet støtter struktur, varsling og oppfølging etter avklart regelprofil. Ansatte utfører nødvendige handlinger, undersøker og vurderer om tiltakene hjelper.
+
+### Når noe mangler eller feiler
+
+Hvis vanlig varslingsvei ikke er egnet, skal godkjent alternativ være synlig. Manglende felter eller dokumentgenerering må ikke hindre faktisk varsling; handling utenfor programmet kan registreres etterpå.
 
 ### Resultat
 
@@ -1171,11 +1581,28 @@ Beskyttet dokumentasjon, ansvarlig avsenders vurdering, riktige kontaktpunkter o
 - Konkrete observasjoner/opplysninger, kilde og tidspunkt.
 - Ansvarlig persons vurdering, kontaktpunkt og faktisk handling eller melding.
 
+### Arbeidsflate og handlinger
+
+- Handlingsbildet viser skolens avklarte kontaktveier og hvem den ansatte kan kontakte. Et beskyttet skjema skiller egne observasjoner, opplysninger fra andre, usikkerhet og faktisk utført kontakt.
+- Den ansvarlige kan samle nødvendig grunnlag og lage et utkast til melding med mottaker og formål. Foresatte og det ordinære elevteamet legges ikke automatisk til som mottakere.
+
 ### Slik fungerer det
 
 1. Brukeren får tydelig tilgang til relevante kontaktveier og kan handle uten å vente på dokumentgenerering.
 2. Nødvendig faktagrunnlag registreres i en beskyttet sak; eventuelt utkast gjennomgås av den ansvarlige avsenderen.
 3. Faktisk melding og kontakt registreres med mottaker og tidspunkt, og videre oppfølging gis til rett ansvarlig.
+
+### Status og overganger
+
+Registrert bekymring, forberedt melding, faktisk kontakt eller sending og videre oppfølging er separate statuser. En lagret tekst skal aldri fremstå som en allerede levert melding.
+
+### Automatikk og menneskelige valg
+
+Programmet kan ordne dokumentert informasjon og minne om oppfølging. Den ansvarlige vurderer og handler innenfor sin plikt; AI avgjør ikke om et barn er utsatt eller om melding skal sendes.
+
+### Når noe mangler eller feiler
+
+Ved hast eller utilgjengelig system brukes etablerte kontaktveier, og faktisk handling dokumenteres når det er mulig. Normal dokumentgodkjenning skal ikke bli en ventekø for nødvendig personlig handling.
 
 ### Resultat
 
@@ -1216,11 +1643,28 @@ Egen hendelsesregistrering med beskrivelse, inngrep, elevens syn og faktisk vars
 - Tid, sted, hendelsesforløp, hva som ble gjort og hvem som var involvert.
 - Elevens egen beskrivelse, faktisk varsling og relevante oppfølgingspunkter.
 
+### Arbeidsflate og handlinger
+
+- Hendelsesskjemaet viser tidspunkt, sted, involverte roller, situasjonen før og under hendelsen, varighet og det som faktisk ble gjort. Elevens syn og observerte følger registreres som egne opplysninger.
+- Ansvarlig ser nødvendige varslings- og dokumentasjonsoppgaver etter skolens avklarte regler og kan knytte forebyggende oppfølging til hendelsen. Gjentakelser kan gjennomgås innenfor sakstilgangen.
+
 ### Slik fungerer det
 
 1. Ansatt fyller ut et eget hendelsesskjema med faktiske forhold fremfor en generell øktlogg.
 2. Systemet viser manglende nødvendige felt og varslingsoppgaver etter skolens godkjente regelprofil.
 3. Ansvarlig gjennomgår hendelsen og følger opp forebygging og eventuelle gjentakelser med avgrenset tilgang.
+
+### Status og overganger
+
+Hendelsen er registrert, under kontroll eller korrigert. Varsling, informasjon og forebyggende tiltak har egne utførelsesstatuser; ferdig hendelsesskjema avslutter ikke disse.
+
+### Automatikk og menneskelige valg
+
+Programmet kan strukturere beskrivelsen og vise manglende dokumentasjon. Ansvarlige vurderer hendelsen og videre tiltak; løsningen gir ikke automatiske konklusjoner om lovlighet eller instrukser for inngrep.
+
+### Når noe mangler eller feiler
+
+Motstridende beskrivelser beholdes med opphav. Etterregistrering viser både hendelsestid og registreringstid, og en manglende kvittering behandles som uavklart varsling.
 
 ### Resultat
 
@@ -1261,11 +1705,28 @@ Formålsstyrt tilgang per skole, elev og sak; sikker innlogging og revisjonsspor
 - Skole-, elev- og sakstilknytning, formål, gjeldende rettigheter og dataklassifisering.
 - Forespørsel, identitets-/representasjonsgrunnlag, omfang og relevant tidsregel.
 
+### Arbeidsflate og handlinger
+
+- Personvernarbeidslisten viser innsyns- og rettingshenvendelser med identitetsavklaring, omfang, ansvarlig og tidsgrunnlag. Saksbehandleren kan samle relevante dokumenter og avledninger innenfor sin fullmakt.
+- Før utlevering vises en pakke med hva som tas med, skjermes eller krever vurdering, samt begrunnelser. Tilgangshistorikk og berørte rettinger kan undersøkes uten generell adgang til alle elevtekster.
+
 ### Slik fungerer det
 
 1. Tilgang kontrolleres ved åpning, søk, generering, eksport og utsending; avslag viser en praktisk avklaringsvei uten å røpe skjermet innhold.
 2. Innsynsansvarlig registrerer en forespørsel, avklarer identitet og omfang og får en samlet oversikt over relevante opplysninger og avledninger.
 3. Ansvarlig vurderer skjerming, retting eller andre tiltak og registrerer svar og utførelse med sporbar begrunnelse.
+
+### Status og overganger
+
+En henvendelse viser mottatt, identitet eller omfang uavklart, under behandling, klart til kontroll og besvart. Beslutning og faktisk utførelse av retting eller annen handling registreres separat.
+
+### Automatikk og menneskelige valg
+
+Programmet kan finne relevante data, følge opp tidsregler og håndheve tildelt tilgang. Ansvarlig vurderer identitet, andres opplysninger, rettslig grunnlag og hvilken respons som skal gis.
+
+### Når noe mangler eller feiler
+
+Ved uklar representasjon eller tredjepartsopplysninger avgrenses pakken og spørsmålet sendes til ansvarlig. Et avslått oppslag skal ikke røpe innhold eller bekrefte skjermede saksdetaljer.
 
 ### Resultat
 
@@ -1306,11 +1767,28 @@ Dokumentklasser, bevarings-/sletteplan, rettslig sperre, arkivoverføring og kvi
 - Dokumenttype, eier, kildeversjon, saksreferanse og bevarings-/sletteregel.
 - Eventuell rettslig sperre, avhengige kopier og kvittering fra autoritativt arkiv.
 
+### Arbeidsflate og handlinger
+
+- Dokumentkortet viser klasse, ansvarlig system, versjon, bevaringsregel og eventuelle sperrer. Arkivoversikten skiller dokumenter klare til overføring fra dokumenter som mangler metadata eller kvittering.
+- Før disponering vises nøyaktig hvilke originaler, versjoner og avledninger som omfattes. Ansvarlig kan kontrollere sperrer og registrere godkjent handling; resultatet følges opp per del.
+
 ### Slik fungerer det
 
 1. Dokumentet klassifiseres og får en livssyklus; uavklart regel sendes til ansvarlig.
 2. Ferdige dokumenter kan overføres til riktig arkiv med metadata og status for mottak.
 3. Ved sletting eller annen disponering kontrolleres sperrer, nødvendige avledninger og faktisk resultat; feil blir synlige oppgaver.
+
+### Status og overganger
+
+Arbeidsutkast, ferdig dokument, venter på arkiv, bekreftet mottatt og disponert er ulike statuser. En bevaringssperre har egen gyldighet og begrunnelse.
+
+### Automatikk og menneskelige valg
+
+Programmet anvender godkjente regler, forbereder metadata og utfører avklarte overføringer. Ansvarlig fastsetter dokumentklasse og bevaringsgrunnlag og håndterer unntak.
+
+### Når noe mangler eller feiler
+
+Ukjent regel eller aktiv sperre hindrer automatisk sletting. Manglende arkivkvittering gir avklaringsoppgave, og en delvis mislykket sletting skal ikke vises som fullført.
 
 ### Resultat
 
@@ -1351,11 +1829,28 @@ Oppgaver, ansvar, avvik, risiko og oppfølgingsstatus. Vis manglende opplysninge
 - Oppgaver, frister, faktiske avvik og utførte oppfølgingshandlinger.
 - Aggregerte ressurs- og dokumentasjonsdata med relevant tilgangsgrunnlag.
 
+### Arbeidsflate og handlinger
+
+- Ledelsesbildet viser oppgaver uten eier, frister, avvik og dokumenterte mangler i leveransen. Filtre gjelder periode, organisatorisk område og type avvik; skjermede elevdetaljer krever egen tilgang.
+- Leder kan åpne et avvik, tildele tiltak og avtale kontroll av resultat. Sammendraget skal gjøre det mulig å følge ansvar og kapasitet uten å lese alle underliggende elevdokumenter.
+
 ### Slik fungerer det
 
 1. Leder ser hva som mangler ansvarlig, nærmer seg frist eller har dokumentert avvik.
 2. En sak kan åpnes innenfor fullmakten; leder fordeler tiltak og følger opp utførelse.
 3. Ved gjennomgang vurderes om tiltaket løste forholdet; status og begrunnelse oppdateres separat fra dokumentferdigstilling.
+
+### Status og overganger
+
+Avvik viser meldt, vurdert, tiltak besluttet, under oppfølging og effekt vurdert. Lukking begrunnes av ansvarlig; et opplastet dokument alene lukker ikke avviket.
+
+### Automatikk og menneskelige valg
+
+Programmet sammenstiller registrert status og fremhever manglende oppfølging. Leder prioriterer tiltak og vurderer om forholdet faktisk er rettet.
+
+### Når noe mangler eller feiler
+
+Manglende data eller uavklarte regler vises som slike, fremfor grønn samsvarsstatus. Små grupper og skjermede saker begrenses slik at aggregater ikke gir indirekte innsyn.
 
 ### Resultat
 
@@ -1396,11 +1891,28 @@ Forbered kontrollerte uttrekk til GSI, elevdata, tilsyn og relevante tilskudds-/
 - Gjeldende rapportspesifikasjon og periode.
 - Kontrollerte data fra elev-, bemannings-, vedtaks- og andre autoritative systemer.
 
+### Arbeidsflate og handlinger
+
+- Rapportveiviseren viser aktuell rapporttype, periode, spesifikasjonsversjon og hvilke data programmet kan bidra med. Felt kan åpnes for definisjon, kilde og avstemming mot skolens hovedsystem.
+- Kontrollbildet viser manglende felt og avvik før ansvarlig attesterer. En eksport får format, tidspunkt, ansvarlig og dokumentert innleveringsmåte; kvittering knyttes til den konkrete versjonen.
+
 ### Slik fungerer det
 
 1. Ansvarlig velger rapporttype og ser definisjon, kilder og hvilke felt programmet kan bidra med.
 2. Systemet beregner eller sammenstiller et uttrekk og viser avstemmingsforskjeller og mangler.
 3. Ansvarlig attesterer innholdet og eksporterer eller sender via avtalt grensesnitt; innleveringskvittering registreres der den finnes.
+
+### Status og overganger
+
+Uttrekket er under sammenstilling, trenger avstemming, attestert, eksportert eller bekreftet innlevert. En eksportfil betyr ikke at rapporten er sendt til myndigheten.
+
+### Automatikk og menneskelige valg
+
+Programmet beregner og sammenstiller bare felter med avklart definisjon og grunnlag. Ansvarlig avstemmer, attesterer og leverer; tall med ukjent betydning skal ikke fylles automatisk.
+
+### Når noe mangler eller feiler
+
+Hvis mottakerskjema eller definisjon er endret, må den nye spesifikasjonen avklares. Der API mangler, støttes kontrollert eksport og registrering av faktisk manuell innlevering.
 
 ### Resultat
 
@@ -1441,11 +1953,28 @@ Tastatur, skjermleser, god lesbarhet, tilgjengelige dokumenter og støtte for bo
 - Brukerens språkvalg og behov for tilgjengelig presentasjon.
 - Originaltekst, dokumentstruktur og eventuelle språk-/tolkebehov for mottakeren.
 
+### Arbeidsflate og handlinger
+
+- Alle sentrale skjermbilder har tydelige feltetiketter, synlig tastaturfokus, forståelige feil og tilbakemelding ved lagring. Innhold kan forstørres og brukes på smal skjerm uten at nødvendige handlinger forsvinner.
+- Brukeren velger bokmål eller nynorsk i arbeidsflaten. Dokumentets språk og eventuell oversettelse velges separat; original og språkvariant kan sammenlignes ved gjennomgang.
+
 ### Slik fungerer det
 
 1. Brukeren skal kunne fullføre sentrale oppgaver med tastatur og hjelpemidler uten å måtte bruke en alternativ mindreverdig arbeidsflyt.
 2. Innhold vises med klare felt, lesbare feilbeskjeder og tilgjengelige dokumentmaler.
 3. Ved oversettelse opprettes en egen språkvariant; en kompetent person kontrollerer viktig innhold før bruk eller deling.
+
+### Status og overganger
+
+En språkvariant er utkast, til språkkontroll eller godkjent for en bestemt innholdsversjon. Når originalen endres, vises at oversettelsen trenger ny kontroll.
+
+### Automatikk og menneskelige valg
+
+Programmet følger brukerens språkvalg og kan foreslå oversettelse der tjenesten er tilgjengelig. Kompetent person kontrollerer viktig innhold før deling; en oversatt tekst arver ikke automatisk godkjenning.
+
+### Når noe mangler eller feiler
+
+Feil beskriver hvilket felt som trenger retting, uten at utfylt innhold går tapt. Manglende oversettelse vises tydelig med tilgang til originalen, fremfor en språkvariant som ser ferdig ut.
 
 ### Resultat
 
@@ -1486,11 +2015,28 @@ Feide/annen identitet, skoleadministrasjon, LMS, e-post, kalender, dokumentarkiv
 - Avtalt system, skole, datatyper, tilgangsomfang og hvilken kilde som er autoritativ.
 - Eksterne identifikatorer, filformat/API-versjon, siste synkroniseringspunkt og feilstatus.
 
+### Arbeidsflate og handlinger
+
+- Integrasjonsoversikten viser tilkoblet system, avtalte datatyper, rettigheter, sist vellykkede kjøring og ansvarlig. Administrator kan teste en avgrenset forbindelse, pause den eller trekke tilgangen tilbake.
+- Importgjennomgangen viser ekstern identitet, foreslått intern kobling og konkrete endringer. Konflikter og delvis feil får en arbeidsliste der ansvarlig velger hva som skal behandles på nytt.
+
 ### Slik fungerer det
 
 1. Administrator aktiverer bare godkjente datatyper og kontrollerer kobling mellom eksterne og interne identiteter.
 2. Import kjøres med forhåndsvisning der det er nødvendig; endringer avstemmes og konflikter sendes til ansvarlig.
 3. Systemet viser siste vellykkede overføring, feil og mulig manuell reserve, og kan pauses eller frakobles.
+
+### Status og overganger
+
+En kobling er ikke konfigurert, klar, aktiv, pauset eller trenger handling. Hver overføring har egen status, og fravær av nye data skilles fra mislykket import.
+
+### Automatikk og menneskelige valg
+
+Programmet utveksler kun aktiverte datatyper, gjenkjenner gjentatte hendelser og følger opp transportutfall. Administrator avklarer kilder, identiteter og hvilket system som eier en opplysning.
+
+### Når noe mangler eller feiler
+
+Uklart identitetstreff eller motstridende endring settes til kontroll. Ved bortfall vises sist vellykkede synkronisering og avtalt manuell reserve; programmet lager ikke dubletter ved hvert nytt forsøk.
 
 ### Resultat
 
@@ -1531,11 +2077,28 @@ Serverstyrt gateway for generering, søk, OCR og tale. API i utvikling med synte
 - Et avgrenset formål og bare autoriserte kilder som trengs for oppgaven.
 - Modell-/promptversjon, behandlingsmiljø, kvalitetskrav og ressursgrenser.
 
+### Arbeidsflate og handlinger
+
+- I den aktuelle arbeidsflyten vises hvilket grunnlag som brukes, at generering pågår og hvilket forslag som er klart til kontroll. Fagpersonen kan åpne kildene og se mangler uten å håndtere modellinnstillinger.
+- En separat administrasjonsflate viser godkjent modell, støttede oppgaver, behandlingssted og evalueringer. Ny modell prøves på faste syntetiske eksempler og sammenlignes med gjeldende versjon før aktivering.
+
 ### Slik fungerer det
 
 1. Systemet bygger et avgrenset kildegrunnlag etter tilgangskontroll og viser status for genereringen.
 2. Modellen returnerer et forslag med kildekoblinger og synlige mangler; resultatet går til menneskelig gjennomgang.
 3. Modellansvarlig kan prøve og godkjenne en ny modellversjon mot faste syntetiske eksempler før den aktiveres.
+
+### Status og overganger
+
+En forespørsel er i kø, under behandling, ferdig som ubekreftet forslag, avbrutt eller feilet. Modellversjoner har egne tilstander for utprøving, vurdering, aktiv bruk og tilbaketrekking.
+
+### Automatikk og menneskelige valg
+
+AI kan foreslå tekst, uttrekk, taleutskrift og relevante kilder innenfor godkjent formål. Mennesker bekrefter fakta og faglige vurderinger. Produksjonsbehandling skjer på egen server; eksternt utviklings-API bruker kun syntetiske data.
+
+### Når noe mangler eller feiler
+
+Ved timeout eller utilgjengelig modell beholdes siste lagrede utkast og manuell arbeidsflyt er tilgjengelig der den passer. Systemet bytter aldri stille til en ekstern modell, heller ikke for OCR, tale eller embeddings.
 
 ### Resultat
 
@@ -1577,11 +2140,28 @@ Kryptering, nøkkelstyring, sikkerhetskopier, prøvd gjenoppretting, overvåking
 - Godkjent driftsoppsett, nøkkel-/tilgangsforvaltning og avtalte gjenopprettingsmål.
 - Teknisk status, sikkerhetskopier, hendelser og ansvarlige kontaktpunkter.
 
+### Arbeidsflate og handlinger
+
+- Driftsbildet viser tilgjengelighet, køer, feiltyper, sikkerhetskopier og tidspunkt for siste prøvde gjenoppretting. Vanlige driftslogger inneholder tekniske referanser fremfor elevtekst.
+- Driftsansvarlig kan følge en hendelse, se hvilke tjenester som er berørt og dokumentere tiltak og gjenoppretting. Rutiner for oppdatering og reservearbeid knyttes til faktisk testresultat.
+
 ### Slik fungerer det
 
 1. Driftsansvarlig ser tjenestestatus, køer og feil uten at elevtekst kopieres til generelle driftslogger.
 2. Sikkerhetskopier og oppdateringer følges opp etter avtalt rutine, med praktisk prøving av gjenoppretting.
 3. Ved hendelse avgrenses tilgang og berørte operasjoner; ansvarlig følger teknisk retting og nødvendig organisatorisk håndtering.
+
+### Status og overganger
+
+Tjenester vises som tilgjengelige, redusert eller utilgjengelige. En sikkerhetskopi er opprettet eller feilet, mens verifisert gjenoppretting registreres separat.
+
+### Automatikk og menneskelige valg
+
+Programmet overvåker teknisk tilstand og kjører avtalte sikkerhetskopier. Driftsansvarlig vurderer hendelser, godkjenner relevante endringer og bekrefter at gjenoppretting er prøvd.
+
+### Når noe mangler eller feiler
+
+Ved bortfall får brukeren vite hvilke handlinger som er utilgjengelige og om lagring er bekreftet. Arbeid som ikke er registrert i systemet må avstemmes ved gjenoppretting; ingen skjult påstand om offline-lagring.
 
 ### Resultat
 
@@ -1622,11 +2202,28 @@ Oppdater tilknytning, rettigheter, planer og krav ved nytt år/trinn/skole. Sele
 - Nye tilknytninger, datoer, aktive planer og relevante overføringsbehov.
 - Mottakerskole, konkret delingsgrunnlag, nødvendig innhold og eventuelle begrensninger.
 
+### Arbeidsflate og handlinger
+
+- Overgangsveiviseren viser elever, nye grupper, aktive planer, åpne oppgaver og tilganger som utløper. Ansvarlig får en forhåndsvisning før endringer for nytt skoleår tas i bruk.
+- Ved skolebytte bygges en separat pakke med valgte opplysninger, formål, mottaker og vurdert delingsgrunnlag. Brukeren kan se nøyaktig hvilke dokumentversjoner som følger med.
+
 ### Slik fungerer det
 
 1. Års-/overgangsveiviseren viser hvilke tilganger, planer og oppgaver som må videreføres eller avklares.
 2. Ansvarlig velger nødvendige opplysninger til en separat overføringspakke og kontrollerer grunnlag og mottaker.
 3. Faktisk overføring og mottak registreres; historiske tilknytninger beholdes etter riktig dokumentregel.
+
+### Status og overganger
+
+En overgang er planlagt, under kontroll eller gjennomført; overføringspakken har egne godkjennings- og mottaksstatuser. Gamle skoletilknytninger blir historiske med riktige datoer.
+
+### Automatikk og menneskelige valg
+
+Programmet finner elementer som må videreføres eller avklares og forbereder en selektiv pakke. Ansvarlig bestemmer nye oppdrag, nødvendig innhold og hvem som kan motta det.
+
+### Når noe mangler eller feiler
+
+Åpne saker og uavklart delingsgrunnlag blir konkrete punkter til ansvarlig. Et skolebytte kopierer ikke automatisk hele elevmappen eller gir den nye skolen tilgang til skjermede saker.
 
 ### Resultat
 
@@ -1667,11 +2264,28 @@ Kompetanse, tilgjengelighet, planleggingstid, veiledning, pauser og faktiske res
 - Tilgjengelig arbeidstid, kvalifikasjoner, oppdrag, forberedelse, veiledning og pauser.
 - Undervisningsbehov, lokalt avklarte arbeidstidsregler og ressursreservasjoner.
 
+### Arbeidsflate og handlinger
+
+- Kapasitetsbildet viser tilgjengelig tid og kompetanse sammen med undervisning, forberedelse, veiledning, møter og forflytning. Planlagt ressursbruk og registrert faktisk tidsbruk holdes atskilt.
+- Leder kan sammenligne alternative fordelinger og se hvilke oppgaver eller elevbehov som blir udekket. Et valgt scenario kan brukes som grunnlag for timeplanforslag uten å publiseres automatisk.
+
 ### Slik fungerer det
 
 1. Leder registrerer tilgjengelig kapasitet og nødvendig tid rundt undervisningen.
 2. Systemet sammenstiller oppdrag og behov med kapasitet og viser konkret underdekning.
 3. Leder prøver alternative fordelinger som kan brukes av F14, og følger opp forhold som krever bemanning eller endret organisering.
+
+### Status og overganger
+
+Scenarioer er utkast, sammenligningsalternativer eller besluttet plan. Underdekning beholdes som synlig forhold med ansvarlig oppfølging.
+
+### Automatikk og menneskelige valg
+
+Programmet summerer behov, tid og tilgjengelighet og viser konflikter. Leder avgjør bemanning og organisering; beregningene fastsetter ikke automatisk hvem som skal miste støtte.
+
+### Når noe mangler eller feiler
+
+Ukjent kapasitet merkes som ukjent, ikke ledig tid. Samtidig arbeid med en elevgruppe skal telle riktig for den ansattes kalender og skilles fra registrert støtte til hver elev.
 
 ### Resultat
 
@@ -1712,11 +2326,28 @@ Krav- og oppfølgingsmoduler for opptak, skyss, SFO, helse/miljø, forsikring, b
 - Bekreftet anvendelse av relevante områder: opptak, skyss, SFO, fysisk miljø, bemanning, forsikring, anskaffelser og økonomi.
 - Ansvar, kildesystem, dokumentkrav, hendelser og lokale rutiner.
 
+### Arbeidsflate og handlinger
+
+- Skoleledelsen ser en oversikt over betingede områder og om ansvar, regelprofil og hovedsystem er avklart. Bare aktiverte områder får operative oppgaver og relevante skjemaer.
+- Hver oppgave viser konkret handling, dokumentasjonsbehov og lenke til riktig fagsystem der arbeidet skjer eksternt. Brukeren kan registrere referanse og utført handling uten å kopiere unødvendige elev- eller personalopplysninger.
+
 ### Slik fungerer det
 
 1. Leder aktiverer et konkret område først når ansvar og anvendelige regler er avklart.
 2. Hver oppgave får formål, eier, fristgrunnlag og lenke til riktig fagsystem eller nødvendig dokumentasjon.
 3. Ansvarlig registrerer gjennomført oppfølging; ledelsen ser uavklarte forhold og avvik uten å samle unødvendige detaljdata i elevsystemet.
+
+### Status og overganger
+
+Et område er uavklart, vurdert ikke relevant med begrunnelse eller aktivert. Oppgaver har egne statuser for utførelse og kontroll; en aktivering betyr ikke at området er ferdig dekket.
+
+### Automatikk og menneskelige valg
+
+Programmet oppretter og følger opp oppgaver fra godkjent oppsett. Skoleleder avklarer anvendelse, ansvar og systemgrense; innholdet i en ekstern fagprosess overtas ikke automatisk.
+
+### Når noe mangler eller feiler
+
+Ved manglende ansvarlig eller ukjent regelgrunnlag vises avklaringsbehov. Dersom en ekstern oppgave bare er lenket, må faktisk gjennomføring dokumenteres før den vises som utført.
 
 ### Resultat
 
@@ -1757,11 +2388,28 @@ Riktig myndighet, saksgrunnlag, høring, begrunnelse, underretning, frist og kla
 - Sakstype, relevant beslutning/vurdering, tidspunkt for underretning og partsforhold.
 - Faktagrunnlag, aktuelt regelgrunnlag og ansvarlig myndighet.
 
+### Arbeidsflate og handlinger
+
+- Saksveiviseren starter med varsel, fritak, klage eller annen definert sakstype. Den viser riktige parter, beslutningsmyndighet, nødvendig grunnlag og fristens utløser for akkurat den prosessen.
+- Saksbehandleren kan samle vedlegg, registrere partens innspill, forberede begrunnelse og se en mottakertilpasset pakke. Oversending og underretning får egne registreringer.
+
 ### Slik fungerer det
 
 1. Brukeren velger riktig sakstype og får en sjekkliste for denne prosessen.
 2. Systemet sammenstiller grunnlag og forslag til begrunnelse eller klagepakke, og viser hvilke frister som er beregnet fra hvilke hendelser.
 3. Ansvarlig gjennomgår, treffer beslutning innenfor sin myndighet eller oversender til rett instans, og registrerer faktisk underretning og videre status.
+
+### Status og overganger
+
+Saken viser mottatt, under avklaring, under behandling, avgjort eller oversendt og avsluttet. Partens tilgang og faktisk underretning følger egne, daterte vurderinger.
+
+### Automatikk og menneskelige valg
+
+Programmet foreslår struktur og beregner tidsregler fra bekreftede hendelser og riktig sakstype. Ansvarlig vurderer innhold, beslutning og eventuell videre oversending.
+
+### Når noe mangler eller feiler
+
+Ukjent mottaksdato eller klagetype stopper en påstått sikker fristberegning. Programmet ber om avklaring og bruker ikke en generell klagefrist for alle prosesser.
 
 ### Resultat
 
@@ -1802,11 +2450,28 @@ Pedagogen kan godta, endre, avvise og begrunne forslag. Oppdateringer av elevgru
 - Forslag, kildeversjoner, tidligere redigeringer og brukerens begrunnelse.
 - Endringer i vedtak, mål, opplysninger eller ressursgrunnlag som kan påvirke eksisterende innhold.
 
+### Arbeidsflate og handlinger
+
+- Forslaget har tydelige valg for å bruke, redigere eller forkaste innhold, med kildevisning tilgjengelig. Kort tilbakemelding er valgfri med mindre en konkret faglig kontroll krever begrunnelse.
+- Ved ny generering vises forskjeller fra brukerens gjeldende tekst. Brukeren velger hvilke endringer som skal tas inn; egne formuleringer skal ikke forsvinne ved et nytt modellforslag.
+
 ### Slik fungerer det
 
 1. Brukeren kan godta, redigere eller forkaste forslaget og eventuelt gi en kort begrunnelse.
 2. Ved ny generering vises forskjeller og hvilke egne endringer som vil bli berørt før brukeren velger versjon.
 3. Når en kilde rettes, viser systemet berørte økter, kort og dokumentutkast; ansvarlig velger nødvendig revisjon eller oppfølging av allerede delte dokumenter.
+
+### Status og overganger
+
+Forslag viser ubekreftet, gjennomgått, delvis brukt eller forkastet. Når en kilde endres, kan det avledede dokumentet få status trenger ny kontroll uten at det gamle forslaget slettes.
+
+### Automatikk og menneskelige valg
+
+Programmet sammenligner versjoner og identifiserer berørte kilder. Pedagogen avgjør om forslaget er egnet og hvilke rettinger som er nødvendige; en positiv tilbakemelding er ikke en generell godkjenning av fremtidige forslag.
+
+### Når noe mangler eller feiler
+
+En svak eller manglende kilde kan fjernes fra grunnlaget, og brukeren kan fortsette manuelt. Dersom teksten allerede er delt, opprettes oppfølging fremfor at den historiske versjonen endres i det stille.
 
 ### Resultat
 
@@ -1847,11 +2512,28 @@ Mål samlet arbeidstid inkludert kontroll, retting og dobbeltføring. Evaluer as
 - Baseline for dagens arbeidsmåte og avtalte målepunkter.
 - Samlet oppgavetid, kontroll/korreksjon, dobbeltføring og deltakernes vurdering av nytte.
 
+### Arbeidsflate og handlinger
+
+- Pilotoppsettet definerer oppgavetype og hvordan tid og kvalitet skal sammenlignes før og etter innføring. Deltakere kan registrere forberedelse, kontroll, retting og etterarbeid i samme måling.
+- Resultatbildet viser sammenlignbare oppgaver, samlet tidsbruk og kvalitative erfaringer på egnet aggregert nivå. Funksjoner kan vurderes ut fra om de faktisk sparer arbeid og gir brukbart resultat.
+
 ### Slik fungerer det
 
 1. Piloten velger konkrete oppgaver, for eksempel forberedelse av økt og kort notatføring.
 2. Samme type oppgave måles før og med programmet, inkludert etterarbeid og kvalitetskontroll.
 3. Resultater sammenstilles på egnet aggregert nivå og brukes til å forbedre eller utsette funksjoner som ikke avlaster.
+
+### Status og overganger
+
+En måling er planlagt, baseline registrert, prøve gjennomført eller evaluert. Manglende eller ikke sammenlignbare målinger vises som utilstrekkelig grunnlag.
+
+### Automatikk og menneskelige valg
+
+Programmet kan sammenstille frivillig registrerte målinger og beregne forskjeller. Pilotansvarlig vurderer sammenlignbarhet og kvalitet og velger hva som skal forbedres eller utsettes.
+
+### Når noe mangler eller feiler
+
+Få deltakere eller ulik oppgavetyngde skal ikke bli sikre gevinstpåstander eller rangering av ansatte. Første pilot vurderes på undervisningsflyten; e-postmålinger innføres først når den funksjonen tas i bruk.
 
 ### Resultat
 

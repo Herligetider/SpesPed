@@ -1,6 +1,6 @@
 # Første komplette arbeidsflyt – til faglig gjennomgang
 
-Arbeidsversjon 0.2 · 8. september 2026. Dette er en foreslått arbeidsflyt som skal vurderes av domenefagperson, ikke en implementert løsning eller en allerede gjennomført brukertest.
+Arbeidsversjon 0.3 · 21. oktober 2026. Dette er en foreslått arbeidsflyt som skal vurderes av domenefagperson, ikke en bekreftelse på en ferdig implementert løsning eller en allerede gjennomført brukertest.
 
 Målet er at pedagogen kan bruke informasjon skolen allerede har til å forberede en konkret økt, gi assistenten nødvendig veiledning og registrere et kort resultat som gjør neste økt enklere å planlegge.
 
@@ -72,7 +72,19 @@ Etter økten registreres 20 faktiske minutter og et kort notat, for eksempel «E
 7. Hva føres allerede i andre systemer og bør gjenbrukes?
 8. Hvordan kan vi måle spart tid inkludert kontroll, retting og etterarbeid?
 
-Tilbakemeldinger kan merkes med stegnummer og funksjons-ID, for eksempel «Steg 6 / F13: kortet må også vise hvor materiellet oppbevares». Funksjonskatalogen har et eget spørsmål og konkrete akseptansekriterier per funksjon.
+Tilbakemeldinger kan merkes med stegnummer og funksjons-ID, for eksempel «Steg 6 / F13: kortet må også vise hvor materiellet oppbevares». Funksjonskatalogen beskriver nå arbeidsflate, statusendringer, hva som automatiseres, menneskelige valg og feilhåndtering for hver funksjon, i tillegg til spørsmål og akseptansekriterier.
+
+Bruk gjerne dette formatet for hvert innspill:
+
+| Punkt | Hva fagpersonen fyller inn |
+|---|---|
+| Steg og funksjons-ID | Hvor i arbeidsflyten endringen hører hjemme |
+| Konkret situasjon | Et anonymisert eksempel fra arbeidshverdagen |
+| Ønsket endring | Hvilket felt, hvilken handling eller oppfølging som trengs |
+| Nytte og merarbeid | Hva endringen sparer, og om den krever mer registrering |
+| Prioritet | Nødvendig for første undervisningsflyt eller senere funksjon |
+
+Gjennomgå først normalforløpet, deretter én manglende kilde, én endret økt og én feilregistrering. Det er spesielt nyttig å oppdage trinn der brukeren må skrive samme informasjon på nytt eller tolke en generell tekst for å komme videre.
 
 ## Senere arbeidsflyt: e-post for en valgt periode
 
@@ -81,5 +93,7 @@ I P4 velger pedagogen elev, formål og fra-/til-dato, for eksempel 1.–20. okto
 Brukeren gjennomgår teksten, velger mottakerspesifikt innhold og godkjenner før eventuell uttrykkelig utsending gjennom skolens tillatte kanal. Et sent registrert notat, ny periode eller endret tekst krever vurdering av en ny revisjon. En tom periode skal ikke gi oppdiktet fremgang.
 
 Skolen kan velge gjentakelse av utkast, for eksempel hver 14. dag eller månedlig, med egen ansvarlig, periodeavgrensning og mulighet for pause. Gjentakelse er avslått som utgangspunkt og gir aldri forhåndsgodkjenning av fremtidige brev. En fast ukentlig e-post er ikke prioritert.
+
+Tre valg gjøres hver for seg: **hvilke datoer e-posten oppsummerer**, **om og når et nytt utkast skal klargjøres**, og **om det gjennomgåtte brevet skal sendes**. Første mottakerversjon omfatter bare berettigede foresatte. Til faglig gjennomgang kan dere prøve én egendefinert periode, én periode uten observasjoner og ett sent registrert notat som krever nytt utkast.
 
 Se [F20 i funksjonskatalogen](02-feature-catalog.no.md#f20), [ES07 i event storming](03-event-storming.en.md) og [P4 i implementasjonsplanen](05-implementation-plan.en.md).

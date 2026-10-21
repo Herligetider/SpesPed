@@ -1,0 +1,183 @@
+.planning-workspace {
+  --planning-line: #c8d7ce;
+  max-width: 100%;
+  color: #19382e;
+  padding-block: 1rem;
+}
+.planning-workspace p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.planning-workspace h3,
+.planning-workspace h4,
+.planning-workspace h5 {
+  margin-block: 1rem 0.5rem;
+}
+.planning-workspace h5 {
+  font-size: 1rem;
+}
+.planning-workspace label {
+  display: block;
+  margin-block: 0.65rem;
+  font-weight: 600;
+}
+.planning-workspace input:not([type="checkbox"]),
+.planning-workspace select,
+.planning-workspace textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+  padding: 0.6rem;
+  border: 1px solid #7c9688;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: #173b2d;
+  font: inherit;
+}
+.planning-workspace input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+.planning-workspace textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+.planning-workspace fieldset {
+  min-width: 0;
+  border: 1px solid var(--planning-line);
+  border-radius: 0.5rem;
+  margin-block: 1rem;
+  padding: 1rem;
+}
+.planning-workspace fieldset:disabled {
+  opacity: 0.7;
+}
+.planning-workspace button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #547761;
+  color: #183d2b;
+  background: #f1f7f1;
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.8rem;
+  margin: 0.25rem 0.35rem 0.25rem 0;
+  max-width: 100%;
+}
+.planning-workspace button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.planning-workspace button:focus-visible,
+.planning-workspace summary:focus-visible,
+.planning-workspace input:focus-visible,
+.planning-workspace textarea:focus-visible,
+.planning-workspace select:focus-visible {
+  outline: 3px solid #326da5;
+  outline-offset: 3px;
+}
+.planning-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--planning-line);
+  padding-bottom: 0.75rem;
+}
+.planning-tabs button[aria-selected="true"] {
+  background: #23533c;
+  color: white;
+}
+.planning-grid,
+.planning-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.planning-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+.planning-card,
+.planning-detail,
+.planning-case {
+  border: 1px solid var(--planning-line);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-block: 1rem;
+  background: #fff;
+}
+.planning-state {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  margin: 0.25rem 0.4rem 0.25rem 0;
+  background: #eaf3ea;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+}
+.planning-warning {
+  background: #fff3d4;
+  color: #5b3d00;
+  border-left: 4px solid #aa7900;
+  padding: 0.65rem;
+}
+.planning-help {
+  font-size: 0.9rem;
+  color: #496155;
+}
+.planning-workspace details {
+  margin-block: 1rem;
+}
+.planning-workspace summary {
+  cursor: pointer;
+  color: #244f3c;
+  font-weight: 650;
+  padding: 0.4rem 0;
+}
+.planning-workspace blockquote {
+  margin: 0.75rem 0;
+  padding: 1rem;
+  border-left: 3px solid #78a38c;
+  background: #f4f8f4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.planning-workspace blockquote footer {
+  font-size: 0.85rem;
+  margin-top: 0.6rem;
+}
+.planning-provision {
+  border-top: 1px solid var(--planning-line);
+  padding-block: 0.5rem;
+}
+.planning-workspace table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+}
+.planning-workspace td,
+.planning-workspace th {
+  border: 1px solid var(--planning-line);
+  padding: 0.5rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.planning-workspace [hidden] {
+  display: none !important;
+}
+@media (max-width: 760px) {
+  .planning-grid,
+  .planning-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .planning-card,
+  .planning-detail,
+  .planning-case {
+    padding: 0.65rem;
+  }
+  .planning-workspace table {
+    display: block;
+    overflow-x: auto;
+  }
+}
