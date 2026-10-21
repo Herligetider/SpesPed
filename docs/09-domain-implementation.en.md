@@ -367,3 +367,33 @@ Exact curriculum/resource selection into IEP and teaching bases, AI license
 checks on those selections, practitioner authority controls and the complete J20
 browser workflow remain separate required integration work. The BC06 backend
 candidate is not full F09/F10 acceptance.
+
+## Read-only assessment inputs
+
+Candidate `a0bcab2` adds two owning-context projections; independent review is
+pending. They are building blocks for J10, not completed assessment workflows.
+
+`curriculum.projections.reviewed_assessment_scheme(db, actor, school_id,
+scheme_revision_id, starts_on=..., ends_on=...)` accepts inclusive local dates.
+It checks the exact reviewed revision, full period coverage, current original
+source rights and a digest of the stored curriculum plus assessment rules. It
+returns scheme identity, goals, reviewed assessment-rule text, source references,
+review metadata and a basis digest. A newer draft does not replace the previous
+reviewed scheme; a reviewed successor does. The text grants no grading or
+exemption authority, which remains explicitly unassessed for the consumer.
+
+`teaching.projections.learner_delivery_basis(db, actor, school_id, learner_id,
+delivery_revision_id)` returns only the authorized pupil's current actual-work
+revision and participation, including absence and zero minutes. It includes
+occurrence and recording dates, exact goal/provision references, support context,
+the reported support status and its current assessment. It exposes no group
+narrative, other pupil or staff total. A corrected revision returns
+`actual_changed`; lost pupil scope denies access. A recalled staffing basis
+changes support to unassessed without rewriting the recorded fact or creating a
+follow-up task during the read.
+
+Both calls leave transaction ownership with the consumer. They refuse pending
+dependency edits before refreshing retained ORM objects. The caller supplies
+the native `curriculum_source_port` and, where configured, the
+`teaching_qualification_port` through its session. Neither projection supplies
+professional finalization authority or proves learning progress from attendance.

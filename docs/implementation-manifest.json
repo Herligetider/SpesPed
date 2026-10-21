@@ -638,7 +638,8 @@
         "e80380cdf7da10431c18685969351c9b0cf07e48",
         "f5c7e883733d05c8b0d2ca6a7e4ea3938ffda4f0",
         "da503e1b87c038a73d64dca433f38ef90c6e2961",
-        "c18a0e05c7dd3519df6365e7a0bab740841f351a"
+        "c18a0e05c7dd3519df6365e7a0bab740841f351a",
+        "a0bcab2ac738605fe754ae16d5d4337d810276f5"
       ],
       "evidence": [
         {
@@ -697,6 +698,11 @@
           "revision": "c18a0e05c7dd3519df6365e7a0bab740841f351a",
           "path": "docs/reviews/suggestion-recovery-review.md",
           "result": "Bounded backend accepted with no actionable finding:18committed tests plus14independentSQLite/PostgreSQLcases acrossdocumentedruns. New-app durable resume/complete-response recovery,exactbasis/wrongmanifest isolation,livepermission/source/model checks,103-jobpagination,output-freeSQLincludingpriorIEPlineage andper-sessionreviewoutcomes passed. UIrecovery isseparatelyassigned;nofeaturepromoted."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+          "result": "Root added pure owning-context reviewed assessment-scheme and learner actual-delivery projections for J10. Fourteen dual-DB tests passed; two strengthened no-flush/commit/rollback/DML ITO-read checks passed. Checks include public/Montessori schemes, complete periods, digest/supersession, retained permission caches, pending edits, pupil-only group projection, actual correction and current unassessed staffing without follow-up writes. Independent review queued; no complete feature promoted."
         }
       ],
       "findings": [
@@ -1171,7 +1177,8 @@
       "reviewAgent": "/root/review_j09",
       "commits": [
         "d065091e8915594a3177876193f675c18ca0aa23",
-        "c5bf1ecd51deb98f843196bd62922ca68aaa73a4"
+        "c5bf1ecd51deb98f843196bd62922ca68aaa73a4",
+        "a0bcab2ac738605fe754ae16d5d4337d810276f5"
       ],
       "evidence": [
         {
@@ -1194,6 +1201,11 @@
           "revision": "c5bf1ecd51deb98f843196bd62922ca68aaa73a4",
           "path": "docs/reviews/J09-review.md",
           "result": "Bounded BC06 backend and actual-application composition accepted: R1/R2 independently verified fixed. Frozen suite 46 passed, 2 intentional SQLite-only concurrency skips; both PostgreSQL races ran. Independent dual-database recheck 12 passed, including three-choice immutable correction/replay and current actor-aware historic experience/redaction. Static migration alignment, roundtrip and retained-data refusal passed. Full consumer, reservation and UI integrations remain outstanding; no complete feature promoted."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+          "result": "Root added pure owning-context reviewed assessment-scheme and learner actual-delivery projections for J10. Fourteen dual-DB tests passed; two strengthened no-flush/commit/rollback/DML ITO-read checks passed. Checks include public/Montessori schemes, complete periods, digest/supersession, retained permission caches, pending edits, pupil-only group projection, actual correction and current unassessed staffing without follow-up writes. Independent review queued; no complete feature promoted."
         }
       ],
       "findings": [
@@ -1235,11 +1247,18 @@
       "requiredEvidence": "Scale/condition validity, evidence gaps, human-only grades, scheme differences",
       "implementationAgent": "/root/j10_assessment",
       "reviewAgent": null,
-      "commits": [],
+      "commits": [
+        "a0bcab2ac738605fe754ae16d5d4337d810276f5"
+      ],
       "evidence": [
         {
           "type": "work_assignment",
           "result": "Native BC09 instruments, administrations, source-backed progress snapshots and human assessment statements assigned to /root/j10_assessment (gpt-6.1-sol high). Must use real BC02/BC05/BC06/BC07 owners, explicit scale/context/license rules, immutable corrections, human-only grades and separate communication records. Root provides pure source projections and actualApp registration; typed AI and native finalization/qualification authority remain required integrations, not assumed from roles or prose."
+        },
+        {
+          "type": "implementation_candidate",
+          "revision": "a0bcab2ac738605fe754ae16d5d4337d810276f5",
+          "result": "Root added pure owning-context reviewed assessment-scheme and learner actual-delivery projections for J10. Fourteen dual-DB tests passed; two strengthened no-flush/commit/rollback/DML ITO-read checks passed. Checks include public/Montessori schemes, complete periods, digest/supersession, retained permission caches, pending edits, pupil-only group projection, actual correction and current unassessed staffing without follow-up writes. Independent review queued; no complete feature promoted."
         }
       ],
       "findings": [],
@@ -1813,6 +1832,12 @@
           "revision": "76f8171aed95a3942dfa993b230bf34271afdebe",
           "path": "docs/reviews/missing-adapter-test-review.md",
           "result": "Two legacy unavailable-provider test scenarios now explicitly remove only their own installed native adapter. Independent 14 focused/context checks and 4 real native goal/case authorization probes passed on SQLite/PostgreSQL. Production code and shared fixtures unchanged; no whole-suite or whole-feature acceptance inferred."
+        },
+        {
+          "type": "integration_run",
+          "revision": "c5bf1ecd51deb98f843196bd62922ca68aaa73a4",
+          "path": "docs/reviews/backend-integration-c5bf1ec.md",
+          "result": "Full frozen backend run completed:735passed,21skipped,4failed,90subtests passed in1188.58s. All four failures are the two legacy missing-adapter test scenarios subsequently repaired and independently accepted at76f8171. Nineteen skips are SQLite instances of executed PostgreSQL concurrency cases;two optional real OCR/scanner checks lacked enabled prerequisites. No full-suite rerun or new-module acceptance inferred."
         }
       ],
       "findings": []
