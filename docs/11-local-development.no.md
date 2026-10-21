@@ -83,13 +83,46 @@ main()
 PY
 ```
 
+Legg deretter til tilganger for å prøve de faglige arbeidsflatene:
+
+```sh
+uv run --project backend spesped demo-access --confirm-synthetic
+```
+
 Logg inn som `demo.leader@example.invalid` med passordet du nettopp valgte.
 Standarddemoen oppretter to skoler, tre syntetiske elever og kontoer med ulike
-tilganger. Den inneholder ikke ferdige undervisningsforløp. Skolelederrollen gir
-heller ikke automatisk tilgang til alle arbeidsflater: faglige handlinger krever
-egne tilganger som beskrevet i [backend-veiledningen](../backend/README.md).
-De ekstra testdataene og tilganger som er opprettet på en annen maskin følger
-ikke med denne demoen.
+tilganger. `demo-access` gir skolelederkontoen eksplisitte testtilganger til
+støtteprofil, planer, undervisning og dokumentarbeid for **Syntetisk elev A og B**,
+samt dokumentinnboksen. Den klargjør også syntetiske pedagogiske støttesaker
+med egen sakstilgang. Den inneholder ikke ferdige undervisningsforløp.
+Assistent-, foresatt- og driftskontoene beholder sine begrensede roller.
+
+Skolelederrollen alene gir fortsatt ikke automatisk tilgang. Kommandoen er
+et tillegg til standarddemoen, krever utviklingsmiljø og endrer ikke de vanlige
+tilgangsreglene. Den oppretter ikke AI-oppsett, foresattrettigheter eller
+godkjenning for utsending. [Backend-veiledningen](../backend/README.md) beskriver
+de ordinære tilgangskontraktene.
+
+### Hvis du allerede har startet demoen og får «Du har ikke tilgang»
+
+Stopp backend med Ctrl+C. Fra prosjektroten, i samme terminal og med samme
+databaseinnstillinger som backend, kjør:
+
+```sh
+git pull --ff-only origin main
+uv run --project backend spesped demo-access --confirm-synthetic
+```
+
+Start backend igjen som beskrevet nedenfor, og logg inn på nytt som
+`demo.leader@example.invalid`. Passord og eksisterende data beholdes. Kommandoen
+kan kjøres flere ganger uten å duplisere tilganger; den gjenåpner ikke eksplisitt
+tilbakekalte tilganger. Ikke kjør den opprinnelige `demo`-importen på nytt.
+
+Hvis du senere oppretter en ny pedagogisk støttesak for A eller B som
+demolederen, kjør `demo-access --confirm-synthetic` på nytt for å gi eksplisitt
+tilgang til den nye saken. Opprettelse alene gir ikke sakstilgang. Kommandoen
+krever at standarddemoens opprinnelige skoler, kontoer, elever og tilknytninger
+fortsatt kan gjenkjennes; den avviser endret eller ufullstendig grunnoppsett.
 
 ## Start programmet
 

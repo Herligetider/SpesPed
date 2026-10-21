@@ -38,6 +38,28 @@ schools and three synthetic pupils. The teacher can read/update one pupil; the
 assistant has only brief/observation actions; the technical user and guardian
 cannot read pupils. Production settings reject this fixture command.
 
+To exercise the current practitioner workspaces as `demo.leader@example.invalid`,
+explicitly upgrade that standard fixture after creating it:
+
+```sh
+uv run --project backend spesped demo-access --confirm-synthetic
+```
+
+This also repairs an existing basic demo without deleting its data or resetting
+passwords. It runs only in development, verifies the original fixture provenance,
+and adds explicit pupil/case-scoped authorities for the original synthetic pupils
+A and B plus school intake authority. Synthetic educational support cases receive
+exact case grants; ordinary case matching remains unchanged. The other school,
+assistant, guardian and technical accounts retain their existing scope. The
+upgrade is idempotent and does not reactivate revoked grants, configure AI, create
+guardian rights or authorize disclosure/dispatch. Use the same database settings
+as the backend and sign in again after upgrading. The ordinary bootstrap and
+basic demo commands retain their original limited permissions.
+After creating an additional educational support case as that leader for A or B,
+rerun the upgrade to provision its explicit case grants. Only cases with matching
+native leader-creation provenance qualify. Altered or incomplete original demo
+identity inventories are rejected; unrelated cases are not granted access.
+
 HTTP clients send an exact configured `Origin` at login and on every write.
 Login/me return the CSRF token; writes add `X-CSRF-Token`. Sessions are opaque,
 stored only as SHA-256 token hashes, and cookies are HttpOnly/SameSite=Lax with
