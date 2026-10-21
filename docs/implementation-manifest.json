@@ -1442,13 +1442,14 @@
       "status": "implementing",
       "requiredEvidence": "Correct periods/goals, late evidence, cadence deduplication, no auto-send",
       "implementationAgent": "/root/j11_documents",
-      "reviewAgent": "/root/review_j11_documents",
+      "reviewAgent": "/root/review_document_choices",
       "commits": [
         "9f1ba49ee1e2241eaf6f1247dc21e16f3611ff4c",
         "e614152784c6962bbcf7076ec875d2b53d8007fd",
         "ca3279b4e85c013c0998cedd9333a0ba98409192",
         "35845e984e9311b679695a7a7fdf2c270b1ad691",
-        "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220"
+        "e7fe46a65acc32b7694e8fd9bd7036d12bc0d220",
+        "955e472598c6cb2a6aa404d944896bf7603026f4"
       ],
       "evidence": [
         {
@@ -1512,6 +1513,12 @@
         {
           "type": "scope_coordination",
           "result": "Practitioner choice extension authorized narrow new owner inventory modules identity/document_choices.py, plans/document_choices.py, teaching/document_choices.py, assessment/document_choices.py and governance/document_choices.py plus dedicated tests; documents/choices.py composes their public reads. Source inventories use native current owner authorization, no committed HTTP/router calls or protected-case discovery. Recovery list requires documents.write plus matching AIpurpose, while ordinary readers/approvers retain accepted R1 scope. Existing ai/choices reused. UI and backend agents coordinate fixed typed category responses; all new owner modules require independent review."
+        },
+        {
+          "type": "independent_review",
+          "revision": "955e472598c6cb2a6aa404d944896bf7603026f4",
+          "path": "docs/reviews/document-choices-review.md",
+          "result": "Typed choice/recovery/inbox candidate frozen across8 verified author files. Separate review:32focused SQLite/PostgreSQL passes and4 independent scope/transaction passes, but two P2 defects reproduced on both engines: actual picker labels group duration as pupil minutes and future lower-date narrowing is ignored before cap. Original author repairing category-specific narrowing and pupil participation projection; native document backend acceptance remains bounded and unchanged."
         }
       ],
       "findings": [
@@ -1538,6 +1545,18 @@
           "priority": "P2",
           "description": "Unconditional empty-BC10 downgrade intercepts prior J19 retained-history regression",
           "status": "verified_fixed"
+        },
+        {
+          "id": "J11-DC-R1",
+          "priority": "P2",
+          "description": "Actual picker substitutes group duration for selected pupil participation",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J11-DC-R2",
+          "priority": "P2",
+          "description": "Future lower-date narrowing ignored before inventory cap",
+          "status": "repair_in_progress"
         }
       ]
     },
@@ -1953,8 +1972,10 @@
       "status": "implementing",
       "requiredEvidence": "Browser journeys, revisions and source review; public/Montessori fixtures",
       "implementationAgent": "/root/j20_document_ui",
-      "reviewAgent": null,
-      "commits": [],
+      "reviewAgent": "/root/review_document_ui",
+      "commits": [
+        "d15671bf89ce4f2e5d88388da5df7f9d4636a300"
+      ],
       "evidence": [
         {
           "type": "work_assignment",
@@ -1963,9 +1984,58 @@
         {
           "type": "integration_in_progress",
           "result": "Root added learner tab Rapporter og brev / Rapportar og brev in App.tsx, using existing keyed actor/client/school/pupil lifetime. Three root composition tests and TypeScript check pass; tests verify same-pupil hidden-tab draft retention and immediate content removal on identity/client change. Root App paths remain uncommitted pending complete UI candidate; frontend author continues actual manual/AI/schedule/contribution controls while choice owner implements native inventory contracts. No browser/full-feature acceptance claimed."
+        },
+        {
+          "type": "independent_review",
+          "revision": "d15671bf89ce4f2e5d88388da5df7f9d4636a300",
+          "path": "docs/reviews/document-ui-review.md",
+          "result": "Six-file document UI candidate including root learner tab pinned. Fourauthor hashes verified; author10focusedtests+typecheck; reviewer14tests/typecheck/build pass but7 actionable findings reproduced or confirmed against native contracts. Root actual native PostgreSQL browser confirms blank auto-selected editor and422 nested request key. Original author repairing all7 findings. No browser/report workflow or whole-feature acceptance."
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "J20-DUI-R1",
+          "priority": "P1",
+          "description": "Manual revision missing required nested request_key",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R2",
+          "priority": "P1",
+          "description": "Shared creation/editor state can erase selected content and alter untouched configuration",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R3",
+          "priority": "P1",
+          "description": "Denied refresh retains protected workspace/editor/proposal data",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R4",
+          "priority": "P2",
+          "description": "Period/context changes retain hidden old basis selections",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R5",
+          "priority": "P2",
+          "description": "No explicit handling/preservation of evidence gaps",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R6",
+          "priority": "P2",
+          "description": "Contribution responses and reloads not bound to selected document",
+          "status": "repair_in_progress"
+        },
+        {
+          "id": "J20-DUI-R7",
+          "priority": "P2",
+          "description": "Changed source basis has no existing-document rebuild path",
+          "status": "repair_in_progress"
+        }
+      ]
     },
     {
       "id": "J21",
@@ -1984,15 +2054,36 @@
       "status": "implementing",
       "requiredEvidence": "Chosen dates, paused draft plan, explicit send, recipient-specific view",
       "implementationAgent": "/root/j21_guardian_ui",
-      "reviewAgent": null,
-      "commits": [],
+      "reviewAgent": "/root/review_guardian_ui",
+      "commits": [
+        "83699e5b389d04157f177998d7ca26aa40f23286",
+        "c6e0ad87bc6c403e331a7e2408c51b8e4dd30ea6"
+      ],
       "evidence": [
         {
           "type": "work_assignment",
           "result": "Assigned accepted-contract guardian portal frontend to /root/j21_guardian_ui using Luna medium: actual paginated grants, session-bound explicit open, current authorized payload/attachments, separate human read acknowledgment, safe retries/expiry/current-rights denial, no dossier requests. Owns new web/src/features/guardian/**; root owns guardian-only shell routing and authenticated schoolBlob download integration. Root APItests12passes, shell/finalbrowser tests pending. Practitioner disclosure screens and other J21 collaboration remain required; independent review after freeze."
+        },
+        {
+          "type": "independent_review",
+          "revision": "83699e5b389d04157f177998d7ca26aa40f23286",
+          "path": "docs/reviews/guardian-ui-review.md",
+          "result": "Eight-file guardian UI/root shell/API candidate pinned after4author hashes verified. Separate review35tests/typecheck/build pass but pending-open response can restore content after refresh removes grant. Independent adverse probe reproduces. Root normal native PostgreSQL browser journey at d15671b passes session-scoped keyboard open, authenticated attachment download, explicit receipt, reload and NN390px layout with no learner list/dossier calls; this does not close refresh race."
+        },
+        {
+          "type": "repair_candidate",
+          "revision": "c6e0ad87bc6c403e331a7e2408c51b8e4dd30ea6",
+          "result": "Originalauthor2file repair tracks pending grant through open; successful same-page refresh removal invalidates scope. Four owned file hashes verified;8focused tests and typecheck pass. Original independent reviewer reactivated with exact archive and original adverse probe; finding remains open until recheck."
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "J21-GUI-R1",
+          "priority": "P2",
+          "description": "Late open payload redisplays content after refresh removes pending grant",
+          "status": "repair_in_progress"
+        }
+      ]
     },
     {
       "id": "J22",
@@ -3802,7 +3893,7 @@
     {
       "date": "2026-10-21",
       "classification": "progress",
-      "result": "Previous goal turn made concrete progress: accepted BC03 coverage and all J11 repairs, pinned native BC11 and its original-author caller-state repair, and started actual document UI/choice work. Current turn accepted independent J12-R1 recheck, assigned guardian portal UI, added root authenticated attachment/guardian shell integration and started full backend integration at frozen91558b2 with actualPG and archive-native imports. Full product remains incomplete; no releasegate or wholefeature promoted.",
+      "result": "Previous goal turn made concrete progress: accepted BC03 coverage and all J11 repairs, pinned native BC11 and its original-author caller-state repair, and started actual document UI/choice work. Current turn accepted independent J12-R1 recheck, assigned guardian portal UI, added root authenticated attachment/guardian shell integration and started full backend integration at frozen91558b2 with actualPG and archive-native imports. Full product remains incomplete; no releasegate or wholefeature promoted. Pinned guardian, native document choices and document workspace candidates; distinct reviewers found1guardianrace,2choiceprojection/narrowing and7documentUI defects. Original authors repairing all findings. Root normal guardian native browser journey passes; document save422/blankeditor reproduced. No full feature promoted.",
       "verification": {
         "revision": "91558b2c4745d54e84b75d892a8ac79b9a064dc4",
         "sourceIsolation": "git archive at var/integration-91558b2/pin, absolute backend:test PYTHONPATH and four actual archived import paths verified",
