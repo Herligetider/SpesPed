@@ -72,9 +72,11 @@ def mutation(action,kind):
     def decorate(fn):
         @wraps(fn)
         def mutate(db,actor,school_id,*args):
+            # Refuse caller-owned work before entering our rollback/metadata scope.
+            # This precondition must not discard a staged protective restriction.
+            if any(type(v).__module__.startswith('spesped.contexts.') for v in db.new|db.dirty|db.deleted):raise DomainError('dependency_pending','Commit staged changes separately before communication commands.',409)
             previous={k:db.info.get(k) for k in ('communication_request_key','communication_correlation_id')}
             try:
-                if any(type(v).__module__.startswith('spesped.contexts.') for v in db.new|db.dirty|db.deleted):raise DomainError('dependency_pending','Commit staged changes separately before communication commands.',409)
                 require_school_access(db,actor,school_id);db.scalar(select(School.id).where(School.id==school_id).with_for_update())
                 command=args[-1];identity=args[0] if len(args)>1 else None
                 action_access(db,actor,school_id,kind,action,identity,command)
