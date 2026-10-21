@@ -1,3 +1,4 @@
+import { LocalValidationError } from "../../userErrors";
 import {
   cloneElement,
   isValidElement,
@@ -27,7 +28,7 @@ export async function allPages<T>(
     offset += page.items.length;
     if (offset >= page.total) return items;
     if (!page.items.length)
-      throw new Error("Listen ble avbrutt. Last inn på nytt.");
+      throw new LocalValidationError("Listen ble avbrutt. Last inn på nytt.");
   }
 }
 export function useRead<T>(load: () => Promise<T>, dependencies: unknown[]) {
@@ -35,6 +36,14 @@ export function useRead<T>(load: () => Promise<T>, dependencies: unknown[]) {
   const [error, setError] = useState<unknown>();
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
+  const completedScope = useRef<unknown[] | undefined>(undefined);
+  const scope = [...dependencies, revision];
+  const scopeCurrent =
+    !!completedScope.current &&
+    completedScope.current.length === scope.length &&
+    completedScope.current.every((part, index) =>
+      Object.is(part, scope[index]),
+    );
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -43,10 +52,16 @@ export function useRead<T>(load: () => Promise<T>, dependencies: unknown[]) {
     load()
       .then(
         (data) => {
-          if (active) setValue(data);
+          if (active) {
+            completedScope.current = scope;
+            setValue(data);
+          }
         },
         (err) => {
-          if (active) setError(err);
+          if (active) {
+            completedScope.current = scope;
+            setError(err);
+          }
         },
       )
       .finally(() => {
@@ -56,7 +71,12 @@ export function useRead<T>(load: () => Promise<T>, dependencies: unknown[]) {
       active = false;
     };
   }, [...dependencies, revision]); // Every caller supplies the complete read scope.
-  return { value, error, loading, reload: () => setRevision((x) => x + 1) };
+  return {
+    value: scopeCurrent ? value : undefined,
+    error: scopeCurrent ? error : undefined,
+    loading: loading || !scopeCurrent,
+    reload: () => setRevision((x) => x + 1),
+  };
 }
 type Pending = {
   path: readonly string[];
@@ -256,19 +276,20 @@ export function instant(
     /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(
       value,
     );
-  if (!match) throw new Error("Velg en uttrykkelig dato og klokkeslett.");
+  if (!match)
+    throw new LocalValidationError("Velg en uttrykkelig dato og klokkeslett.");
   const normalized =
     match[1] + ":" + (match[2] ?? "00") + "." + (match[3] ?? "").padEnd(3, "0");
   const utc = Date.parse(normalized + "Z");
   if (!Number.isFinite(utc))
-    throw new Error("Velg en gyldig dato og klokkeslett.");
+    throw new LocalValidationError("Velg en gyldig dato og klokkeslett.");
   const matches: string[] = [];
   for (let minutes = -14 * 60; minutes <= 14 * 60; minutes += 15) {
     const iso = new Date(utc - minutes * 60000).toISOString();
     if (localInput(iso, zone) === normalized) matches.push(iso);
   }
   if (matches.length !== 1)
-    throw new Error(
+    throw new LocalValidationError(
       matches.length
         ? "Klokkeslettet forekommer to ganger ved overgang til vintertid. Velg et entydig klokkeslett."
         : "Klokkeslettet finnes ikke i skolens tidssone. Velg et annet klokkeslett.",

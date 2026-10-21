@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -301,5 +301,105 @@ describe('workspace access flow', () => {
     expect(contrast(muted, pageBackground)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(muted, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(4.5);
     expect(contrast(headingColor, headerBackground)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+
+describe("trusted local teaching validation in the actual App", () => {
+  async function teachingApp() {
+    const record = learner("l1", "Syntetisk elev");
+    const client = {
+      setSessionExpiredHandler: vi.fn(),
+      me: vi.fn().mockResolvedValue(session()),
+      schools: vi.fn().mockResolvedValue(session().schools),
+      learners: vi.fn().mockResolvedValue({ items: [record], total: 1 }),
+      learner: vi.fn().mockResolvedValue(profile(record)),
+      schoolGet: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+      schoolCommand: vi.fn(),
+    } as unknown as ApiClient;
+    render(<App client={client} />);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Syntetisk elev/ }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Undervisning" }));
+    await screen.findByRole("button", { name: "Planlegg ny økt" });
+    return client;
+  }
+  it("shows corrective nonexistent school-time validation without submitting a basis", async () => {
+    const client = await teachingApp();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Planlegg ny økt" }),
+    );
+    fireEvent.change(
+      screen.getByLabelText("Planlagt tidspunkt (Europe/Oslo)"),
+      { target: { value: "2027-03-28T02:30" } },
+    );
+    fireEvent.change(screen.getByLabelText("Arena"), {
+      target: { value: "Syntetisk rom" },
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Bekreft valgt grunnlag" }),
+    );
+    expect(
+      await screen.findByText(
+        "Klokkeslettet finnes ikke i skolens tidssone. Velg et annet klokkeslett.",
+      ),
+    ).toBeVisible();
+    expect(client.schoolCommand).not.toHaveBeenCalled();
+  });
+  it("shows the authored ITO instruction and keeps the incomplete actual record unsent", async () => {
+    const client = await teachingApp();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Gjennomføring" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Registrer faktisk økt" }),
+    );
+    fireEvent.change(screen.getByLabelText("Faktisk start (Europe/Oslo)"), {
+      target: { value: "2026-10-20T12:00" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Faktisk hendelsesvarighet i minutter"),
+      { target: { value: "30" } },
+    );
+    fireEvent.change(screen.getByLabelText("Faktisk aktivitet"), {
+      target: { value: "Syntetisk faktisk aktivitet" },
+    });
+    await userEvent.selectOptions(
+      screen.getByLabelText("Støtteform, registrering 1"),
+      "individually_adapted_education",
+    );
+    fireEvent.change(
+      screen.getByLabelText("Faktiske elevminutter, registrering 1"),
+      { target: { value: "30" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("Støtte som ble gitt, registrering 1"),
+      { target: { value: "Rapportert støtte" } },
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Bekreft faktisk gjennomføring" }),
+    );
+    expect(
+      await screen.findByText(
+        "ITO uten vurdert kvalifikasjonsgrunnlag registreres som delvis gjennomføring med årsak og ansvarlig oppfølging.",
+      ),
+    ).toBeVisible();
+    expect(client.schoolCommand).not.toHaveBeenCalled();
+  });
+  it("keeps the generic fallback for an unexpected Error rather than exposing its message", async () => {
+    const client = {
+      setSessionExpiredHandler: vi.fn(),
+      me: vi.fn().mockRejectedValue(new Error("PRIVATE_UNEXPECTED_DIAGNOSTIC")),
+    } as unknown as ApiClient;
+    render(<App client={client} />);
+    expect(
+      await screen.findByText(
+        "Noe gikk galt. Prøv igjen, eller kontakt systemansvarlig.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("PRIVATE_UNEXPECTED_DIAGNOSTIC"),
+    ).not.toBeInTheDocument();
   });
 });

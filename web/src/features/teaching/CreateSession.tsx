@@ -1,3 +1,4 @@
+import { LocalValidationError } from "../../userErrors";
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type {
@@ -142,7 +143,7 @@ export default function CreateSession(props: Props) {
         goals.value?.some((g) => g.id === id),
       );
       if (!activeGoals.length)
-        throw new Error(
+        throw new LocalValidationError(
           "Velg minst ett aktivt, bekreftet mål for tidspunktet.",
         );
       command.run<Basis>(

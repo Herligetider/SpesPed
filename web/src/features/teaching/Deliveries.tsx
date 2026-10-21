@@ -1,3 +1,4 @@
+import { LocalValidationError } from "../../userErrors";
 import { useState } from "react";
 import DeliverySummary from "./DeliverySummary";
 import type { FormEvent } from "react";
@@ -26,6 +27,7 @@ import {
 type Props = WorkspaceProps & {
   learnerId: string;
   zone: string;
+  active?: boolean;
   session?: Session;
   onChanged?: () => void;
 };
@@ -124,7 +126,8 @@ export function DeliveryForm(
       result.push(...page.items);
       offset += page.items.length;
       if (offset >= page.total) return result;
-      if (!page.items.length) throw new Error("Elevlisten ble avbrutt.");
+      if (!page.items.length)
+        throw new LocalValidationError("Elevlisten ble avbrutt.");
     }
   }, [client, schoolId]);
   const [conflict, setConflict] = useState(false);
@@ -163,7 +166,7 @@ export function DeliveryForm(
     try {
       const occurred = instant(date, zone, existing?.occurred_at);
       if (new Date(occurred).getTime() + duration * 60000 > Date.now())
-        throw new Error(
+        throw new LocalValidationError(
           "Registrer en faktisk økt først etter at hele hendelsen har skjedd.",
         );
       if (
@@ -174,7 +177,7 @@ export function DeliveryForm(
         ) &&
         status !== "partial"
       )
-        throw new Error(
+        throw new LocalValidationError(
           "ITO uten vurdert kvalifikasjonsgrunnlag registreres som delvis gjennomføring med årsak og ansvarlig oppfølging.",
         );
       const content = {
@@ -661,7 +664,7 @@ export default function Deliveries(props: Props) {
         props.learnerId,
         "teaching-deliveries",
       ]),
-    [props.client, props.schoolId, props.learnerId],
+    [props.client, props.schoolId, props.learnerId, props.active],
   );
   const [selected, setSelected] = useState("");
   const [newForm, setNewForm] = useState(false);

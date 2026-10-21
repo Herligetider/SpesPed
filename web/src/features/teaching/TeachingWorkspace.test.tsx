@@ -4,12 +4,14 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ApiClient } from "../../api";
 import type { WorkspaceProps, Session, SessionContent } from "./types";
 import TeachingWorkspace from "./TeachingWorkspace";
+import { AssignmentPanel } from "./Assignments";
 import SessionEditor from "./SessionEditor";
 import CreateSession from "./CreateSession";
 import { ObservationForm } from "./Observations";
@@ -649,5 +651,250 @@ describe("time and complete choice pagination", () => {
       ]),
     ).toHaveLength(101);
     expect(calls[1].url.searchParams.get("offset")).toBe("100");
+  });
+});
+
+describe("independent review teaching regressions", () => {
+  it("drops cached guidance and review prose on brief_stale, including late child responses", async () => {
+    let recalled = false;
+    let finishMessages: ((value: Response) => void) | undefined;
+    let finishActuals: ((value: Response) => void) | undefined;
+    const assignment = {
+      id: "assigned",
+      version: 1,
+      state: "active",
+      brief_state: "assigned",
+      learner_id: "learner",
+      learner_name: "Demo-elev",
+      follow_up_owner_id: "teacher",
+      planned_at: "2026-10-22T08:00:00Z",
+      valid_from: "2026-01-01T00:00:00Z",
+      valid_until: "2099-01-01T00:00:00Z",
+      arena: "Rom",
+      role: "Støtte",
+      content: {
+        simple_goal: "Tre ord",
+        material_location: "Hylle",
+        steps: ["Hent", "Øv", "Noter"],
+        support: "Avtalt støtte",
+        simplification: "Ett kort",
+        help_when: "Ved tvil",
+        contact: "Pedagogen",
+        training_guidance: "Avtal opplæring",
+      },
+    };
+    const message = {
+      id: "guidance",
+      kind: "guidance",
+      author_id: "teacher",
+      text: "Tilbakekalt veiledning",
+      created_at: "2026-10-20T10:00:00Z",
+    };
+    const input = {
+      id: "input",
+      version: 1,
+      state: "recorded",
+      occurred_at: "2026-10-20T10:00:00Z",
+      content: {
+        occurred_at: "2026-10-20T10:00:00Z",
+        duration_minutes: 10,
+        status: "participated",
+        category: "ordinary_teaching",
+        activity: "Selvstendig registrert faktisk aktivitet",
+        support: "Eget faktum",
+        difficulty: "",
+      },
+      review_reason: "Tilbakekalt vurdering",
+      review_history: [
+        {
+          id: "history",
+          outcome: "recorded",
+          reason: "Tilbakekalt historisk begrunnelse",
+          historical: false,
+          reviewed_at: "2026-10-20T11:00:00Z",
+        },
+      ],
+    };
+    const { props, calls } = setup((call) => {
+      if (call.method === "POST") {
+        recalled = true;
+        return response("Kortet er utdatert", 409);
+      }
+      if (call.path.endsWith("/brief-assignments/assigned"))
+        return response(
+          recalled
+            ? { ...assignment, content: null, brief_state: "review_required" }
+            : assignment,
+        );
+      if (call.path.endsWith("/messages"))
+        return recalled
+          ? new Promise((resolve) => {
+              finishMessages = resolve;
+            })
+          : response(page([message]));
+      if (call.path.endsWith("/actual-inputs"))
+        return recalled
+          ? new Promise((resolve) => {
+              finishActuals = resolve;
+            })
+          : response(page([input]));
+      return response(page([]));
+    });
+    render(
+      <AssignmentPanel
+        {...props}
+        mode="assistant"
+        assignmentId="assigned"
+        zone="Europe/Oslo"
+      />,
+    );
+    await screen.findByText("Tilbakekalt veiledning");
+    await screen.findByText("Vurdering: Tilbakekalt vurdering");
+    await screen.findByText(/Tilbakekalt historisk begrunnelse/);
+    fireEvent.change(
+      screen.getByLabelText("Tekst til det konkrete oppdraget"),
+      { target: { value: "Spørsmål etter tilbakekalling" } },
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Lagre spørsmål" }),
+    );
+    await screen.findByText(/Kortet trenger ny pedagogisk kontroll/);
+    expect(
+      screen.queryByText("Tilbakekalt veiledning"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tilbakekalt vurdering/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Tilbakekalt historisk begrunnelse/),
+    ).not.toBeInTheDocument();
+    await waitFor(() => expect(finishMessages && finishActuals).toBeTruthy());
+    await act(async () => {
+      finishMessages!(response(page([message])));
+      finishActuals!(response(page([input])));
+    });
+    expect(
+      screen.queryByText("Tilbakekalt veiledning"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tilbakekalt vurdering/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Tilbakekalt historisk begrunnelse/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Selvstendig registrert faktisk aktivitet"),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.path.endsWith("/actual-inputs")),
+    ).toHaveLength(2);
+  });
+
+  it.each([null, "original-session-revision"])(
+    "keeps an existing observation's %s factual session link when correcting prose",
+    async (original) => {
+      const existing = {
+        id: "note",
+        revision_id: "note-r1",
+        version: 1,
+        revision: 1,
+        state: "saved",
+        confirmed: true,
+        current: true,
+        learner_id: "learner",
+        occurred_at: "2026-10-20T10:00:47.123456Z",
+        author_id: "teacher",
+        session_revision_id: original,
+        assignment_id: original ? "original-assignment" : null,
+        goal_revision_id: null,
+        observation: "Uavhengig observasjon",
+        support: "Original støtte",
+        interpretation: null,
+        next_step: null,
+        correction_reason: null,
+      };
+      const { props, calls } = setup((call) =>
+        call.method === "POST"
+          ? response({ ...existing, revision: 2 })
+          : response(page([])),
+      );
+      render(
+        <ObservationForm
+          {...props}
+          learnerId="learner"
+          zone="Europe/Oslo"
+          existing={existing}
+          session={{ ...row, revision_id: "unrelated-selected-session" }}
+        />,
+      );
+      fireEvent.change(screen.getByLabelText("Støtte som faktisk ble gitt"), {
+        target: { value: "Rettet støtte" },
+      });
+      fireEvent.change(screen.getByLabelText("Begrunnelse for retting"), {
+        target: { value: "Rett kun støtte" },
+      });
+      await userEvent.click(
+        screen.getByRole("button", { name: "Lagre korrigert observasjon" }),
+      );
+      await waitFor(() =>
+        expect(calls.some((call) => call.method === "POST")).toBe(true),
+      );
+      expect(
+        calls.find((call) => call.method === "POST")!.body.content,
+      ).toMatchObject({
+        session_revision_id: original,
+        assignment_id: existing.assignment_id,
+        occurred_at: existing.occurred_at,
+        support: "Rettet støtte",
+      });
+    },
+  );
+
+  it("preserves visited session, observation and actual-delivery drafts across internal tabs", async () => {
+    const { props } = setup(defaultHandler);
+    render(<TeachingWorkspace {...props} />);
+    await openSession();
+    await userEvent.click(screen.getByText("Rediger økten som ny revisjon"));
+    fireEvent.change(screen.getByLabelText("Forberedelse"), {
+      target: { value: "Ulagret praktisk forberedelse" },
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Observasjoner" }),
+    );
+    const observations = within(
+      document.querySelector(
+        '[data-teaching-view="observations"]',
+      ) as HTMLElement,
+    );
+    fireEvent.change(observations.getByLabelText("Konkret observasjon"), {
+      target: { value: "Ulagret konkret observasjon" },
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Gjennomføring" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Registrer faktisk økt" }),
+    );
+    const delivery = within(
+      document.querySelector('[data-teaching-view="delivery"]') as HTMLElement,
+    );
+    fireEvent.change(delivery.getByLabelText("Faktisk aktivitet"), {
+      target: { value: "Ulagret faktisk aktivitet" },
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Undervisningsøkter" }),
+    );
+    expect(screen.getByLabelText("Forberedelse")).toHaveValue(
+      "Ulagret praktisk forberedelse",
+    );
+    expect(screen.getByLabelText("Forberedelse")).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Observasjoner" }),
+    );
+    expect(observations.getByLabelText("Konkret observasjon")).toHaveValue(
+      "Ulagret konkret observasjon",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Gjennomføring" }),
+    );
+    expect(delivery.getByLabelText("Faktisk aktivitet")).toHaveValue(
+      "Ulagret faktisk aktivitet",
+    );
   });
 });

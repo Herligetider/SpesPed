@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type {
   WorkspaceProps,
@@ -66,7 +66,11 @@ function ScopedWorkspace(props: WorkspaceProps) {
     </div>
   );
 }
-type TeacherProps = WorkspaceProps & { learnerId: string; zone: string };
+type TeacherProps = WorkspaceProps & {
+  learnerId: string;
+  zone: string;
+  active?: boolean;
+};
 export function SessionView({ row, zone }: { row: Session; zone: string }) {
   return (
     <article>
@@ -425,7 +429,9 @@ function CurrentSession(
           )}
         </section>
       )}
-      {!withdrawn && <Briefs {...props} session={visibleRow} />}
+      {!withdrawn && visibleRow.content && (
+        <Briefs {...props} session={visibleRow} />
+      )}
     </section>
   );
 }
@@ -500,7 +506,7 @@ function FollowUps(props: TeacherProps) {
         props.learnerId,
         "teaching-follow-ups",
       ]),
-    [props.client, props.schoolId, props.learnerId],
+    [props.client, props.schoolId, props.learnerId, props.active],
   );
   return (
     <section>
@@ -522,6 +528,7 @@ function FollowUps(props: TeacherProps) {
 }
 function TeacherWorkspace(props: TeacherProps) {
   const [tab, setTab] = useState("sessions");
+  const [opened, setOpened] = useState(["sessions"]);
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState("");
   const [readRevision, setReadRevision] = useState(0);
@@ -545,6 +552,12 @@ function TeacherWorkspace(props: TeacherProps) {
         : Promise.resolve(undefined),
     [props.client, props.schoolId, props.learnerId, selected, readRevision],
   );
+  const retainedCurrent = useRef<Session | undefined>(undefined);
+  if (current.value) retainedCurrent.current = current.value;
+  const currentRow =
+    retainedCurrent.current?.id === selected
+      ? retainedCurrent.current
+      : undefined;
   function updated(row: Session) {
     setSelected(row.id);
     setReadRevision((x) => x + 1);
@@ -576,75 +589,98 @@ function TeacherWorkspace(props: TeacherProps) {
             type="button"
             key={t.id}
             aria-pressed={tab === t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              if (t.id === "sessions" && tab !== "sessions") {
+                current.reload();
+                sessions.reload();
+              }
+              setTab(t.id);
+              setOpened((previous) =>
+                previous.includes(t.id) ? previous : [...previous, t.id],
+              );
+            }}
           >
             {t.label}
           </button>
         ))}
       </nav>
-      {tab === "sessions" && (
-        <>
-          <div className="teaching-actions">
-            <button type="button" onClick={() => setCreating(!creating)}>
-              {creating ? "Lukk nytt øktutkast" : "Planlegg ny økt"}
-            </button>
+      <div hidden={tab !== "sessions"} data-teaching-view="sessions">
+        <div className="teaching-actions">
+          <button type="button" onClick={() => setCreating(!creating)}>
+            {creating ? "Lukk nytt øktutkast" : "Planlegg ny økt"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              sessions.reload();
+              setReadRevision((x) => x + 1);
+            }}
+          >
+            Kontroller lagrede økter på nytt
+          </button>
+        </div>
+        {creating && <CreateSession {...props} onCreated={updated} />}
+        <ReadStatus {...sessions} formatError={props.formatError} />
+        {sessions.value?.length === 0 && (
+          <p>Ingen lagrede undervisningsøkter.</p>
+        )}
+        <div className="teaching-list">
+          {sessions.value?.map((row) => (
             <button
               type="button"
+              key={row.id}
+              aria-pressed={selected === row.id}
               onClick={() => {
-                sessions.reload();
+                setSelected(row.id);
                 setReadRevision((x) => x + 1);
               }}
             >
-              Kontroller lagrede økter på nytt
+              {row.content?.title ?? "Trenger ny kontroll"} ·{" "}
+              {displayDate(row.planned_at, props.zone)} · revisjon{" "}
+              {row.revision} · {row.approved ? "godkjent" : "ikke godkjent"}
             </button>
-          </div>
-          {creating && <CreateSession {...props} onCreated={updated} />}
-          <ReadStatus {...sessions} formatError={props.formatError} />
-          {sessions.value?.length === 0 && (
-            <p>Ingen lagrede undervisningsøkter.</p>
-          )}
-          <div className="teaching-list">
-            {sessions.value?.map((row) => (
-              <button
-                type="button"
-                key={row.id}
-                aria-pressed={selected === row.id}
-                onClick={() => {
-                  setSelected(row.id);
-                  setReadRevision((x) => x + 1);
-                }}
-              >
-                {row.content?.title ?? "Trenger ny kontroll"} ·{" "}
-                {displayDate(row.planned_at, props.zone)} · revisjon{" "}
-                {row.revision} · {row.approved ? "godkjent" : "ikke godkjent"}
-              </button>
-            ))}
-          </div>
-          <ReadStatus {...current} formatError={props.formatError} />
-          {current.value && (
+          ))}
+        </div>
+        <ReadStatus {...current} formatError={props.formatError} />
+        {currentRow && (
+          <div hidden={current.loading || !!current.error || !current.value}>
             <CurrentSession
-              key={`${current.value.id}:${current.value.revision_id}:${current.value.version}`}
+              key={`${currentRow.id}:${currentRow.revision_id}:${currentRow.version}`}
               {...props}
-              row={current.value}
+              row={currentRow}
+              active={tab === "sessions"}
               onUpdated={updated}
             />
-          )}
-        </>
+          </div>
+        )}
+      </div>
+      {opened.includes("delivery") && (
+        <div hidden={tab !== "delivery"} data-teaching-view="delivery">
+          <Deliveries
+            {...props}
+            session={current.value}
+            active={tab === "delivery"}
+            onChanged={() => {
+              sessions.reload();
+              current.reload();
+            }}
+          />
+        </div>
       )}
-      {tab === "delivery" && (
-        <Deliveries
-          {...props}
-          session={current.value}
-          onChanged={() => {
-            sessions.reload();
-            current.reload();
-          }}
-        />
-      )}{" "}
-      {tab === "observations" && (
-        <Observations {...props} session={current.value} />
-      )}{" "}
-      {tab === "followups" && <FollowUps {...props} />}
+      {opened.includes("observations") && (
+        <div hidden={tab !== "observations"} data-teaching-view="observations">
+          <Observations
+            {...props}
+            session={current.value}
+            active={tab === "observations"}
+          />
+        </div>
+      )}
+      {opened.includes("followups") && (
+        <div hidden={tab !== "followups"} data-teaching-view="followups">
+          <FollowUps {...props} active={tab === "followups"} />
+        </div>
+      )}
     </>
   );
 }

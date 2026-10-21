@@ -1,3 +1,4 @@
+import { LocalValidationError } from "../../userErrors";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type {
@@ -25,6 +26,7 @@ type Props = WorkspaceProps & {
   learnerId: string;
   session: Session;
   zone: string;
+  active?: boolean;
 };
 const emptyBrief = (): BriefContent => ({
   simple_goal: "",
@@ -192,7 +194,9 @@ function ManageBrief(props: Props & { brief: Brief; onChanged: () => void }) {
       const from = instant(start, zone),
         until = instant(end, zone);
       if (from >= until)
-        throw new Error("Tildelingen trenger en slutt etter starten.");
+        throw new LocalValidationError(
+          "Tildelingen trenger en slutt etter starten.",
+        );
       command.run(
         ["teaching", "briefs", brief.id, "assignments"],
         {

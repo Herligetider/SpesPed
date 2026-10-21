@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiClient, ApiError, api } from './api';
+import { LocalValidationError } from './userErrors';
 import IntakeWorkspace from './IntakeWorkspace';
 import PlanningWorkspace from './features/planning/PlanningWorkspace';
 import TeachingWorkspace from './features/teaching/TeachingWorkspace';
@@ -39,6 +40,7 @@ function AuthenticatedApp({ client }: { client: ApiClient }) {
   const school = session?.schools.find((item) => item.id === selectedSchoolId) ?? null;
 
   function displayError(error: unknown): string {
+    if (error instanceof LocalValidationError) return error.message;
     if (error instanceof ApiError) return localizeApiError(language, error.code, error.message);
     return translate(language, 'genericError');
   }

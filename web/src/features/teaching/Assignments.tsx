@@ -197,6 +197,7 @@ function ActualForm(
 function Reconcile(
   props: WorkspaceProps & {
     row: ActualInput;
+    active?: boolean;
     learnerId: string;
     zone: string;
     onSaved: () => void;
@@ -213,7 +214,7 @@ function Reconcile(
         props.learnerId,
         "teaching-deliveries",
       ]),
-    [props.client, props.schoolId, props.learnerId],
+    [props.client, props.schoolId, props.learnerId, props.active],
   );
   return (
     <form
@@ -283,17 +284,24 @@ function Reconcile(
   );
 }
 export function AssignmentPanel(
-  props: WorkspaceProps & { assignmentId: string; zone: string },
+  props: WorkspaceProps & {
+    assignmentId: string;
+    zone: string;
+    active?: boolean;
+  },
 ) {
   const { client, schoolId, formatError, assignmentId, zone } = props;
+  const [accessRevision, setAccessRevision] = useState(0);
   const assignment = useRead(
     () =>
-      client.schoolGet<Assignment>(schoolId, [
-        "teaching",
-        "brief-assignments",
-        assignmentId,
-      ]),
-    [client, schoolId, assignmentId],
+      client
+        .schoolGet<Assignment>(schoolId, [
+          "teaching",
+          "brief-assignments",
+          assignmentId,
+        ])
+        .then((row) => ({ row, accessRevision })),
+    [client, schoolId, assignmentId, accessRevision],
   );
   const messages = useRead(
     () =>
@@ -303,7 +311,7 @@ export function AssignmentPanel(
         assignmentId,
         "messages",
       ]),
-    [client, schoolId, assignmentId],
+    [client, schoolId, assignmentId, accessRevision],
   );
   const actuals = useRead(
     () =>
@@ -313,7 +321,7 @@ export function AssignmentPanel(
         assignmentId,
         "actual-inputs",
       ]),
-    [client, schoolId, assignmentId],
+    [client, schoolId, assignmentId, accessRevision],
   );
   const [kind, setKind] = useState(
     props.mode === "assistant" ? "question" : "guidance",
@@ -321,10 +329,26 @@ export function AssignmentPanel(
   const [text, setText] = useState("");
   const [responds, setResponds] = useState("");
   const [needsFollowup, setNeedsFollowup] = useState(false);
-  const command = useCommand(client, schoolId, formatError, assignment.reload);
+  function refreshAccess() {
+    setAccessRevision((revision) => revision + 1);
+  }
+  const previouslyActive = useRef(props.active ?? true);
+  useEffect(() => {
+    const active = props.active ?? true;
+    if (active && !previouslyActive.current) refreshAccess();
+    previouslyActive.current = active;
+  }, [props.active]);
+  const command = useCommand(client, schoolId, formatError, refreshAccess);
   const textRef = useRef(text);
   textRef.current = text;
-  const row = assignment.value;
+  const freshRow =
+    assignment.value?.accessRevision === accessRevision
+      ? assignment.value.row
+      : undefined;
+  const retainedRow = useRef<Assignment | undefined>(undefined);
+  if (freshRow) retainedRow.current = freshRow;
+  const row = retainedRow.current;
+  const accessCurrent = !!freshRow && !assignment.loading && !assignment.error;
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   useEffect(() => {
     if (!row || props.mode !== "assistant") return;
@@ -352,7 +376,7 @@ export function AssignmentPanel(
       },
       () => {
         if (textRef.current === snapshot) setText("");
-        messages.reload();
+        refreshAccess();
       },
     );
   }
@@ -366,7 +390,7 @@ export function AssignmentPanel(
         </p>
       )}
       {row && !expired && (
-        <>
+        <div hidden={!accessCurrent}>
           <h3>
             {row.learner_name ?? "Tildelt elev"} ·{" "}
             {displayDate(row.planned_at, zone)}
@@ -387,9 +411,7 @@ export function AssignmentPanel(
           <button
             type="button"
             onClick={() => {
-              assignment.reload();
-              messages.reload();
-              actuals.reload();
+              refreshAccess();
             }}
           >
             Kontroller oppdrag og kildegrunnlag på nytt
@@ -415,7 +437,11 @@ export function AssignmentPanel(
                 }[m.kind] ?? "Melding"}{" "}
                 · {displayDate(m.created_at, zone)}
               </strong>
-              <p>{m.text ?? "Innhold trenger kildekontroll."}</p>
+              <p>
+                {row.content
+                  ? (m.text ?? "Innhold trenger kildekontroll.")
+                  : "Innhold trenger kildekontroll."}
+              </p>
             </article>
           ))}
           {row.content && (
@@ -494,11 +520,7 @@ export function AssignmentPanel(
           )}
           {props.mode === "assistant" && (
             <>
-              <ActualForm
-                {...props}
-                assignment={row}
-                onSaved={actuals.reload}
-              />
+              <ActualForm {...props} assignment={row} onSaved={refreshAccess} />
               <ObservationForm
                 {...props}
                 learnerId={row.learner_id}
@@ -543,28 +565,33 @@ export function AssignmentPanel(
                   <p>Avklaring: {input.content.difficulty}</p>
                 </>
               )}
-              {input.review_reason && <p>Vurdering: {input.review_reason}</p>}
+              {row.content && input.review_reason && (
+                <p>Vurdering: {input.review_reason}</p>
+              )}
               {input.review_history?.map((review) => (
                 <p key={review.id}>
                   {displayDate(review.reviewed_at, zone)} ·{" "}
                   {review.historical
                     ? "Historisk vurdering"
                     : "Gjeldende vurdering"}
-                  : {review.reason ?? "Kildegrunnlag trenger kontroll"}
+                  :{" "}
+                  {row.content
+                    ? (review.reason ?? "Kildegrunnlag trenger kontroll")
+                    : "Kildegrunnlag trenger kontroll"}
                 </p>
               ))}
-              {props.mode === "teaching" && (
+              {props.mode === "teaching" && row.content && (
                 <Reconcile
                   key={`${input.id}:${input.version}`}
                   {...props}
                   row={input}
                   learnerId={row.learner_id}
-                  onSaved={actuals.reload}
+                  onSaved={refreshAccess}
                 />
               )}
             </article>
           ))}
-        </>
+        </div>
       )}
     </section>
   );

@@ -1,3 +1,4 @@
+import { LocalValidationError } from "../../userErrors";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { WorkspaceProps, Category } from "./types";
@@ -15,7 +16,7 @@ export function firstDateInstant(date: string, zone: string): string {
     !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
     new Date(date + "T12:00:00Z").toISOString().slice(0, 10) !== date
   )
-    throw new Error("Velg en gyldig dato.");
+    throw new LocalValidationError("Velg en gyldig dato.");
   const formatter = new Intl.DateTimeFormat("sv-SE", {
     timeZone: zone,
     year: "numeric",
@@ -31,17 +32,23 @@ export function firstDateInstant(date: string, zone: string): string {
     const civil = formatter.format(new Date(candidate));
     if (civil >= date) return new Date(candidate).toISOString();
   }
-  throw new Error("Datoperioden inneholder ingen reelle tidspunkter.");
+  throw new LocalValidationError(
+    "Datoperioden inneholder ingen reelle tidspunkter.",
+  );
 }
 export function periodBounds(start: string, end: string, zone: string) {
   if (!start || !end || start > end)
-    throw new Error("Velg fra- og til-dato i riktig rekkefølge.");
+    throw new LocalValidationError(
+      "Velg fra- og til-dato i riktig rekkefølge.",
+    );
   const after = new Date(end + "T12:00:00Z");
   after.setUTCDate(after.getUTCDate() + 1);
   const from = firstDateInstant(start, zone),
     until = firstDateInstant(after.toISOString().slice(0, 10), zone);
   if (from >= until)
-    throw new Error("Datoperioden inneholder ingen reelle tidspunkter.");
+    throw new LocalValidationError(
+      "Datoperioden inneholder ingen reelle tidspunkter.",
+    );
   return { start: from, end: until };
 }
 export default function DeliverySummary(

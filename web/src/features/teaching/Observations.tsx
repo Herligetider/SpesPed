@@ -22,6 +22,7 @@ import {
 type Props = WorkspaceProps & {
   learnerId: string;
   zone: string;
+  active?: boolean;
   session?: Session;
   assignmentId?: string;
 };
@@ -86,7 +87,7 @@ export function ObservationForm(
     () =>
       props.assignmentId
         ? Promise.resolve([])
-        : props.session && selectedLearner === learnerId
+        : !existing && props.session && selectedLearner === learnerId
           ? client
               .schoolGet<{
                 basis: {
@@ -110,6 +111,7 @@ export function ObservationForm(
       selectedLearner,
       props.assignmentId,
       props.session?.basis_id,
+      existing?.revision_id,
     ],
   );
   function submit(event: FormEvent) {
@@ -124,13 +126,15 @@ export function ObservationForm(
         session_revision_id:
           selectedLearner !== learnerId
             ? null
-            : (props.session?.revision_id ??
-              existing?.session_revision_id ??
-              null),
+            : existing
+              ? existing.session_revision_id
+              : (props.session?.revision_id ?? null),
         assignment_id:
           selectedLearner !== learnerId
             ? null
-            : (props.assignmentId ?? existing?.assignment_id ?? null),
+            : existing
+              ? existing.assignment_id
+              : (props.assignmentId ?? null),
         goal_revision_id: goal || null,
         observation,
         support,
@@ -358,7 +362,7 @@ export default function Observations(props: Props) {
         props.learnerId,
         "teaching-observations",
       ]),
-    [props.client, props.schoolId, props.learnerId],
+    [props.client, props.schoolId, props.learnerId, props.active],
   );
   const [editing, setEditing] = useState<Observation>();
   const [history, setHistory] = useState<Observation>();
